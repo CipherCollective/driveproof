@@ -1,13 +1,14 @@
-// DriveProof Phase 1: single private speed value with in-circuit Schnorr verification.
-// Honest claim: proves attested telemetry satisfies a speed policy without revealing
-// the raw value beyond what a successful proof implies. Phase 1 omits subject
-// binding and replay nullifiers (Phases 2–3).
+// DriveProof Phase 2: subject binding via driverBinding = H(domain, driverSecret).
+// Possession-bound pseudonymous attribution — not proof of legal identity or who
+// physically drove. Phase 3 (replay nullifier) not yet included.
 
 pragma language_version >= 0.22 && <= 0.23;
 import CompactStandardLibrary;
 import "schnorr" prefix Schnorr_;
 
 export { Schnorr_SchnorrSignature };
+
+export new type DriverSecret = Bytes<32>;
 
 struct SpeedReading {
     speed: Uint<16>;
@@ -18,10 +19,20 @@ export ledger speedLimit: Uint<16>;
 export ledger complianceCount: Uint<32>;
 
 witness getAttestedSpeedWitness(): [SpeedReading, Schnorr_SchnorrSignature, Uint<16>];
+witness getDriverSecret(): DriverSecret;
 
 constructor(limit: Uint<16>, attestorId: Uint<16>, attestorPk: JubjubPoint) {
     speedLimit = disclose(limit);
     attestors.insert(disclose(attestorId), disclose(attestorPk));
+}
+
+// Pseudonymous subject binding — possession of driverSecret, not legal identity.
+export pure circuit deriveDriverBinding(secret: DriverSecret): Field {
+    const bindingBytes = persistentHash<[Bytes<21>, DriverSecret]>([
+        "DRIVEPROOF_SUBJECT_V1",
+        secret
+    ]) as Bytes<32>;
+    return transientHash<Bytes<32>>(bindingBytes);
 }
 
 export circuit proveCompliance(): [] {
@@ -36,8 +47,9 @@ circuit evaluateSpeed(): Boolean {
     assert(attestors.member(disclose(attestorId)), "Attestor not registered");
     const attestorPk = attestors.lookup(disclose(attestorId));
 
-    const msg: Vector<1, Field> = [reading.speed as Field];
-    Schnorr_schnorrVerify<1>(msg, signature, attestorPk);
+    const driverBinding = deriveDriverBinding(getDriverSecret());
+    const msg: Vector<2, Field> = [reading.speed as Field, driverBinding];
+    Schnorr_schnorrVerify<2>(msg, signature, attestorPk);
 
     return reading.speed <= speedLimit;
 }
@@ -45,7 +57,7 @@ circuit evaluateSpeed(): Boolean {
 export pure circuit schnorrChallenge(
     ann_x: Field, ann_y: Field,
     pk_x: Field, pk_y: Field,
-    msg: Vector<1, Field>
+    msg: Vector<2, Field>
 ): Field {
-    return Schnorr_schnorrChallenge1(ann_x, ann_y, pk_x, pk_y, msg);
+    return Schnorr_schnorrChallenge2(ann_x, ann_y, pk_x, pk_y, msg);
 }

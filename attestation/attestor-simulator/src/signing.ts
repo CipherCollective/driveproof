@@ -39,7 +39,11 @@ export function sign(sk: bigint, msg: bigint[]): SchnorrSignature {
   return { announcement: R, response: s };
 }
 
-/** Phase 1: attestor signs a single private speed field as Vector<1, Field>. */
-export function signSpeed(sk: bigint, speed: number): SchnorrSignature {
-  return sign(sk, [BigInt(speed)]);
+/** Signs [speed, driverBinding]. Driver sends driverBinding = H(domain, driverSecret), never the secret. */
+export function signTripAttestation(sk: bigint, speed: number, driverBinding: bigint): SchnorrSignature {
+  return sign(sk, [BigInt(speed), driverBinding]);
+}
+
+export function computeDriverBinding(driverSecret: Uint8Array): bigint {
+  return pureCircuits.deriveDriverBinding(driverSecret);
 }

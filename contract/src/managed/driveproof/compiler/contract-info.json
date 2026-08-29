@@ -4,6 +4,27 @@
   "runtime-version": "0.16.0",
   "circuits": [
     {
+      "name": "deriveDriverBinding",
+      "pure": true,
+      "proof": false,
+      "arguments": [
+        {
+          "name": "secret",
+          "type": {
+            "type-name": "Alias",
+            "name": "DriverSecret",
+            "type": {
+              "type-name": "Bytes",
+              "length": 32
+            }
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Field"
+      }
+    },
+    {
       "name": "proveCompliance",
       "pure": false,
       "proof": true,
@@ -48,7 +69,7 @@
           "name": "msg",
           "type": {
             "type-name": "Vector",
-            "length": 1,
+            "length": 2,
             "type": {
               "type-name": "Field"
             }
@@ -133,6 +154,19 @@
             "maxval": 65535
           }
         ]
+      }
+    },
+    {
+      "name": "getDriverSecret",
+      "arguments": [
+      ],
+      "result type": {
+        "type-name": "Alias",
+        "name": "DriverSecret",
+        "type": {
+          "type-name": "Bytes",
+          "length": 32
+        }
       }
     }
   ],

@@ -5,9 +5,13 @@ import {
   sampleContractAddress,
   type JubjubPoint,
 } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import { Contract, type Ledger, ledger } from '../managed/driveproof/contract/index.js';
+import { Contract, type Ledger, ledger, pureCircuits } from '../managed/driveproof/contract/index.js';
 import { type DriveProofPrivateState, witnesses } from '../witnesses.js';
-import { createSignedSpeedState, generateAttestorKeyPair } from './utils/test-data.js';
+import {
+  createSignedSpeedState,
+  generateAttestorKeyPair,
+  generateDriverSecret,
+} from './utils/test-data.js';
 
 const toHexPadded = (str: string, len = 64) => Buffer.from(str, 'ascii').toString('hex').padStart(len, '0');
 
@@ -27,16 +31,23 @@ export class DriveProofSimulator {
   readonly attestorPk: JubjubPoint;
   readonly attestorId: bigint = 1n;
   readonly speedLimit: bigint;
+  readonly driverSecretKey: Uint8Array;
 
   constructor(speedLimit: bigint = DEFAULT_SPEED_LIMIT, witnessOverrides: Partial<typeof witnesses> = {}) {
     this.speedLimit = speedLimit;
     this.contract = new Contract<DriveProofPrivateState>({ ...witnesses, ...witnessOverrides });
+    this.driverSecretKey = generateDriverSecret();
 
     const keyPair = generateAttestorKeyPair();
     this.attestorSk = keyPair.sk;
     this.attestorPk = keyPair.pk;
 
-    const initialPrivateState = createSignedSpeedState(67n, this.attestorSk, this.attestorId);
+    const initialPrivateState = createSignedSpeedState(
+      67n,
+      this.attestorSk,
+      this.driverSecretKey,
+      this.attestorId,
+    );
     const deployer = createTestDeployer('deployer');
 
     const { currentPrivateState, currentContractState, currentZswapLocalState } = this.contract.initialState(
@@ -53,6 +64,10 @@ export class DriveProofSimulator {
     );
   }
 
+  computeDriverBinding(driverSecret: Uint8Array = this.driverSecretKey): bigint {
+    return pureCircuits.deriveDriverBinding(driverSecret);
+  }
+
   getLedger(): Ledger {
     return ledger(this.circuitContext.currentQueryContext.state);
   }
@@ -61,10 +76,10 @@ export class DriveProofSimulator {
     return this.circuitContext.currentPrivateState;
   }
 
-  setSignedSpeedState(speed: bigint): void {
+  setSignedSpeedState(speed: bigint, driverSecret: Uint8Array = this.driverSecretKey): void {
     this.circuitContext = {
       ...this.circuitContext,
-      currentPrivateState: createSignedSpeedState(speed, this.attestorSk, this.attestorId),
+      currentPrivateState: createSignedSpeedState(speed, this.attestorSk, driverSecret, this.attestorId),
     };
   }
 

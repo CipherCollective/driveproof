@@ -1,5 +1,7 @@
 import type * as __compactRuntime from '@midnight-ntwrk/compact-runtime';
 
+export type DriverSecret = Uint8Array;
+
 export type Schnorr_SchnorrSignature = { announcement: __compactRuntime.JubjubPoint;
                                          response: bigint
                                        };
@@ -11,6 +13,7 @@ export type Witnesses<PS> = {
                                                                                        },
                                                                                        Schnorr_SchnorrSignature,
                                                                                        bigint]];
+  getDriverSecret(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, DriverSecret];
 }
 
 export type ImpureCircuits<PS> = {
@@ -22,6 +25,7 @@ export type ProvableCircuits<PS> = {
 }
 
 export type PureCircuits = {
+  deriveDriverBinding(secret_0: DriverSecret): bigint;
   schnorrChallenge(ann_x_0: bigint,
                    ann_y_0: bigint,
                    pk_x_0: bigint,
@@ -30,6 +34,8 @@ export type PureCircuits = {
 }
 
 export type Circuits<PS> = {
+  deriveDriverBinding(context: __compactRuntime.CircuitContext<PS>,
+                      secret_0: DriverSecret): __compactRuntime.CircuitResults<PS, bigint>;
   proveCompliance(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
   schnorrChallenge(context: __compactRuntime.CircuitContext<PS>,
                    ann_x_0: bigint,

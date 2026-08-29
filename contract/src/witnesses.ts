@@ -10,6 +10,7 @@ export type DriveProofPrivateState = {
   speed: bigint;
   attestationSignature: SchnorrSignature;
   attestorId: bigint;
+  driverSecretKey: Uint8Array;
 };
 
 const TWO_248 = 452312848583266388373324160190187140051835877600158453279131187530910662656n;
@@ -28,6 +29,15 @@ export const witnesses = {
       privateState.attestorId,
     ],
   ],
+
+  getDriverSecret: ({
+    privateState,
+  }: WitnessContext<Ledger, DriveProofPrivateState>): [DriveProofPrivateState, Uint8Array] => {
+    if (!privateState.driverSecretKey || privateState.driverSecretKey.length !== 32) {
+      throw new Error('getDriverSecret: driverSecretKey is missing or wrong length');
+    }
+    return [privateState, privateState.driverSecretKey];
+  },
 
   getSchnorrReduction: (
     { privateState }: WitnessContext<Ledger, DriveProofPrivateState>,

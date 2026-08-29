@@ -18,6 +18,14 @@ export function generateAttestorKeyPair(): { sk: bigint; pk: JubjubPoint } {
   return { sk, pk };
 }
 
+export function generateDriverSecret(): Uint8Array {
+  return new Uint8Array(crypto.randomBytes(32));
+}
+
+export function computeDriverBinding(driverSecret: Uint8Array): bigint {
+  return pureCircuits.deriveDriverBinding(driverSecret);
+}
+
 export function schnorrSign(sk: bigint, msg: bigint[]): Schnorr_SchnorrSignature {
   const pk = ecMulGenerator(sk);
   const k = randomScalar();
@@ -31,13 +39,16 @@ export function schnorrSign(sk: bigint, msg: bigint[]): Schnorr_SchnorrSignature
 export function createSignedSpeedState(
   speed: bigint,
   attestorSk: bigint,
+  driverSecret: Uint8Array,
   attestorId: bigint = 1n,
 ): DriveProofPrivateState {
-  const msg: bigint[] = [speed];
+  const driverBinding = computeDriverBinding(driverSecret);
+  const msg: bigint[] = [speed, driverBinding];
   const signature = schnorrSign(attestorSk, msg);
   return {
     speed,
     attestationSignature: signature,
     attestorId,
+    driverSecretKey: driverSecret,
   };
 }

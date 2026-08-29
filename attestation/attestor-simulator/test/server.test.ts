@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import type { Server } from 'node:http';
+import * as crypto from 'crypto';
 import { createServer } from '../src/server.js';
-import { generateKeyPair } from '../src/signing.js';
+import { generateKeyPair, computeDriverBinding } from '../src/signing.js';
 
 setNetworkId('undeployed');
 
@@ -11,6 +12,8 @@ describe('Attestor simulator server', () => {
   let baseUrl: string;
   const { sk, pk } = generateKeyPair();
   const providerId = 42;
+  const driverSecret = new Uint8Array(crypto.randomBytes(32));
+  const driverBinding = computeDriverBinding(driverSecret).toString();
 
   beforeAll(async () => {
     server = createServer(sk, providerId, pk);
@@ -47,11 +50,11 @@ describe('Attestor simulator server', () => {
     expect(body.publicKey.y).toBe(pk.y.toString());
   });
 
-  it('POST /attest with tripId safe returns speed 67 attestation', async () => {
+  it('POST /attest with tripId safe returns speed 67 attestation bound to driverBinding', async () => {
     const res = await fetch(`${baseUrl}/attest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tripId: 'safe' }),
+      body: JSON.stringify({ tripId: 'safe', driverBinding }),
     });
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -59,13 +62,14 @@ describe('Attestor simulator server', () => {
     expect(body.signature.announcement.x).toBeDefined();
     expect(body.message.tripId).toBe('safe');
     expect(body.message.speed).toBe('67');
+    expect(body.message.driverBinding).toBe(driverBinding);
   });
 
   it('POST /attest with tripId unsafe returns speed 112 attestation', async () => {
     const res = await fetch(`${baseUrl}/attest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tripId: 'unsafe' }),
+      body: JSON.stringify({ tripId: 'unsafe', driverBinding }),
     });
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -77,7 +81,7 @@ describe('Attestor simulator server', () => {
     const res = await fetch(`${baseUrl}/attest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tripId: 'safe', speed: 999 }),
+      body: JSON.stringify({ tripId: 'safe', driverBinding, speed: 999 }),
     });
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -88,18 +92,29 @@ describe('Attestor simulator server', () => {
     const res = await fetch(`${baseUrl}/attest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
+      body: JSON.stringify({ driverBinding }),
     });
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toContain('Missing required field');
   });
 
+  it('POST /attest returns 400 for missing driverBinding', async () => {
+    const res = await fetch(`${baseUrl}/attest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tripId: 'safe' }),
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('driverBinding');
+  });
+
   it('POST /attest returns 400 for unknown tripId', async () => {
     const res = await fetch(`${baseUrl}/attest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tripId: 'tampered' }),
+      body: JSON.stringify({ tripId: 'tampered', driverBinding }),
     });
     expect(res.status).toBe(400);
     const body = await res.json();

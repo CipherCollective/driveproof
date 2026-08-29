@@ -1,7 +1,7 @@
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { describe, it, expect } from 'vitest';
 import { DriveProofSimulator, DEFAULT_SPEED_LIMIT } from './driveproof.simulator.js';
-import { createSignedSpeedState } from './utils/test-data.js';
+import { createSignedSpeedState, generateDriverSecret } from './utils/test-data.js';
 
 setNetworkId('undeployed');
 
@@ -35,7 +35,12 @@ describe('DriveProof Phase 1 — single signed speed value', () => {
   it('fails signature verification when signed 112 is tampered to 71 (not policy check)', () => {
     const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT);
 
-    const signed112 = createSignedSpeedState(112n, simulator.attestorSk, simulator.attestorId);
+    const signed112 = createSignedSpeedState(
+      112n,
+      simulator.attestorSk,
+      simulator.driverSecretKey,
+      simulator.attestorId,
+    );
     simulator.circuitContext = {
       ...simulator.circuitContext,
       currentPrivateState: {
@@ -65,5 +70,50 @@ describe('DriveProof Phase 1 — single signed speed value', () => {
     const pk = ledger.attestors.lookup(1n);
     expect(pk.x).toEqual(simulator.attestorPk.x);
     expect(pk.y).toEqual(simulator.attestorPk.y);
+  });
+});
+
+describe('DriveProof Phase 2 — subject binding', () => {
+  // Binding proves possession-bound pseudonymous attribution, not legal identity
+  // or who physically sat behind the wheel.
+  it('subject B cannot prove subject A possession-bound attestation', () => {
+    const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT);
+    const subjectA = simulator.driverSecretKey;
+    const subjectB = generateDriverSecret();
+
+    const attestationForA = createSignedSpeedState(
+      67n,
+      simulator.attestorSk,
+      subjectA,
+      simulator.attestorId,
+    );
+
+    simulator.circuitContext = {
+      ...simulator.circuitContext,
+      currentPrivateState: {
+        ...attestationForA,
+        driverSecretKey: subjectB,
+      },
+    };
+
+    let thrown: Error | undefined;
+    try {
+      simulator.proveCompliance();
+    } catch (err) {
+      thrown = err as Error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown!.message).toContain('Invalid attestation signature');
+    expect(simulator.getLedger().complianceCount).toEqual(0n);
+  });
+
+  it('subject A can prove their own possession-bound attestation', () => {
+    const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT);
+    simulator.setSignedSpeedState(67n, simulator.driverSecretKey);
+
+    simulator.proveCompliance();
+
+    expect(simulator.getLedger().complianceCount).toEqual(1n);
   });
 });
