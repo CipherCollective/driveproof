@@ -3,12 +3,16 @@ import { ArrowLeft, Check, ExternalLink, RefreshCw, TriangleAlert, WalletCards }
 import { requestAttestorPrivateState, type AttestorTripId } from "@driveproof/attestor-client";
 import {
   createLaceMidnightWalletBridge,
+  readMidnightWalletDiagnostics,
   readMidnightWalletConfig,
   type MidnightWalletConfig,
+  type MidnightWalletDiagnostics,
+  type WalletDiagnosticResult,
   type WalletConnectionState
 } from "@driveproof/midnight-wallet";
 import {
   createMidnightRuntime,
+  describeError,
   normalizeErrorMessage,
   type MidnightRuntimeDiagnostic,
   type MidnightRuntimeDiagnosticStage
@@ -33,9 +37,14 @@ type DriveProofContract = DriveProof.Contract<DriveProofPrivateState>;
 type DriveProofCircuitId = MidnightContract.ProvableCircuitId<DriveProofContract>;
 type DriveProofRuntime = Awaited<ReturnType<typeof createMidnightRuntime<DriveProofCircuitId, typeof PRIVATE_STATE_ID, DriveProofPrivateState>>>;
 type PublicTransaction = Pick<FinalizedTxData, "txId" | "txHash" | "blockHash" | "blockHeight" | "status">;
+const HISTORY_STATUSES = ["pending", "confirmed", "finalized", "discarded"] as const;
 
 type DeploymentStage = "IDLE" | MidnightRuntimeDiagnosticStage;
-type DeploymentFailure = { stage: MidnightRuntimeDiagnosticStage; message: string };
+type DeploymentFailure = {
+  stage: MidnightRuntimeDiagnosticStage;
+  message: string;
+  details?: MidnightRuntimeDiagnostic["errorDetails"];
+};
 
 function createStoragePassword(): string {
   const bytes = new Uint8Array(32);
@@ -66,6 +75,11 @@ function statusClass(status: boolean | undefined): string {
   return status ? "debug-good" : "";
 }
 
+function diagnosticResultLabel<T>(result: WalletDiagnosticResult<T>, format: (value: T) => string): string {
+  if (result.status === "supported") return `SUPPORTED: ${format(result.value)}`;
+  return `${result.status === "unsupported" ? "UNSUPPORTED" : "ERROR"}: ${result.message}`;
+}
+
 export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalletConfig }) {
   const resolvedConfig = useMemo(() => config ?? readMidnightWalletConfig(), [config]);
   const bridge = useMemo(() => createLaceMidnightWalletBridge(resolvedConfig), [resolvedConfig]);
@@ -82,19 +96,26 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
   const [error, setError] = useState<string>();
   const [deploymentStage, setDeploymentStage] = useState<DeploymentStage>("IDLE");
   const [deploymentFailure, setDeploymentFailure] = useState<DeploymentFailure>();
+  const [walletDiagnostics, setWalletDiagnostics] = useState<MidnightWalletDiagnostics>();
+  const [walletDiagnosticsError, setWalletDiagnosticsError] = useState<string>();
+  const [walletDiagnosticsBusy, setWalletDiagnosticsBusy] = useState(false);
   const privateStatePassword = useRef<string | undefined>(undefined);
   const deploymentStageRef = useRef<DeploymentStage>("IDLE");
   const deploymentInFlight = useRef(false);
+  const walletDiagnosticsInFlight = useRef(false);
 
   const walletConnected = connection.status === "connected";
   const networkReady = walletConnected && connection.network === resolvedConfig.networkId;
   const session = connection.status === "connected" ? connection.session : undefined;
+  const observedHistoryStatuses = walletDiagnostics?.txHistory.status === "supported"
+    ? walletDiagnostics.txHistory.value.map(({ status }) => status)
+    : [];
 
   function applyDeploymentDiagnostic(diagnostic: MidnightRuntimeDiagnostic) {
     deploymentStageRef.current = diagnostic.stage;
     setDeploymentStage(diagnostic.stage);
     if (diagnostic.outcome === "rejected" && diagnostic.error) {
-      setDeploymentFailure({ stage: diagnostic.stage, message: diagnostic.error });
+      setDeploymentFailure({ stage: diagnostic.stage, message: diagnostic.error, details: diagnostic.errorDetails });
       setError(diagnostic.error);
     }
   }
@@ -104,7 +125,14 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
       stage: diagnostic.stage,
       outcome: diagnostic.outcome,
       ...(diagnostic.metadata ?? {}),
-      ...(diagnostic.error ? { error: diagnostic.error } : {})
+      ...(diagnostic.errorDetails ? {
+        ...(diagnostic.errorDetails.name ? { errorName: diagnostic.errorDetails.name } : {}),
+        ...(diagnostic.errorDetails.tag ? { errorTag: diagnostic.errorDetails.tag } : {}),
+        errorMessage: diagnostic.errorDetails.message,
+        ...(diagnostic.errorDetails.cause?.name ? { causeName: diagnostic.errorDetails.cause.name } : {}),
+        ...(diagnostic.errorDetails.cause?.tag ? { causeTag: diagnostic.errorDetails.cause.tag } : {}),
+        ...(diagnostic.errorDetails.cause?.message ? { causeMessage: diagnostic.errorDetails.cause.message } : {})
+      } : diagnostic.error ? { errorMessage: diagnostic.error } : {})
     };
     if (diagnostic.outcome === "rejected") {
       console.error(`[DriveProofDeploy] ${diagnostic.event}`, payload);
@@ -126,8 +154,26 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     setDetected(await bridge.detect());
   }
 
+  async function readWalletDiagnostics() {
+    if (!session || walletDiagnosticsInFlight.current) return;
+
+    walletDiagnosticsInFlight.current = true;
+    setWalletDiagnosticsBusy(true);
+    setWalletDiagnosticsError(undefined);
+    try {
+      setWalletDiagnostics(await readMidnightWalletDiagnostics(session.wallet));
+    } catch (diagnosticsError) {
+      setWalletDiagnosticsError(normalizeErrorMessage(diagnosticsError));
+    } finally {
+      walletDiagnosticsInFlight.current = false;
+      setWalletDiagnosticsBusy(false);
+    }
+  }
+
   async function connect() {
     setError(undefined);
+    setWalletDiagnostics(undefined);
+    setWalletDiagnosticsError(undefined);
     setOperation("connecting");
     try {
       const next = await bridge.connect();
@@ -226,11 +272,13 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
       setContractAddress(result.deployTxData.public.contractAddress);
       setDeployment(publicTransaction(result.deployTxData.public));
     } catch (deploymentError) {
+      const details = describeError(deploymentError);
       publishDeployDiagnostic({
         stage: deploymentStageRef.current === "IDLE" ? "BUILDING UNBOUND TX" : deploymentStageRef.current,
         event: "deploy:error",
         outcome: "rejected",
-        error: normalizeErrorMessage(deploymentError)
+        error: details.message,
+        errorDetails: details
       });
     } finally {
       deploymentInFlight.current = false;
@@ -339,6 +387,84 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
           </div>
         </section>
 
+        {import.meta.env.DEV && (
+          <section className="wallet-debug-panel" aria-labelledby="wallet-diagnostics-heading">
+            <div className="wallet-debug-panel-heading"><span className="eyebrow" id="wallet-diagnostics-heading">READ-ONLY WALLET DIAGNOSTICS</span><span className="debug-neutral">NO TX ACTIONS</span></div>
+            <p>Reads current Lace state only. This action never builds, balances, signs, or submits a transaction.</p>
+            <button className="debug-secondary-button" disabled={busy || !session || walletDiagnosticsBusy} onClick={() => void readWalletDiagnostics()} type="button">
+              {walletDiagnosticsBusy ? "READING LACE STATE" : "READ WALLET DIAGNOSTICS"}
+            </button>
+            {walletDiagnosticsError && <div className="wallet-debug-message" role="alert"><TriangleAlert size={16} /><span>{walletDiagnosticsError}</span></div>}
+            {walletDiagnostics && (
+              <>
+                <div className="wallet-debug-details" aria-live="polite">
+                  <div>
+                    <span>typeof getConnectionStatus</span>
+                    <strong>{walletDiagnostics.methodAvailability.getConnectionStatus}</strong>
+                  </div>
+                  <div>
+                    <span>typeof getConfiguration</span>
+                    <strong>{walletDiagnostics.methodAvailability.getConfiguration}</strong>
+                  </div>
+                  <div>
+                    <span>typeof getDustBalance</span>
+                    <strong>{walletDiagnostics.methodAvailability.getDustBalance}</strong>
+                  </div>
+                  <div>
+                    <span>typeof getTxHistory</span>
+                    <strong>{walletDiagnostics.methodAvailability.getTxHistory}</strong>
+                  </div>
+                </div>
+                <div className="wallet-debug-details" aria-live="polite">
+                <div>
+                  <span>getConnectionStatus()</span>
+                  <strong className={walletDiagnostics.connectionStatus.status === "supported" ? "debug-good" : walletDiagnostics.connectionStatus.status === "error" ? "debug-bad" : ""}>
+                    {diagnosticResultLabel(walletDiagnostics.connectionStatus, (value) => `${value.status.toUpperCase()}${value.networkId ? ` · ${value.networkId.toUpperCase()}` : ""}`)}
+                  </strong>
+                </div>
+                <div>
+                  <span>getConfiguration()</span>
+                  <strong className={walletDiagnostics.configuration.status === "supported" ? "debug-good" : walletDiagnostics.configuration.status === "error" ? "debug-bad" : ""}>
+                    {diagnosticResultLabel(walletDiagnostics.configuration, (value) => `network=${value.networkId} · indexer=${value.indexerUri} · node=${value.substrateNodeUri} · prover=${value.proverServerUri ?? "NOT REPORTED"}`)}
+                  </strong>
+                </div>
+                <div>
+                  <span>getDustBalance()</span>
+                  <strong className={walletDiagnostics.dustBalance.status === "supported" ? "debug-good" : walletDiagnostics.dustBalance.status === "error" ? "debug-bad" : ""}>
+                    {diagnosticResultLabel(walletDiagnostics.dustBalance, (value) => `balance=${value.balance} · cap=${value.cap} · no threshold assumed`)}
+                  </strong>
+                </div>
+                <div>
+                  <span>getTxHistory({walletDiagnostics.historyPage}, {walletDiagnostics.historyPageSize})</span>
+                  <strong className={walletDiagnostics.txHistory.status === "supported" ? "debug-good" : walletDiagnostics.txHistory.status === "error" ? "debug-bad" : ""}>
+                    {diagnosticResultLabel(walletDiagnostics.txHistory, (value) => `${value.length} entries`)}
+                  </strong>
+                </div>
+                <div>
+                  <span>Deployment status check</span>
+                  <strong>{walletDiagnostics.txHistory.status === "supported" ? HISTORY_STATUSES.map((status) => `${status.toUpperCase()}: ${observedHistoryStatuses.includes(status) ? "OBSERVED" : "NOT SEEN"}`).join(" · ") : "NOT AVAILABLE · history read did not succeed"}</strong>
+                </div>
+                <div>
+                  <span>History correlation</span>
+                  <strong>{deploymentFailure ? "No transaction ID was returned by submitTransaction; recent history cannot be conclusively attributed to this deployment attempt." : walletDiagnostics.historyCorrelation}</strong>
+                </div>
+                <div>
+                  <span>Sync status</span>
+                  <strong>{walletDiagnostics.syncStatus.message}</strong>
+                </div>
+                </div>
+              </>
+            )}
+            {walletDiagnostics?.txHistory.status === "supported" && (
+              <div className="wallet-debug-details wallet-debug-history" aria-label="Recent transaction hashes and statuses">
+                {walletDiagnostics.txHistory.value.length > 0 ? walletDiagnostics.txHistory.value.map(({ txHash, status }) => (
+                  <div key={txHash}><span>{txHash}</span><strong>{status.toUpperCase()}</strong></div>
+                )) : <div><span>Transaction history</span><strong>NO RECENT ENTRIES</strong></div>}
+              </div>
+            )}
+          </section>
+        )}
+
         <section className="wallet-debug-panel">
           <div className="wallet-debug-panel-heading"><span className="eyebrow">2 · ISSUER ATTESTATION</span><span className={attestation ? "debug-good" : "debug-neutral"}>{attestation ? "LOADED IN MEMORY" : "NOT REQUESTED"}</span></div>
           <p>Calls the local attestor with a trip identifier. The browser never supplies speed and never receives the provider secret.</p>
@@ -363,6 +489,20 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
               <div>
                 <span>Exact error</span>
                 <strong className="debug-bad">{deploymentFailure.message}</strong>
+              </div>
+            )}
+            {deploymentFailure?.details && (
+              <div>
+                <span>Error metadata</span>
+                <strong className="debug-bad">
+                  {[
+                    deploymentFailure.details.name && `name=${deploymentFailure.details.name}`,
+                    deploymentFailure.details.tag && `tag=${deploymentFailure.details.tag}`,
+                    deploymentFailure.details.cause?.name && `cause.name=${deploymentFailure.details.cause.name}`,
+                    deploymentFailure.details.cause?.tag && `cause.tag=${deploymentFailure.details.cause.tag}`,
+                    deploymentFailure.details.cause?.message && `cause.message=${deploymentFailure.details.cause.message}`
+                  ].filter((value): value is string => Boolean(value)).join(" · ")}
+                </strong>
               </div>
             )}
           </div>

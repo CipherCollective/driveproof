@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   MidnightRuntimeError,
   createRuntimeConfiguration,
+  describeError,
   normalizeErrorMessage,
   validatePreprodConfiguration
 } from "./index";
@@ -15,7 +16,33 @@ describe("Midnight runtime configuration", () => {
   it("normalizes string and structured non-Error failures", () => {
     expect(normalizeErrorMessage("wallet rejected")).toBe("wallet rejected");
     expect(normalizeErrorMessage({ message: "wallet rejected" })).toBe("wallet rejected");
-    expect(normalizeErrorMessage({ code: "WALLET_REJECTED" })).toBe('{"code":"WALLET_REJECTED"}');
+    expect(normalizeErrorMessage({ code: "WALLET_REJECTED" })).toBe("WALLET_REJECTED");
+  });
+
+  it("keeps nested submission error details safe and structured", () => {
+    const details = describeError({
+      name: "SubmissionError",
+      tag: "SubmissionError",
+      message: "Transaction submission failed",
+      cause: {
+        name: "WalletError",
+        tag: "SubmissionRejected",
+        message: "The wallet rejected the transaction"
+      },
+      txData: "must not be copied into diagnostics"
+    });
+
+    expect(details).toEqual({
+      name: "SubmissionError",
+      tag: "SubmissionError",
+      message: "Transaction submission failed",
+      cause: {
+        name: "WalletError",
+        tag: "SubmissionRejected",
+        message: "The wallet rejected the transaction"
+      }
+    });
+    expect(details).not.toHaveProperty("txData");
   });
 
   it("fails closed when Lace reports the wrong network", () => {

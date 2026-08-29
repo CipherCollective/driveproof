@@ -72,12 +72,26 @@ export type MidnightRuntimeDiagnosticStage =
   | "WAITING FOR CONTRACT"
   | "DEPLOYED";
 
+export type MidnightRuntimeErrorCause = {
+  name?: string;
+  tag?: string;
+  message?: string;
+};
+
+export type MidnightRuntimeErrorDetails = {
+  name?: string;
+  tag?: string;
+  message: string;
+  cause?: MidnightRuntimeErrorCause;
+};
+
 export type MidnightRuntimeDiagnostic = {
   stage: MidnightRuntimeDiagnosticStage;
   event: string;
   outcome: "start" | "resolved" | "rejected";
   metadata?: Record<string, string | number | boolean>;
   error?: string;
+  errorDetails?: MidnightRuntimeErrorDetails;
 };
 
 export type MidnightRuntime<
@@ -110,21 +124,63 @@ export class MidnightRuntimeError extends Error {
   }
 }
 
+function asErrorRecord(value: unknown): Record<string, unknown> | undefined {
+  return value !== null && typeof value === "object"
+    ? value as Record<string, unknown>
+    : undefined;
+}
+
+function stringProperty(record: Record<string, unknown> | undefined, key: string): string | undefined {
+  const value = record?.[key];
+  return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+function readErrorCause(value: unknown): MidnightRuntimeErrorCause | undefined {
+  const record = asErrorRecord(value);
+  if (!record) return typeof value === "string" ? { message: value } : undefined;
+
+  const cause = {
+    ...(stringProperty(record, "name") ? { name: stringProperty(record, "name") } : {}),
+    ...(stringProperty(record, "tag") ? { tag: stringProperty(record, "tag") } : {}),
+    ...(stringProperty(record, "message") ? { message: stringProperty(record, "message") } : {})
+  };
+  return Object.keys(cause).length > 0 ? cause : undefined;
+}
+
+export function describeError(error: unknown): MidnightRuntimeErrorDetails {
+  const record = asErrorRecord(error);
+  const name = stringProperty(record, "name") ?? (error instanceof Error ? error.name : undefined);
+  const tag = stringProperty(record, "tag");
+  const fallback = error !== null && typeof error === "object" ? "Unknown error" : String(error);
+  const message = stringProperty(record, "message")
+    ?? (typeof error === "string" ? error : undefined)
+    ?? tag
+    ?? stringProperty(record, "code")
+    ?? name
+    ?? fallback;
+  const cause = readErrorCause(record?.cause);
+
+  return {
+    ...(name ? { name } : {}),
+    ...(tag ? { tag } : {}),
+    message,
+    ...(cause ? { cause } : {})
+  };
+}
+
 export function normalizeErrorMessage(error: unknown): string {
-  if (error instanceof Error && error.message) return error.message;
-  if (typeof error === "string") return error;
+  return describeError(error).message;
+}
 
-  if (error !== null && typeof error === "object" && "message" in error) {
-    const message = error.message;
-    if (typeof message === "string" && message) return message;
-  }
-
-  try {
-    const serialized = JSON.stringify(error);
-    return serialized ?? String(error);
-  } catch {
-    return String(error);
-  }
+function errorMetadata(details: MidnightRuntimeErrorDetails): Record<string, string> {
+  return {
+    ...(details.name ? { errorName: details.name } : {}),
+    ...(details.tag ? { errorTag: details.tag } : {}),
+    errorMessage: details.message,
+    ...(details.cause?.name ? { causeName: details.cause.name } : {}),
+    ...(details.cause?.tag ? { causeTag: details.cause.tag } : {}),
+    ...(details.cause?.message ? { causeMessage: details.cause.message } : {})
+  };
 }
 
 function publishDiagnostic(
@@ -135,7 +191,11 @@ function publishDiagnostic(
     stage: diagnostic.stage,
     outcome: diagnostic.outcome,
     ...(diagnostic.metadata ?? {}),
-    ...(diagnostic.error ? { error: diagnostic.error } : {})
+    ...(diagnostic.errorDetails
+      ? errorMetadata(diagnostic.errorDetails)
+      : diagnostic.error
+        ? { errorMessage: diagnostic.error }
+        : {})
   };
 
   if (diagnostic.outcome === "rejected") {
@@ -251,7 +311,8 @@ function createWalletProviders(
             event: "balanceTx:wallet-rejected",
             outcome: "rejected",
             metadata: { resolved: false },
-            error: message
+            error: message,
+            errorDetails: describeError(error)
           });
           throw error;
         }
@@ -286,7 +347,8 @@ function createWalletProviders(
             event: "balanceTx:deserialize:rejected",
             outcome: "rejected",
             metadata: { resolved: false },
-            error: message
+            error: message,
+            errorDetails: describeError(error)
           });
           throw error;
         }
@@ -304,7 +366,8 @@ function createWalletProviders(
           event: "balanceTx:error",
           outcome: "rejected",
           metadata: { resolved: false },
-          error: message
+          error: message,
+          errorDetails: describeError(error)
         });
         throw error;
       }
@@ -339,7 +402,8 @@ function createWalletProviders(
             event: "submitTx:wallet-rejected",
             outcome: "rejected",
             metadata: { resolved: false },
-            error: message
+            error: message,
+            errorDetails: describeError(error)
           });
           throw error;
         }
@@ -367,7 +431,8 @@ function createWalletProviders(
             event: "submitTx:transaction-id:rejected",
             outcome: "rejected",
             metadata: { resolved: false },
-            error: message
+            error: message,
+            errorDetails: describeError(error)
           });
           throw error;
         }
@@ -385,7 +450,8 @@ function createWalletProviders(
           event: "submitTx:error",
           outcome: "rejected",
           metadata: { resolved: false },
-          error: message
+          error: message,
+          errorDetails: describeError(error)
         });
         throw error;
       }
@@ -422,7 +488,8 @@ function createDiagnosticProofProvider(
           event: "proveTx:rejected",
           outcome: "rejected",
           metadata: { resolved: false },
-          error: message
+          error: message,
+          errorDetails: describeError(error)
         });
         throw error;
       }
@@ -464,7 +531,8 @@ function createDiagnosticPublicDataProvider(
           event: "contract:indexer-confirmation:rejected",
           outcome: "rejected",
           metadata: { transactionId, resolved: false },
-          error: message
+          error: message,
+          errorDetails: describeError(error)
         });
         throw error;
       }

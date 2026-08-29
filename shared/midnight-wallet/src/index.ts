@@ -2,12 +2,15 @@ import type {
   ConnectedAPI,
   Configuration,
   ConnectionStatus,
+  HistoryEntry,
   InitialAPI
 } from "@midnight-ntwrk/dapp-connector-api";
 
 export const DEFAULT_MIDNIGHT_NETWORK = "preprod";
 export const DEFAULT_PROOF_SERVER_URL = "http://localhost:6300";
 export const SUPPORTED_CONNECTOR_API_RANGE = ">=4.0.1 <5.0.0";
+export const WALLET_SYNC_UNAVAILABLE_MESSAGE =
+  "Wallet sync must be checked in Lace UI; Connector API does not expose authoritative sync percentage.";
 
 export type MidnightWalletConfig = {
   networkId: string;
@@ -34,6 +37,45 @@ export type WalletConnectionState =
   | { status: "wrong-network"; network: string; expectedNetwork: string; walletName?: string }
   | { status: "unavailable"; reason: string }
   | { status: "error"; message: string };
+
+export type WalletDiagnosticResult<T> =
+  | { status: "supported"; value: T }
+  | { status: "unsupported"; message: "Method not implemented." }
+  | { status: "error"; message: string };
+
+export type MidnightWalletDiagnostics = {
+  methodAvailability: {
+    getConnectionStatus: string;
+    getConfiguration: string;
+    getDustBalance: string;
+    getTxHistory: string;
+  };
+  connectionStatus: WalletDiagnosticResult<{
+    status: "connected" | "disconnected";
+    networkId?: string;
+  }>;
+  configuration: WalletDiagnosticResult<{
+    networkId: string;
+    indexerUri: string;
+    substrateNodeUri: string;
+    proverServerUri?: string;
+  }>;
+  dustBalance: WalletDiagnosticResult<{
+    balance: string;
+    cap: string;
+  }>;
+  txHistory: WalletDiagnosticResult<Array<{
+    txHash: string;
+    status: HistoryEntry["txStatus"]["status"];
+  }>>;
+  historyPage: number;
+  historyPageSize: number;
+  historyCorrelation: string;
+  syncStatus: {
+    available: false;
+    message: typeof WALLET_SYNC_UNAVAILABLE_MESSAGE;
+  };
+};
 
 export interface MidnightWalletBridge {
   detect(): Promise<boolean>;
@@ -70,6 +112,127 @@ export function isSupportedConnectorApiVersion(apiVersion: string): boolean {
 
 export function classifyNetwork(expectedNetwork: string, observedNetwork: string): "connected" | "wrong-network" {
   return expectedNetwork === observedNetwork ? "connected" : "wrong-network";
+}
+
+const METHOD_NOT_IMPLEMENTED_MESSAGE = "Method not implemented.";
+
+function diagnosticErrorMessage(error: unknown): string {
+  if (typeof error === "string" && error.trim()) return error;
+  if (error !== null && typeof error === "object") {
+    const record = error as Record<string, unknown>;
+    for (const key of ["message", "tag", "code", "name"]) {
+      const value = record[key];
+      if (typeof value === "string" && value.trim()) return value;
+    }
+  }
+  return "Unknown wallet diagnostic error";
+}
+
+function isMethodNotImplemented(message: string): boolean {
+  return message.trim().replace(/[.]$/, "").toLowerCase() === "method not implemented";
+}
+
+async function readDiagnosticMethod<T>(invoke: (() => Promise<T>) | undefined): Promise<WalletDiagnosticResult<T>> {
+  if (!invoke) return { status: "unsupported", message: METHOD_NOT_IMPLEMENTED_MESSAGE };
+
+  try {
+    return { status: "supported", value: await invoke() };
+  } catch (error) {
+    const message = diagnosticErrorMessage(error);
+    return isMethodNotImplemented(message)
+      ? { status: "unsupported", message: METHOD_NOT_IMPLEMENTED_MESSAGE }
+      : { status: "error", message };
+  }
+}
+
+/**
+ * Reads only non-secret wallet state exposed by the Connector API. This does
+ * not construct, balance, sign, or submit a transaction.
+ */
+export async function readMidnightWalletDiagnostics(
+  wallet: ConnectedAPI,
+  pageNumber = 0,
+  pageSize = 10
+): Promise<MidnightWalletDiagnostics> {
+  const methodAvailability = {
+    getConnectionStatus: typeof wallet.getConnectionStatus,
+    getConfiguration: typeof wallet.getConfiguration,
+    getDustBalance: typeof wallet.getDustBalance,
+    getTxHistory: typeof wallet.getTxHistory
+  };
+  const connectionStatus = await readDiagnosticMethod(
+    typeof wallet.getConnectionStatus === "function" ? () => wallet.getConnectionStatus() : undefined
+  );
+  const configuration = await readDiagnosticMethod(
+    typeof wallet.getConfiguration === "function" ? () => wallet.getConfiguration() : undefined
+  );
+  const dustBalance = await readDiagnosticMethod(
+    typeof wallet.getDustBalance === "function" ? () => wallet.getDustBalance() : undefined
+  );
+  const history = await readDiagnosticMethod(
+    typeof wallet.getTxHistory === "function" ? () => wallet.getTxHistory(pageNumber, pageSize) : undefined
+  );
+
+  const mappedConnectionStatus: WalletDiagnosticResult<{
+    status: "connected" | "disconnected";
+    networkId?: string;
+  }> = connectionStatus.status === "supported"
+    ? {
+        status: "supported",
+        value: connectionStatus.value.status === "connected"
+          ? { status: "connected", networkId: connectionStatus.value.networkId }
+          : { status: "disconnected" }
+      }
+    : connectionStatus;
+  const mappedConfiguration: WalletDiagnosticResult<{
+    networkId: string;
+    indexerUri: string;
+    substrateNodeUri: string;
+    proverServerUri?: string;
+  }> = configuration.status === "supported"
+    ? {
+        status: "supported",
+        value: {
+          networkId: configuration.value.networkId,
+          indexerUri: configuration.value.indexerUri,
+          substrateNodeUri: configuration.value.substrateNodeUri,
+          ...(configuration.value.proverServerUri ? { proverServerUri: configuration.value.proverServerUri } : {})
+        }
+      }
+    : configuration;
+  const mappedDustBalance: WalletDiagnosticResult<{ balance: string; cap: string }> = dustBalance.status === "supported"
+    ? {
+        status: "supported",
+        value: {
+          balance: dustBalance.value.balance.toString(),
+          cap: dustBalance.value.cap.toString()
+        }
+      }
+    : dustBalance;
+  const mappedHistory: WalletDiagnosticResult<Array<{
+    txHash: string;
+    status: HistoryEntry["txStatus"]["status"];
+  }>> = history.status === "supported"
+    ? {
+        status: "supported",
+        value: history.value.map(({ txHash, txStatus }) => ({ txHash, status: txStatus.status }))
+      }
+    : history;
+
+  return {
+    methodAvailability,
+    connectionStatus: mappedConnectionStatus,
+    configuration: mappedConfiguration,
+    dustBalance: mappedDustBalance,
+    txHistory: mappedHistory,
+    historyPage: pageNumber,
+    historyPageSize: pageSize,
+    historyCorrelation: "Recent history is not automatically attributed to a deployment attempt; compare transaction hashes manually.",
+    syncStatus: {
+      available: false,
+      message: WALLET_SYNC_UNAVAILABLE_MESSAGE
+    }
+  };
 }
 
 function getInitialAPIs(): ConnectorCandidate[] {
