@@ -25,13 +25,12 @@ import {
 } from "@driveproof/fixtures";
 import type { DemoFixture, DriveProofClient, ProofResult, TripAttestation } from "@driveproof/types";
 
-const stages = [
+const pendingStages = [
   "Preparing private witness",
   "Checking authorized attestation",
   "Evaluating private safety policy",
   "Generating Midnight proof",
-  "Submitting verification",
-  "Verification confirmed"
+  "Submitting verification"
 ];
 
 const wait = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
@@ -90,7 +89,7 @@ function PrivacyPanel({ attestation }: { attestation: TripAttestation }) {
             <div className="privacy-item"><span>Route / grid positions</span><span>private</span></div>
             <div className="privacy-item"><span>Speed history</span><span>private</span></div>
             <div className="privacy-item"><span>Braking history</span><span>private</span></div>
-            <div className="privacy-item"><span>Attestation material</span><span>signed locally</span></div>
+            <div className="privacy-item"><span>Attestation</span><span>issuer-signed</span></div>
           </div>
           <div className="lock-line"><Fingerprint size={12} /> witness stays in the driver flow</div>
         </div>
@@ -114,15 +113,18 @@ function PrivacyPanel({ attestation }: { attestation: TripAttestation }) {
 }
 
 function VerificationFlow({ stage, result }: { stage: number; result?: ProofResult }) {
-  const progress = result ? 100 : Math.round(((stage + 1) / stages.length) * 100);
+  const verified = result?.status === "verified";
+  const displayStages = verified ? [...pendingStages, "Verification confirmed"] : pendingStages;
+  const progress = result ? 100 : Math.round(((stage + 1) / pendingStages.length) * 100);
   return (
     <section className="verification-panel" aria-live="polite">
       <div className="eyebrow">{result ? "MOCK RESULT" : "MOCK UX SIMULATION"}</div>
       <h2>{result ? (result.status === "verified" ? "Verification confirmed" : result.reason === "replay" ? "Replay rejected" : "Proof generation rejected") : "Building your DriveProof"}</h2>
       <p>{result ? "This product shell is ready for the generated Midnight client. No real proof or chain transaction was created in this run." : "A calm, staged view of the private proving flow. The current client is development-only."}</p>
       <div className="verification-stages">
-        {stages.map((label, index) => {
-          const done = Boolean(result) || index < stage;
+        {displayStages.map((label, index) => {
+          const isConfirmation = label === "Verification confirmed";
+          const done = verified || (Boolean(result) && !isConfirmation) || index < stage;
           const active = !result && index === stage;
           return (
             <div className={`verification-stage ${active ? "verification-stage--active" : ""} ${done ? "verification-stage--done" : ""}`} key={label}>
@@ -207,7 +209,7 @@ export function DriverExperience({ client: providedClient, stageDelayMs = 650 }:
     if (!attestation || isVerifying) return;
     setResult(undefined);
     setIsVerifying(true);
-    for (let index = 0; index < stages.length; index += 1) {
+    for (let index = 0; index < pendingStages.length; index += 1) {
       setStage(index);
       if (stageDelayMs > 0) await wait(stageDelayMs);
     }
@@ -283,7 +285,7 @@ export function DriverExperience({ client: providedClient, stageDelayMs = 650 }:
 
           {fixture === "tampered" && <TamperedNotice />}
           {isVerifying && <VerificationFlow stage={stage} />}
-          {result && !isVerifying && <><ResultBanner result={result} /><VerificationFlow stage={stages.length - 1} result={result} /></>}
+          {result && !isVerifying && <><ResultBanner result={result} /><VerificationFlow stage={pendingStages.length - 1} result={result} /></>}
         </main>
       </div>
       <DemoControls fixture={fixture} onFixtureChange={setFixture} />

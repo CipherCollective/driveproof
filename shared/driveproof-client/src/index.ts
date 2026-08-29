@@ -30,8 +30,6 @@ export class MockDriveProofClient implements DriveProofClient {
       return { status: "rejected", reason: "replay" };
     }
 
-    this.usedAttestations.add(replayKey);
-
     let result: ProofResult;
     if (attestation.fixture === "safe") {
       result = {
@@ -47,6 +45,7 @@ export class MockDriveProofClient implements DriveProofClient {
     }
 
     if (result.status === "verified") {
+      this.usedAttestations.add(replayKey);
       this.statuses.set(result.transactionId, result);
     }
     return result;

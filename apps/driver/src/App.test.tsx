@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MockDriveProofClient } from "@driveproof/driveproof-client";
+import type { ProofResult } from "@driveproof/types";
 import { DriverExperience } from "./App";
 
 describe("DriverExperience", () => {
@@ -23,6 +24,24 @@ describe("DriverExperience", () => {
     fireEvent.click(screen.getByRole("button", { name: "GENERATE DRIVEPROOF" }));
 
     expect(await screen.findByText("PROOF GENERATION REJECTED")).toBeInTheDocument();
+    expect(screen.queryByText("Verification confirmed")).not.toBeInTheDocument();
+  });
+
+  it("does not render a confirmation stage while proveCompliance is pending", async () => {
+    const client = new MockDriveProofClient();
+    let resolveProof: ((result: ProofResult) => void) | undefined;
+    const pendingProof = new Promise<ProofResult>((resolve) => { resolveProof = resolve; });
+    const proveCompliance = vi.spyOn(client, "proveCompliance").mockReturnValue(pendingProof);
+    render(<DriverExperience client={client} stageDelayMs={0} />);
+
+    await screen.findByText("Private Trip");
+    fireEvent.click(screen.getByRole("button", { name: "GENERATE DRIVEPROOF" }));
+    await waitFor(() => expect(proveCompliance).toHaveBeenCalledTimes(1));
+    expect(screen.queryByText("Verification confirmed")).not.toBeInTheDocument();
+
+    resolveProof?.({ status: "rejected", reason: "policy" });
+    expect(await screen.findByText("PROOF GENERATION REJECTED")).toBeInTheDocument();
+    expect(screen.queryByText("Verification confirmed")).not.toBeInTheDocument();
   });
 
   it("renders the tampered demonstration without claiming a cryptographic diagnosis", async () => {

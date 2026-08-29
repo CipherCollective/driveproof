@@ -11,14 +11,27 @@ describe("MockDriveProofClient", () => {
     });
   });
 
-  it("rejects unsafe and tampered fixtures without exposing a diagnosis contract", async () => {
+  it("rejects unsafe attempts without consuming replay state", async () => {
     const client = new MockDriveProofClient();
     const unsafe = await client.issueDemoTrip("unsafe");
-    const tampered = await client.issueDemoTrip("tampered");
 
     await expect(client.proveCompliance(unsafe, "AUTO-SAFE-01")).resolves.toEqual({
       status: "rejected",
       reason: "policy"
+    });
+    await expect(client.proveCompliance(unsafe, "AUTO-SAFE-01")).resolves.toEqual({
+      status: "rejected",
+      reason: "policy"
+    });
+  });
+
+  it("rejects tampered attempts without consuming replay state", async () => {
+    const client = new MockDriveProofClient();
+    const tampered = await client.issueDemoTrip("tampered");
+
+    await expect(client.proveCompliance(tampered, "AUTO-SAFE-01")).resolves.toEqual({
+      status: "rejected",
+      reason: "unknown"
     });
     await expect(client.proveCompliance(tampered, "AUTO-SAFE-01")).resolves.toEqual({
       status: "rejected",
