@@ -4,10 +4,60 @@
   "runtime-version": "0.16.0",
   "circuits": [
     {
+      "name": "deriveDriverBinding",
+      "pure": true,
+      "proof": false,
+      "arguments": [
+        {
+          "name": "secret",
+          "type": {
+            "type-name": "Alias",
+            "name": "DriverSecret",
+            "type": {
+              "type-name": "Bytes",
+              "length": 32
+            }
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Field"
+      }
+    },
+    {
+      "name": "deriveNullifier",
+      "pure": true,
+      "proof": false,
+      "arguments": [
+        {
+          "name": "attestationId",
+          "type": {
+            "type-name": "Field"
+          }
+        },
+        {
+          "name": "policyId",
+          "type": {
+            "type-name": "Field"
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Field"
+      }
+    },
+    {
       "name": "proveCompliance",
       "pure": false,
       "proof": true,
       "arguments": [
+        {
+          "name": "policyId",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 65535
+          }
+        }
       ],
       "result-type": {
         "type-name": "Tuple",
@@ -48,7 +98,7 @@
           "name": "msg",
           "type": {
             "type-name": "Vector",
-            "length": 1,
+            "length": 3,
             "type": {
               "type-name": "Field"
             }
@@ -102,6 +152,12 @@
                   "type-name": "Uint",
                   "maxval": 65535
                 }
+              },
+              {
+                "name": "attestationId",
+                "type": {
+                  "type-name": "Field"
+                }
               }
             ]
           },
@@ -133,6 +189,19 @@
             "maxval": 65535
           }
         ]
+      }
+    },
+    {
+      "name": "getDriverSecret",
+      "arguments": [
+      ],
+      "result type": {
+        "type-name": "Alias",
+        "name": "DriverSecret",
+        "type": {
+          "type-name": "Bytes",
+          "length": 32
+        }
       }
     }
   ],
@@ -175,6 +244,15 @@
       "type": {
         "type-name": "Uint",
         "maxval": 4294967295
+      }
+    },
+    {
+      "name": "usedNullifiers",
+      "index": 3,
+      "exported": true,
+      "storage": "Set",
+      "type": {
+        "type-name": "Field"
       }
     }
   ]

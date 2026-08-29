@@ -1,7 +1,6 @@
-// DriveProof Phase 1: single private speed value with in-circuit Schnorr verification.
-// Honest claim: proves attested telemetry satisfies a speed policy without revealing
-// the raw value beyond what a successful proof implies. Phase 1 omits subject
-// binding and replay nullifiers (Phases 2–3).
+// DriveProof Phase 3: subject binding + deterministic replay nullifier.
+// Trusted attestor must issue unique attestationIds — a malicious attestor can still
+// re-issue duplicate records under different IDs (known trust boundary).
 
 pragma language_version >= 0.22 && <= 0.23;
 import CompactStandardLibrary;
@@ -9,43 +8,69 @@ import "schnorr" prefix Schnorr_;
 
 export { Schnorr_SchnorrSignature };
 
+export new type DriverSecret = Bytes<32>;
+
 struct SpeedReading {
     speed: Uint<16>;
+    attestationId: Field;
 }
 
 export ledger attestors: Map<Uint<16>, JubjubPoint>;
 export ledger speedLimit: Uint<16>;
 export ledger complianceCount: Uint<32>;
+export ledger usedNullifiers: Set<Field>;
 
 witness getAttestedSpeedWitness(): [SpeedReading, Schnorr_SchnorrSignature, Uint<16>];
+witness getDriverSecret(): DriverSecret;
 
 constructor(limit: Uint<16>, attestorId: Uint<16>, attestorPk: JubjubPoint) {
     speedLimit = disclose(limit);
     attestors.insert(disclose(attestorId), disclose(attestorPk));
 }
 
-export circuit proveCompliance(): [] {
-    const compliant = evaluateSpeed();
-    assert(compliant, "Speed exceeds policy limit");
-    complianceCount = disclose((complianceCount + 1) as Uint<32>);
+export pure circuit deriveDriverBinding(secret: DriverSecret): Field {
+    const bindingBytes = persistentHash<[Bytes<21>, DriverSecret]>([
+        "DRIVEPROOF_SUBJECT_V1",
+        secret
+    ]) as Bytes<32>;
+    return transientHash<Bytes<32>>(bindingBytes);
 }
 
-circuit evaluateSpeed(): Boolean {
+export pure circuit deriveNullifier(attestationId: Field, policyId: Field): Field {
+    return transientHash<[Bytes<23>, Field, Field]>([
+        "DRIVEPROOF_NULLIFIER_V1",
+        attestationId,
+        policyId
+    ]);
+}
+
+export circuit proveCompliance(policyId: Uint<16>): [] {
     const [reading, signature, attestorId] = getAttestedSpeedWitness();
 
     assert(attestors.member(disclose(attestorId)), "Attestor not registered");
     const attestorPk = attestors.lookup(disclose(attestorId));
 
-    const msg: Vector<1, Field> = [reading.speed as Field];
-    Schnorr_schnorrVerify<1>(msg, signature, attestorPk);
+    const driverBinding = deriveDriverBinding(getDriverSecret());
+    const msg: Vector<3, Field> = [
+        reading.speed as Field,
+        driverBinding,
+        reading.attestationId
+    ];
+    Schnorr_schnorrVerify<3>(msg, signature, attestorPk);
 
-    return reading.speed <= speedLimit;
+    assert(reading.speed <= speedLimit, "Speed exceeds policy limit");
+
+    const nullifier = deriveNullifier(reading.attestationId, policyId as Field);
+    assert(!usedNullifiers.member(disclose(nullifier)), "Attestation already used for this policy");
+    usedNullifiers.insert(disclose(nullifier));
+
+    complianceCount = disclose((complianceCount + 1) as Uint<32>);
 }
 
 export pure circuit schnorrChallenge(
     ann_x: Field, ann_y: Field,
     pk_x: Field, pk_y: Field,
-    msg: Vector<1, Field>
+    msg: Vector<3, Field>
 ): Field {
-    return Schnorr_schnorrChallenge1(ann_x, ann_y, pk_x, pk_y, msg);
+    return Schnorr_schnorrChallenge3(ann_x, ann_y, pk_x, pk_y, msg);
 }

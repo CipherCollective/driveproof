@@ -1,6 +1,8 @@
 import type { DemoFixture, TelemetrySample, TripAttestation } from "@driveproof/types";
 
 export const POLICY_ID = "AUTO-SAFE-01";
+/** Numeric policy id consumed by proveCompliance(policyId) on-chain. */
+export const ON_CHAIN_POLICY_ID = 1n;
 export const VEHICLE_ID = "IND-01-DP";
 export const ATTESTOR_ID = "attestor-demo-01";
 
