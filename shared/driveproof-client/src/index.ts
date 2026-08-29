@@ -34,8 +34,15 @@ export class MockDriveProofClient implements DriveProofClient {
     if (attestation.fixture === "safe") {
       result = {
         status: "verified",
-        transactionId: `mock_tx_${attestation.attestationId}`,
-        nullifier: `mock_nullifier_${attestation.attestationId}`
+        receipt: {
+          status: "verified",
+          network: "mock",
+          transactionId: `mock_tx_${attestation.attestationId}`,
+          complianceStatus: "satisfied",
+          policyId,
+          attestorId: attestation.attestorId,
+          nullifier: `mock_nullifier_${attestation.attestationId}`
+        }
       };
     } else if (attestation.fixture === "unsafe") {
       result = { status: "rejected", reason: "policy" };
@@ -46,7 +53,7 @@ export class MockDriveProofClient implements DriveProofClient {
 
     if (result.status === "verified") {
       this.usedAttestations.add(replayKey);
-      this.statuses.set(result.transactionId, result);
+      this.statuses.set(result.receipt.transactionId, result);
     }
     return result;
   }

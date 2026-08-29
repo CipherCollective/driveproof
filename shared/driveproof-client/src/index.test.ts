@@ -7,7 +7,13 @@ describe("MockDriveProofClient", () => {
     const attestation = await client.issueDemoTrip("safe");
 
     await expect(client.proveCompliance(attestation, "AUTO-SAFE-01")).resolves.toMatchObject({
-      status: "verified"
+      status: "verified",
+      receipt: {
+        network: "mock",
+        transactionId: "mock_tx_mock-attestation-safe-001",
+        complianceStatus: "satisfied",
+        policyId: "AUTO-SAFE-01"
+      }
     });
   });
 

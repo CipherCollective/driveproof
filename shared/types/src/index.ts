@@ -22,16 +22,43 @@ export type TripAttestation = {
 
 export type ProofRejectionReason = "policy" | "integrity" | "replay" | "unknown";
 
+/**
+ * Public, non-telemetry output from a successful proof.
+ *
+ * The optional fields are deliberately transport-level metadata only. The
+ * final generated contract/client API may expose a different subset and must
+ * map it here without adding private witness data.
+ */
+export type PublicProofReceipt = {
+  status: "verified";
+  network?: string;
+  transactionId: string;
+  blockHeight?: number;
+  contractAddress?: string;
+  complianceStatus?: "satisfied";
+  policyId?: string;
+  attestorId?: string;
+  nullifier?: string;
+};
+
 export type ProofResult =
   | {
       status: "verified";
-      transactionId: string;
-      nullifier?: string;
+      receipt: PublicProofReceipt;
     }
   | {
       status: "rejected";
       reason?: ProofRejectionReason;
     };
+
+export type DriverFlowState =
+  | "idle"
+  | "preparing"
+  | "proving"
+  | "submitting"
+  | "verified"
+  | "rejected"
+  | "error";
 
 export type DriveProofClientMode = "mock" | "midnight";
 

@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MockDriveProofClient } from "@driveproof/driveproof-client";
-import type { ProofResult } from "@driveproof/types";
+import { createDemoAttestation } from "@driveproof/fixtures";
+import type { DriveProofClient, ProofResult } from "@driveproof/types";
 import { DriverExperience } from "./App";
 
 describe("DriverExperience", () => {
@@ -71,5 +72,46 @@ describe("DriverExperience", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "RESUBMIT SAME ATTESTATION" }));
     expect(await screen.findByText("REPLAY REJECTED")).toBeInTheDocument();
+  });
+
+  it("accepts another client implementation without changing the Driver component", async () => {
+    const alternateClient: DriveProofClient = {
+      mode: "mock",
+      displayName: "INJECTED TEST CLIENT",
+      issueDemoTrip: async () => createDemoAttestation("safe"),
+      proveCompliance: async () => ({
+        status: "verified",
+        receipt: {
+          status: "verified",
+          network: "test",
+          transactionId: "injected_tx_001",
+          complianceStatus: "satisfied"
+        }
+      })
+    };
+
+    render(<DriverExperience client={alternateClient} stageDelayMs={0} />);
+
+    expect(await screen.findByText("INJECTED TEST CLIENT")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "GENERATE DRIVEPROOF" }));
+    expect(await screen.findByText("DRIVEPROOF VERIFIED IN MOCK MODE")).toBeInTheDocument();
+    expect(screen.getByText("injected_tx_001")).toBeInTheDocument();
+  });
+
+  it("maps an unexpected client failure to an error state", async () => {
+    const failingClient: DriveProofClient = {
+      mode: "midnight",
+      displayName: "TEST FAILURE CLIENT",
+      issueDemoTrip: async () => createDemoAttestation("safe"),
+      proveCompliance: async () => { throw new Error("proof runtime unavailable"); }
+    };
+
+    render(<DriverExperience client={failingClient} stageDelayMs={0} />);
+
+    await screen.findByText("Private Trip");
+    fireEvent.click(screen.getByRole("button", { name: "GENERATE DRIVEPROOF" }));
+    expect(await screen.findByText("DRIVEPROOF CLIENT ERROR")).toBeInTheDocument();
+    expect(screen.getByText("proof runtime unavailable")).toBeInTheDocument();
+    expect(screen.queryByText("Verification confirmed")).not.toBeInTheDocument();
   });
 });

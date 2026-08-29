@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowDown,
   ArrowUpRight,
@@ -12,14 +12,8 @@ import {
   SlidersHorizontal,
   X
 } from "lucide-react";
-import { createDriveProofClient } from "@driveproof/driveproof-client";
 import { POLICY_ID } from "@driveproof/fixtures";
 import type { DemoFixture, DriveProofClient, ProofResult, TripAttestation } from "@driveproof/types";
-
-function configuredClient(): DriveProofClient {
-  const requestedMode = import.meta.env.VITE_DRIVEPROOF_CLIENT_MODE === "midnight" ? "midnight" : "mock";
-  return createDriveProofClient(requestedMode);
-}
 
 function initialFixture(): DemoFixture {
   const value = new URLSearchParams(window.location.search).get("fixture");
@@ -97,18 +91,47 @@ function PrivateDataStrip() {
   );
 }
 
-export function InsurerExperience({ client: providedClient, initialFixtureOverride }: { client?: DriveProofClient; initialFixtureOverride?: DemoFixture }) {
-  const client = useMemo(() => providedClient ?? configuredClient(), [providedClient]);
-  const isMock = client.mode === "mock";
-  const [fixture, setFixture] = useState<DemoFixture>(initialFixtureOverride ?? initialFixture);
+export type InsurerExperienceProps = {
+  /** Optional only when a public result is supplied directly. */
+  client?: DriveProofClient;
+  initialFixtureOverride?: DemoFixture;
+  publicResult?: ProofResult;
+  mode?: DriveProofClient["mode"];
+  displayName?: string;
+  onResubmit?: () => Promise<ProofResult>;
+};
+
+export function InsurerExperience({
+  client,
+  initialFixtureOverride,
+  publicResult,
+  mode: modeOverride,
+  displayName: displayNameOverride,
+  onResubmit
+}: InsurerExperienceProps) {
+  const clientMode = client?.mode ?? modeOverride ?? "mock";
+  const displayName = client?.displayName ?? displayNameOverride ?? "PUBLIC PROOF RESULT";
+  const isMock = clientMode === "mock";
+  const [fixture, setFixture] = useState<DemoFixture>(() => initialFixtureOverride ?? initialFixture());
   const [attestation, setAttestation] = useState<TripAttestation>();
-  const [result, setResult] = useState<ProofResult>();
+  const [result, setResult] = useState<ProofResult | undefined>(publicResult);
   const [isLoading, setIsLoading] = useState(true);
   const [isResubmitting, setIsResubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
+    if (publicResult) {
+      setAttestation(undefined);
+      setResult(publicResult);
+      setIsLoading(false);
+      return () => { cancelled = true; };
+    }
+    if (!client) {
+      setResult(undefined);
+      setIsLoading(false);
+      return () => { cancelled = true; };
+    }
     setResult(undefined);
     void client.issueDemoTrip(fixture).then(async (nextAttestation) => {
       const nextResult = await client.proveCompliance(nextAttestation, POLICY_ID);
@@ -119,14 +142,19 @@ export function InsurerExperience({ client: providedClient, initialFixtureOverri
       }
     });
     return () => { cancelled = true; };
-  }, [client, fixture]);
+  }, [client, fixture, publicResult]);
 
   async function resubmit() {
-    if (!attestation || isResubmitting) return;
+    if (isResubmitting || (!onResubmit && (!client || !attestation))) return;
     setIsResubmitting(true);
-    const nextResult = await client.proveCompliance(attestation, POLICY_ID);
-    setResult(nextResult);
-    setIsResubmitting(false);
+    try {
+      const nextResult = onResubmit
+        ? await onResubmit()
+        : await client!.proveCompliance(attestation!, POLICY_ID);
+      setResult(nextResult);
+    } finally {
+      setIsResubmitting(false);
+    }
   }
 
   const driverUrl = `${import.meta.env.VITE_DRIVER_URL ?? "http://localhost:5173"}/?fixture=${fixture}`;
@@ -144,7 +172,7 @@ export function InsurerExperience({ client: providedClient, initialFixtureOverri
           <a className="brand" href="/" aria-label="DriveProof Insurer home"><span className="brand-mark">D</span><span className="brand-word">DRIVEPROOF</span></a>
           <div className="topbar-right">
             <a className="quiet-link" href={driverUrl}>Driver view <ArrowUpRight size={13} /></a>
-            <span className="environment-chip"><span className="environment-dot" /> {client.displayName}</span>
+            <span className="environment-chip"><span className="environment-dot" /> {displayName}</span>
           </div>
         </header>
 
@@ -160,7 +188,7 @@ export function InsurerExperience({ client: providedClient, initialFixtureOverri
           <section className="verifier-grid">
             <section className="panel verification-result-card">
               <div className="panel-padding">
-                <div className="panel-heading"><div><h2 className="panel-title">Verification result</h2><p className="panel-subtitle">What the insurer can trust from this submission.</p></div><div className="status-label">{client.mode === "mock" ? "Demo" : "Preprod"}</div></div>
+                <div className="panel-heading"><div><h2 className="panel-title">Verification result</h2><p className="panel-subtitle">What the insurer can trust from this submission.</p></div><div className="status-label">{isMock ? "Demo" : "Preprod"}</div></div>
                 <div className="result-hero">
                   <div className={`result-icon ${!verified ? "result-icon--rejected" : ""}`}>{verified ? <Check size={22} /> : replay ? <RotateCcw size={22} /> : <X size={22} />}</div>
                   <div>
@@ -170,13 +198,13 @@ export function InsurerExperience({ client: providedClient, initialFixtureOverri
                   </div>
                 </div>
                 <ProofChecks verified={verified} />
-                {verified && <div className="result-transaction"><div className="eyebrow">{isMock ? "TRANSACTION REFERENCE · MOCK ONLY" : "TRANSACTION REFERENCE · MIDNIGHT PREPROD"}</div><div className="transaction-value">{result.transactionId}</div></div>}
+                {verified && <div className="result-transaction"><div className="eyebrow">{isMock ? "TRANSACTION REFERENCE · MOCK ONLY" : "TRANSACTION REFERENCE · MIDNIGHT PREPROD"}</div><div className="transaction-value">{result.receipt.transactionId}</div></div>}
                 <div className="mock-callout"><Code2Icon /><p>{isMock
-                  ? <><strong>{client.displayName}.</strong> This verifier view is a product-development simulation. It did not contact Midnight.</>
-                  : <><strong>{client.displayName}.</strong> The verifier receives the compliance result without raw driving telemetry.</>}</p></div>
-                <button className="secondary-button" disabled={isResubmitting} onClick={() => void resubmit()} style={{ marginTop: 13, width: "100%" }} type="button">
+                  ? <><strong>{displayName}.</strong> This verifier view is a product-development simulation. It did not contact Midnight.</>
+                  : <><strong>{displayName}.</strong> The verifier receives the compliance result without raw driving telemetry.</>}</p></div>
+                {(onResubmit || (client && attestation)) && <button className="secondary-button" disabled={isResubmitting} onClick={() => void resubmit()} style={{ marginTop: 13, width: "100%" }} type="button">
                   {isResubmitting ? "RESUBMITTING" : "RESUBMIT SAME ATTESTATION"} <RotateCcw size={13} />
-                </button>
+                </button>}
               </div>
             </section>
 
@@ -187,7 +215,7 @@ export function InsurerExperience({ client: providedClient, initialFixtureOverri
           <div className="insurer-footer-note"><Fingerprint size={11} style={{ verticalAlign: "-2px", marginRight: 6 }} /> zero knowledge protects privacy · attestation protects integrity</div>
         </main>
       </div>
-      <DemoControls fixture={fixture} onFixtureChange={setFixture} />
+      {!publicResult && client && isMock && <DemoControls fixture={fixture} onFixtureChange={setFixture} />}
     </div>
   );
 }
@@ -196,6 +224,11 @@ function Code2Icon() {
   return <span style={{ color: "var(--accent)", display: "inline-flex", flex: "0 0 auto" }}><MapPinOff size={14} /></span>;
 }
 
-export default function App() {
-  return <InsurerExperience />;
+export type InsurerAppProps = {
+  client: DriveProofClient;
+  publicResult?: ProofResult;
+};
+
+export default function App({ client, publicResult }: InsurerAppProps) {
+  return <InsurerExperience client={client} publicResult={publicResult} />;
 }

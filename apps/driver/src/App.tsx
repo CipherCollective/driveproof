@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
   Check,
@@ -13,7 +13,6 @@ import {
   X,
   Zap
 } from "lucide-react";
-import { createDriveProofClient } from "@driveproof/driveproof-client";
 import {
   fixtureLabel,
   harshBrakingCount,
@@ -21,7 +20,7 @@ import {
   POLICY_ID,
   VEHICLE_ID
 } from "@driveproof/fixtures";
-import type { DemoFixture, DriveProofClient, ProofResult, TripAttestation } from "@driveproof/types";
+import type { DemoFixture, DriverFlowState, DriveProofClient, ProofResult, TripAttestation } from "@driveproof/types";
 import { WalletDebugPage } from "./WalletDebugPage";
 import { PreprodTransactionDebugPage } from "./PreprodTransactionDebugPage";
 
@@ -35,9 +34,10 @@ const pendingStages = [
 
 const wait = (milliseconds: number) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
-function configuredClient(): DriveProofClient {
-  const requestedMode = import.meta.env.VITE_DRIVEPROOF_CLIENT_MODE === "midnight" ? "midnight" : "mock";
-  return createDriveProofClient(requestedMode);
+function normalizeClientError(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string" && error) return error;
+  return "The DriveProof client returned an unexpected error.";
 }
 
 function RouteVisualization({ attestation }: { attestation: TripAttestation }) {
@@ -227,7 +227,20 @@ function ResultBanner({ result, mode }: { result: ProofResult; mode: DriveProofC
           : replay
             ? `This attestation has already been used against ${POLICY_ID}.`
             : `This private witness cannot produce a valid proof for policy ${POLICY_ID}. Underlying telemetry remains private.`}</p>
-        {verified && <div className="state-mono">{result.transactionId}</div>}
+        {verified && <div className="state-mono">{result.receipt.transactionId}</div>}
+      </div>
+    </section>
+  );
+}
+
+function ClientErrorBanner({ message }: { message: string }) {
+  return (
+    <section className="state-banner state-banner--rejected">
+      <X size={16} />
+      <div>
+        <h3>DRIVEPROOF CLIENT ERROR</h3>
+        <p>The proof could not be completed. No compliance result was recorded.</p>
+        <div className="state-mono" style={{ color: "var(--danger)" }}>{message}</div>
       </div>
     </section>
   );
@@ -261,41 +274,67 @@ function DemoControls({ fixture, onFixtureChange }: { fixture: DemoFixture; onFi
   );
 }
 
-export function DriverExperience({ client: providedClient, stageDelayMs = 650 }: { client?: DriveProofClient; stageDelayMs?: number }) {
-  const client = useMemo(() => providedClient ?? configuredClient(), [providedClient]);
+export type DriverExperienceProps = {
+  client: DriveProofClient;
+  stageDelayMs?: number;
+};
+
+export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienceProps) {
   const isMock = client.mode === "mock";
   const [fixture, setFixture] = useState<DemoFixture>("safe");
   const [attestation, setAttestation] = useState<TripAttestation>();
   const [result, setResult] = useState<ProofResult>();
   const [stage, setStage] = useState(0);
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [flowState, setFlowState] = useState<DriverFlowState>("idle");
+  const [errorMessage, setErrorMessage] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
+  const isVerifying = flowState === "preparing" || flowState === "proving" || flowState === "submitting";
 
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
     setResult(undefined);
     setStage(0);
-    void client.issueDemoTrip(fixture).then((nextAttestation) => {
-      if (!cancelled) {
-        setAttestation(nextAttestation);
-        setIsLoading(false);
-      }
-    });
+    setErrorMessage(undefined);
+    setFlowState("idle");
+    void client.issueDemoTrip(fixture)
+      .then((nextAttestation) => {
+        if (!cancelled) {
+          setAttestation(nextAttestation);
+          setIsLoading(false);
+        }
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) {
+          setErrorMessage(normalizeClientError(error));
+          setFlowState("error");
+          setIsLoading(false);
+        }
+      });
     return () => { cancelled = true; };
   }, [client, fixture]);
 
   async function generateProof() {
     if (!attestation || isVerifying) return;
     setResult(undefined);
-    setIsVerifying(true);
-    for (let index = 0; index < pendingStages.length; index += 1) {
-      setStage(index);
-      if (stageDelayMs > 0) await wait(stageDelayMs);
+    setErrorMessage(undefined);
+    setFlowState("preparing");
+    try {
+      for (let index = 0; index < pendingStages.length; index += 1) {
+        setStage(index);
+        setFlowState(index >= 4 ? "submitting" : index >= 3 ? "proving" : "preparing");
+        // Staging is a product-shell aid only. A future real client owns its
+        // actual proving/submission timing and is never artificially delayed.
+        if (client.mode === "mock" && stageDelayMs > 0) await wait(stageDelayMs);
+      }
+      const nextResult = await client.proveCompliance(attestation, POLICY_ID);
+      setResult(nextResult);
+      setFlowState(nextResult.status === "verified" ? "verified" : "rejected");
+    } catch (error: unknown) {
+      setResult(undefined);
+      setErrorMessage(normalizeClientError(error));
+      setFlowState("error");
     }
-    const nextResult = await client.proveCompliance(attestation, POLICY_ID);
-    setResult(nextResult);
-    setIsVerifying(false);
   }
 
   const insurerUrl = `${import.meta.env.VITE_INSURER_URL ?? "http://localhost:5174"}/?fixture=${fixture}`;
@@ -365,6 +404,7 @@ export function DriverExperience({ client: providedClient, stageDelayMs = 650 }:
           </section>
 
           {fixture === "tampered" && <TamperedNotice />}
+          {flowState === "error" && errorMessage && <ClientErrorBanner message={errorMessage} />}
           {isVerifying && <VerificationFlow mode={client.mode} stage={stage} />}
           {result && !isVerifying && <><ResultBanner mode={client.mode} result={result} /><VerificationFlow mode={client.mode} stage={pendingStages.length - 1} result={result} /></>}
         </main>
@@ -374,7 +414,11 @@ export function DriverExperience({ client: providedClient, stageDelayMs = 650 }:
   );
 }
 
-export default function App() {
+export type DriverAppProps = {
+  client: DriveProofClient;
+};
+
+export default function App({ client }: DriverAppProps) {
   const walletDebugEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_WALLET_DEBUG === "true";
   if (walletDebugEnabled && window.location.pathname === "/wallet-debug") {
     return <WalletDebugPage />;
@@ -382,5 +426,5 @@ export default function App() {
   if (import.meta.env.DEV && window.location.pathname === "/wallet-debug/transaction") {
     return <PreprodTransactionDebugPage />;
   }
-  return <DriverExperience />;
+  return <DriverExperience client={client} />;
 }
