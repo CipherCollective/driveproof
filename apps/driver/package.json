@@ -4,22 +4,29 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node ../../scripts/copy-driveproof-zk-assets.mjs",
     "dev": "vite --port 5173",
+    "prebuild": "node ../../scripts/copy-driveproof-zk-assets.mjs",
     "build": "vite build",
     "preview": "vite preview --port 4173"
   },
   "dependencies": {
+    "@driveproof/attestor-client": "1.0.0",
     "@driveproof/driveproof-client": "1.0.0",
     "@driveproof/fixtures": "1.0.0",
-    "@driveproof/midnight-wallet": "1.0.0",
     "@driveproof/midnight-runtime": "1.0.0",
+    "@driveproof/midnight-wallet": "1.0.0",
     "@driveproof/types": "1.0.0",
+    "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
+    "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
+    "driveproof-contract": "0.1.0",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vite-plugin-wasm": "^3.4.1"
   }
 }

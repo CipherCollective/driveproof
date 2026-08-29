@@ -23,7 +23,8 @@
       "@driveproof/driveproof-client": ["shared/driveproof-client/src/index.ts"],
       "@driveproof/midnight-wallet": ["shared/midnight-wallet/src/index.ts"],
       "@driveproof/midnight-runtime": ["shared/midnight-runtime/src/index.ts"],
-      "@driveproof/midnight-runtime/*": ["shared/midnight-runtime/src/*"]
+      "@driveproof/midnight-runtime/*": ["shared/midnight-runtime/src/*"],
+      "@driveproof/attestor-client": ["shared/attestor-client/src/index.ts"]
     }
   },
   "include": [

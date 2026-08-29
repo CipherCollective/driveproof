@@ -23,6 +23,7 @@ import {
 } from "@driveproof/fixtures";
 import type { DemoFixture, DriveProofClient, ProofResult, TripAttestation } from "@driveproof/types";
 import { WalletDebugPage } from "./WalletDebugPage";
+import { PreprodTransactionDebugPage } from "./PreprodTransactionDebugPage";
 
 const pendingStages = [
   "Preparing private witness",
@@ -362,6 +363,9 @@ export default function App() {
   const walletDebugEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_WALLET_DEBUG === "true";
   if (walletDebugEnabled && window.location.pathname === "/wallet-debug") {
     return <WalletDebugPage />;
+  }
+  if (import.meta.env.DEV && window.location.pathname === "/wallet-debug/transaction") {
+    return <PreprodTransactionDebugPage />;
   }
   return <DriverExperience />;
 }

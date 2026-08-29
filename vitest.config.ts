@@ -9,7 +9,8 @@ export default defineConfig({
       "@driveproof/driveproof-client": resolve(__dirname, "shared/driveproof-client/src/index.ts"),
       "@driveproof/midnight-wallet": resolve(__dirname, "shared/midnight-wallet/src/index.ts"),
       "@driveproof/midnight-runtime/proof-server": resolve(__dirname, "shared/midnight-runtime/src/proof-server.ts"),
-      "@driveproof/midnight-runtime": resolve(__dirname, "shared/midnight-runtime/src/index.ts")
+      "@driveproof/midnight-runtime": resolve(__dirname, "shared/midnight-runtime/src/index.ts"),
+      "@driveproof/attestor-client": resolve(__dirname, "shared/attestor-client/src/index.ts")
     }
   },
   test: {
