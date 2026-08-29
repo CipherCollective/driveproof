@@ -1,3 +1,6 @@
+// Must run before App imports any Midnight or contract modules.
+import "./browser-shims";
+
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import App from "./App";

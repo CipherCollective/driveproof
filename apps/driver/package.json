@@ -19,6 +19,7 @@
     "@driveproof/types": "1.0.0",
     "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
     "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
+    "buffer": "^6.0.3",
     "driveproof-contract": "0.1.0",
     "events": "^3.3.0",
     "lucide-react": "^0.468.0",

@@ -7,6 +7,7 @@ export default defineConfig({
   plugins: [react(), wasm()],
   resolve: {
     alias: {
+      buffer: "buffer",
       events: "events"
     }
   },
