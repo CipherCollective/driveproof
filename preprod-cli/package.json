@@ -1,0 +1,33 @@
+{
+  "name": "@driveproof/preprod-cli",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "preprod": "tsx src/index.ts",
+    "prepare-wallet": "tsx src/index.ts --prepare-wallet",
+    "build": "tsc --project tsconfig.build.json",
+    "typecheck": "tsc --project tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "4.1.1",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "4.1.1",
+    "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
+    "@midnight-ntwrk/midnight-js-types": "4.1.1",
+    "@midnight-ntwrk/wallet-sdk": "1.1.0",
+    "@scure/bip39": "^2.0.1",
+    "dotenv": "^17.2.3",
+    "driveproof-contract": "0.1.0",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.5",
+    "@types/ws": "^8.18.1",
+    "tsx": "^4.23.12",
+    "typescript": "^5.7.2"
+  }
+}

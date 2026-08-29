@@ -11,7 +11,8 @@
     "apps/*",
     "shared/*",
     "contract",
-    "attestation/attestor-simulator"
+    "attestation/attestor-simulator",
+    "preprod-cli"
   ],
   "scripts": {
     "dev:driver": "npm --workspace @driveproof/driver run dev",
