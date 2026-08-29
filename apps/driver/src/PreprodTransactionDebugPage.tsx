@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, ExternalLink, RefreshCw, TriangleAlert, WalletCards } from "lucide-react";
-import { requestAttestorPrivateState, type AttestorTripId } from "@driveproof/attestor-client";
+import { checkAttestorHealth, requestAttestorPrivateState, type AttestorHealthStatus, type AttestorTripId } from "@driveproof/attestor-client";
 import {
   createLaceMidnightWalletBridge,
   readMidnightWalletDiagnostics,
@@ -15,15 +15,26 @@ import {
   describeError,
   normalizeErrorMessage,
   type MidnightRuntimeDiagnostic,
-  type MidnightRuntimeDiagnosticStage
+  type MidnightRuntimeDiagnosticStage,
+  type ProofServerStatus
 } from "@driveproof/midnight-runtime";
+import { checkProofServer } from "@driveproof/midnight-runtime/proof-server";
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
 import type { Contract as MidnightContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
 import { deployContract, findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import type { FinalizedTxData } from "@midnight-ntwrk/midnight-js-types";
 import { DriveProof, witnesses, type DriveProofPrivateState } from "driveproof-contract";
 import { classifyExpectedProofRejection, type ExpectedProofRejection } from "./proofErrorPresentation";
-import { deploymentStageLabel } from "./preprodPresentation";
+import { deploymentStageLabel, isRecordingMode, resetDemoUiState } from "./preprodPresentation";
+import {
+  attestorReadiness,
+  laceReadiness,
+  networkReadiness,
+  proofServerReadiness,
+  safeAttestationReadiness,
+  walletReadiness,
+  type ReadinessPresentation
+} from "./preprodReadiness";
 
 const ATTESTOR_URL = import.meta.env.VITE_MIDNIGHT_ATTESTOR_URL?.trim() || "http://localhost:4000";
 const PRIVATE_STATE_ID = "driveproofPrivateState";
@@ -73,20 +84,33 @@ function createCompiledDriveProof() {
   );
 }
 
-function statusClass(status: boolean | undefined): string {
-  return status ? "debug-good" : "";
-}
-
 function diagnosticResultLabel<T>(result: WalletDiagnosticResult<T>, format: (value: T) => string): string {
   if (result.status === "supported") return `SUPPORTED: ${format(result.value)}`;
   return `${result.status === "unsupported" ? "UNSUPPORTED" : "ERROR"}: ${result.message}`;
+}
+
+function readinessClass(tone: ReadinessPresentation["tone"]): string {
+  return tone === "good" ? "debug-good" : tone === "bad" ? "debug-bad" : "";
+}
+
+function ReadinessCell({ label, presentation }: { label: string; presentation: ReadinessPresentation }) {
+  return (
+    <div className="wallet-debug-status">
+      <span>{label}</span>
+      <strong className={readinessClass(presentation.tone)}>{presentation.label}</strong>
+      {presentation.detail && <small>{presentation.detail}</small>}
+    </div>
+  );
 }
 
 export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalletConfig }) {
   const resolvedConfig = useMemo(() => config ?? readMidnightWalletConfig(), [config]);
   const bridge = useMemo(() => createLaceMidnightWalletBridge(resolvedConfig), [resolvedConfig]);
   const compiledContract = useMemo(() => createCompiledDriveProof(), []);
+  const recordingMode = useMemo(() => isRecordingMode(window.location.search), []);
   const [detected, setDetected] = useState(false);
+  const [proofServerStatus, setProofServerStatus] = useState<ProofServerStatus | "checking">("checking");
+  const [attestorStatus, setAttestorStatus] = useState<AttestorHealthStatus | "checking">("checking");
   const [connection, setConnection] = useState<WalletConnectionState>({ status: "disconnected" });
   const [attestation, setAttestation] = useState<DriveProofPrivateState>();
   const [runtime, setRuntime] = useState<DriveProofRuntime>();
@@ -106,6 +130,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
   const deploymentStageRef = useRef<DeploymentStage>("IDLE");
   const deploymentInFlight = useRef(false);
   const walletDiagnosticsInFlight = useRef(false);
+  const readinessInFlight = useRef(false);
 
   const walletConnected = connection.status === "connected";
   const networkReady = walletConnected && connection.network === resolvedConfig.networkId;
@@ -113,6 +138,26 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
   const observedHistoryStatuses = walletDiagnostics?.txHistory.status === "supported"
     ? walletDiagnostics.txHistory.value.map(({ status }) => status)
     : [];
+
+  const refreshReadiness = useCallback(async () => {
+    if (readinessInFlight.current) return;
+
+    readinessInFlight.current = true;
+    setProofServerStatus("checking");
+    setAttestorStatus("checking");
+    try {
+      const [isDetected, nextProofServerStatus, nextAttestorStatus] = await Promise.all([
+        bridge.detect().catch(() => false),
+        checkProofServer({ url: resolvedConfig.expectedProofServerUrl }),
+        checkAttestorHealth(ATTESTOR_URL)
+      ]);
+      setDetected(isDetected);
+      setProofServerStatus(nextProofServerStatus);
+      setAttestorStatus(nextAttestorStatus);
+    } finally {
+      readinessInFlight.current = false;
+    }
+  }, [bridge, resolvedConfig.expectedProofServerUrl]);
 
   function applyDeploymentDiagnostic(diagnostic: MidnightRuntimeDiagnostic) {
     deploymentStageRef.current = diagnostic.stage;
@@ -146,15 +191,11 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
   }
 
   useEffect(() => {
-    let cancelled = false;
-    void bridge.detect().then((isDetected) => {
-      if (!cancelled) setDetected(isDetected);
-    });
-    return () => { cancelled = true; };
-  }, [bridge]);
+    void refreshReadiness();
+  }, [refreshReadiness]);
 
   async function detect() {
-    setDetected(await bridge.detect());
+    await refreshReadiness();
   }
 
   async function readWalletDiagnostics() {
@@ -360,6 +401,34 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     }
   }
 
+  function resetUiOnly() {
+    if (operation !== "idle" || walletDiagnosticsBusy) return;
+
+    const next = resetDemoUiState({
+      attestation,
+      proof,
+      complianceCount,
+      operation,
+      error,
+      deploymentStage,
+      deploymentFailure,
+      expectedProofRejection,
+      walletDiagnostics,
+      walletDiagnosticsError
+    });
+    setAttestation(next.attestation);
+    setProof(next.proof);
+    setComplianceCount(next.complianceCount);
+    setOperation(next.operation);
+    setError(next.error);
+    setDeploymentStage(next.deploymentStage as DeploymentStage);
+    setDeploymentFailure(next.deploymentFailure);
+    setExpectedProofRejection(next.expectedProofRejection);
+    setWalletDiagnostics(next.walletDiagnostics);
+    setWalletDiagnosticsError(next.walletDiagnosticsError);
+    deploymentStageRef.current = "IDLE";
+  }
+
   const busy = operation !== "idle";
   const connectionMessage = connection.status === "error"
     ? connection.message
@@ -368,13 +437,25 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
       : connection.status === "unavailable"
         ? connection.reason
         : undefined;
+  const laceStatus = laceReadiness(detected);
+  const walletStatus = walletReadiness(connection);
+  const networkStatus = networkReadiness(connection, resolvedConfig.networkId);
+  const proofServerStatusPresentation = proofServerReadiness(proofServerStatus);
+  const attestorStatusPresentation = attestorReadiness(attestorStatus);
+  const safeAttestationStatus = safeAttestationReadiness(Boolean(attestation));
+  const contractStatus: ReadinessPresentation = deployment
+    ? { label: "DEPLOYED", tone: "good" }
+    : { label: "NOT DEPLOYED", tone: "neutral" };
 
   return (
-    <div className="wallet-debug-shell">
+    <div className={`wallet-debug-shell${recordingMode ? " wallet-debug-shell--recording" : ""}`}>
       <main className="wallet-debug-card">
         <header className="wallet-debug-header">
           <a className="wallet-debug-back" href="/wallet-debug"><ArrowLeft size={15} /> Wallet debug</a>
-          <div className="eyebrow">ENGINEERING INSTRUMENTATION · DEV ONLY</div>
+          <div className="wallet-debug-header-meta">
+            <div className="eyebrow">ENGINEERING INSTRUMENTATION · DEV ONLY</div>
+            {recordingMode && <span className="recording-mode-chip">RECORDING MODE · PRESENTATION ONLY</span>}
+          </div>
         </header>
 
         <div className="wallet-debug-intro">
@@ -386,12 +467,19 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
           </div>
         </div>
 
+        <div className="wallet-debug-toolbar">
+          <span className="debug-neutral">RESET DOES NOT TOUCH WALLET OR CHAIN</span>
+          <button className="debug-reset-button" disabled={busy || walletDiagnosticsBusy} onClick={resetUiOnly} type="button">RESET UI ONLY</button>
+        </div>
+
         <section className="wallet-debug-status-grid" aria-label="Real transaction readiness">
-          <div className="wallet-debug-status"><span>Lace extension</span><strong className={statusClass(detected)}>{detected ? "DETECTED" : "NOT DETECTED"}</strong></div>
-          <div className="wallet-debug-status"><span>Wallet</span><strong className={statusClass(walletConnected)}>{walletConnected ? "CONNECTED" : "DISCONNECTED"}</strong></div>
-          <div className="wallet-debug-status"><span>Network</span><strong className={statusClass(networkReady)}>{networkReady ? "PREPROD" : connection.status === "wrong-network" ? "WRONG NETWORK" : "PREPROD TARGET"}</strong></div>
-          <div className="wallet-debug-status"><span>Proof server</span><strong>LOCAL · 8.1.0</strong></div>
-          <div className="wallet-debug-status"><span>Contract</span><strong className={statusClass(Boolean(deployment))}>{deployment ? "CONFIRMED ON PREPROD" : "NOT DEPLOYED"}</strong></div>
+          <ReadinessCell label="Lace extension" presentation={laceStatus} />
+          <ReadinessCell label="Wallet" presentation={walletStatus} />
+          <ReadinessCell label="Network" presentation={networkStatus} />
+          <ReadinessCell label="Proof server" presentation={proofServerStatusPresentation} />
+          <ReadinessCell label="Attestor" presentation={attestorStatusPresentation} />
+          <ReadinessCell label="Contract" presentation={contractStatus} />
+          <ReadinessCell label="Safe attestation" presentation={safeAttestationStatus} />
         </section>
 
         <section className="wallet-debug-panel">
@@ -495,6 +583,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
 
         <section className="wallet-debug-panel">
           <div className="wallet-debug-panel-heading"><span className="eyebrow">3 · DEPLOY CONSTRUCTOR-BOUND CONTRACT</span><span className={deployment ? "debug-good" : "debug-neutral"}>{deployment ? "CONFIRMED ON PREPROD" : "NOT SUBMITTED"}</span></div>
+          {deployment && <div className="wallet-debug-evidence-kicker">MIDNIGHT PREPROD</div>}
           <p>Exact constructor: <code>speedLimit=80</code>, <code>attestorId=1</code>, and the handoff public key. Lace approval is required for the real deployment transaction.</p>
           <button className="debug-primary-button" disabled={busy || !runtime || !attestation || Boolean(deployment)} onClick={() => void deploy()} type="button">{operation === "deploying" ? "DEPLOYING · APPROVE LACE" : deployment ? "CONTRACT DEPLOYED" : "DEPLOY TO PREPROD"} {operation === "deploying" && <RefreshCw className="debug-spin" size={15} />}</button>
           <div className="wallet-debug-details" aria-live="polite">
@@ -527,6 +616,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
           </div>
           {contractAddress && <div className="wallet-debug-details"><div><span>Contract address</span><strong>{contractAddress}</strong></div></div>}
           {deployment && <TransactionDetails transaction={deployment} label="Deployment transaction" />}
+          {deployment && <p className="wallet-debug-note"><Check size={13} /> This tab reuses the confirmed contract for proving; UI reset does not reset chain state.</p>}
         </section>
 
         <section className="wallet-debug-panel">
@@ -540,7 +630,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
                 <div className="eyebrow">{expectedProofRejection.eyebrow}</div>
                 <h3>{expectedProofRejection.heading}</h3>
                 <p>{expectedProofRejection.description}</p>
-                <p className="proof-rejection-note">No compliant proof was recorded.</p>
+                <p className="proof-rejection-note">No compliant proof was recorded. No successful transaction recorded.</p>
                 <div className="proof-rejection-detail">Technical detail: {expectedProofRejection.technicalDetail}</div>
               </div>
             </div>
@@ -561,7 +651,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
         )}
 
         {connectionMessage && <div className="wallet-debug-message" role="alert"><TriangleAlert size={16} /><span>{connectionMessage}</span></div>}
-        {error && !deploymentFailure && <div className="wallet-debug-message" role="alert"><TriangleAlert size={16} /><span>{error}</span></div>}
+        {error && !deploymentFailure && <div className="wallet-debug-message" role="alert"><TriangleAlert size={16} /><span>ERROR: {error}</span></div>}
         {complianceCount === "1" && <p className="wallet-debug-note"><Check size={13} /> The observed ledger state is the only success signal shown by this page.</p>}
 
         <footer className="wallet-debug-footer">Artifacts: {ZK_CONFIG_BASE_PATH} · Attestor: {ATTESTOR_URL} · This page never falls back to the product mock client.</footer>
@@ -575,7 +665,7 @@ function TransactionDetails({ transaction, label }: { transaction: PublicTransac
     <div className="wallet-debug-details">
       <div><span>{label} txId</span><strong>{transaction.txId}</strong></div>
       <div><span>Status</span><strong className={transaction.status === "SucceedEntirely" ? "debug-good" : ""}>{transaction.status}</strong></div>
-      <div><span>Block height</span><strong>{transaction.blockHeight}</strong></div>
+      <div><span>Block</span><strong>{transaction.blockHeight}</strong></div>
       <div><span>Block hash</span><strong>{transaction.blockHash}</strong></div>
     </div>
   );

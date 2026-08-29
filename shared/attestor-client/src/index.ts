@@ -2,6 +2,10 @@ import type { DriveProofPrivateState } from "driveproof-contract";
 
 export type AttestorTripId = "safe" | "unsafe";
 
+export type AttestorHealthStatus =
+  | { status: "ready"; url: string; providerId?: number }
+  | { status: "unavailable"; url: string; message: string };
+
 type AttestorResponse = {
   signature: {
     announcement: { x: string; y: string };
@@ -54,6 +58,50 @@ function normalizeBaseUrl(baseUrl: string): string {
     return new URL(baseUrl).toString().replace(/\/$/, "");
   } catch {
     throw new AttestorClientError(`Attestor URL is invalid: ${baseUrl}`);
+  }
+}
+
+/**
+ * Read-only liveness check for the local attestor. It does not request an
+ * attestation, sign data, or expose provider key material.
+ */
+export async function checkAttestorHealth(
+  baseUrl: string,
+  fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis)
+): Promise<AttestorHealthStatus> {
+  let url: string;
+  try {
+    url = normalizeBaseUrl(baseUrl);
+  } catch (error) {
+    return {
+      status: "unavailable",
+      url: baseUrl,
+      message: error instanceof Error ? error.message : String(error)
+    };
+  }
+
+  try {
+    const response = await fetchImpl(`${url}/health`);
+    if (!response.ok) {
+      return { status: "unavailable", url, message: `Attestor /health returned HTTP ${response.status}.` };
+    }
+
+    const body = (await response.json()) as { status?: unknown; providerId?: unknown };
+    if (body.status !== "ok") {
+      return { status: "unavailable", url, message: "Attestor /health returned an invalid status." };
+    }
+
+    return {
+      status: "ready",
+      url,
+      ...(typeof body.providerId === "number" ? { providerId: body.providerId } : {})
+    };
+  } catch (error) {
+    return {
+      status: "unavailable",
+      url,
+      message: `Attestor is unavailable at ${url}: ${error instanceof Error ? error.message : String(error)}`
+    };
   }
 }
 

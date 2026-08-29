@@ -425,6 +425,20 @@ a { color: inherit; text-decoration: none; }
 .wallet-debug-footer { color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; line-height: 1.5; margin-top: 20px; }
 @keyframes debug-spin { to { transform: rotate(360deg); } }
 
+.wallet-debug-header-meta { align-items: flex-end; display: flex; flex-direction: column; gap: 8px; }
+.recording-mode-chip { border: 1px solid rgba(200, 243, 109, 0.35); border-radius: 999px; color: var(--accent); font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; padding: 6px 9px; }
+.wallet-debug-toolbar { align-items: center; display: flex; gap: 12px; justify-content: space-between; margin-top: 18px; }
+.debug-reset-button { background: transparent; border: 0; color: var(--muted-strong); cursor: pointer; font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; padding: 5px 0; text-decoration: underline; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+.debug-reset-button:hover { color: var(--text); }
+.debug-reset-button:disabled { cursor: wait; opacity: 0.45; }
+.wallet-debug-evidence-kicker { color: var(--accent); font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; margin-top: 14px; }
+.wallet-debug-shell--recording .wallet-debug-status span { font-size: 12px; }
+.wallet-debug-shell--recording .wallet-debug-status strong { font-size: 12px; }
+.wallet-debug-shell--recording .wallet-debug-status small { font-size: 10px; }
+.wallet-debug-shell--recording .wallet-debug-details span { font-size: 12px; }
+.wallet-debug-shell--recording .wallet-debug-details strong { font-size: 11px; }
+.wallet-debug-shell--recording .wallet-debug-message { font-size: 13px; }
+
 @media (max-width: 620px) {
   .wallet-debug-shell { align-items: flex-start; padding: 16px; }
   .wallet-debug-card { padding: 20px 17px; }
@@ -437,6 +451,8 @@ a { color: inherit; text-decoration: none; }
   .wallet-debug-details { grid-template-columns: 1fr; }
   .wallet-debug-details > div:nth-child(odd) { margin-right: 0; }
   .wallet-debug-panel-heading { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .wallet-debug-header-meta { align-items: flex-start; width: 100%; }
+  .wallet-debug-toolbar { align-items: flex-start; flex-direction: column; gap: 7px; }
 }
 
 /* Mission 01 visual polish: denser proof hierarchy, clearer telemetry geometry, and a stronger mobile composition. */
