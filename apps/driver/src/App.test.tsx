@@ -26,7 +26,7 @@ describe("DriverExperience", () => {
     await screen.findByText("Private Trip");
     fireEvent.click(screen.getByRole("button", { name: "UNSAFE" }));
     expect(await screen.findByText("112")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "GENERATE DRIVEPROOF" }));
+    fireEvent.click(screen.getByRole("button", { name: "CREATE PRIVATE PROOF" }));
 
     expect(await screen.findByText("PROOF GENERATION REJECTED")).toBeInTheDocument();
     expect(screen.queryByText("Verification confirmed")).not.toBeInTheDocument();
@@ -40,7 +40,7 @@ describe("DriverExperience", () => {
     render(<DriverExperience client={client} stageDelayMs={0} />);
 
     await screen.findByText("Private Trip");
-    fireEvent.click(screen.getByRole("button", { name: "GENERATE DRIVEPROOF" }));
+    fireEvent.click(screen.getByRole("button", { name: "CREATE PRIVATE PROOF" }));
     await waitFor(() => expect(proveCompliance).toHaveBeenCalledTimes(1));
     expect(screen.queryByText("Verification confirmed")).not.toBeInTheDocument();
 
@@ -66,7 +66,7 @@ describe("DriverExperience", () => {
     render(<DriverExperience client={client} stageDelayMs={0} />);
 
     await screen.findByText("Private Trip");
-    fireEvent.click(screen.getByRole("button", { name: "GENERATE DRIVEPROOF" }));
+    fireEvent.click(screen.getByRole("button", { name: "CREATE PRIVATE PROOF" }));
     await waitFor(() => expect(proveCompliance).toHaveBeenCalledTimes(1));
     expect(await screen.findByText("DRIVEPROOF VERIFIED IN MOCK MODE")).toBeInTheDocument();
 
@@ -93,7 +93,7 @@ describe("DriverExperience", () => {
     render(<DriverExperience client={alternateClient} stageDelayMs={0} />);
 
     expect(await screen.findByText("INJECTED TEST CLIENT")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "GENERATE DRIVEPROOF" }));
+    fireEvent.click(screen.getByRole("button", { name: "CREATE PRIVATE PROOF" }));
     expect(await screen.findByText("DRIVEPROOF VERIFIED IN MOCK MODE")).toBeInTheDocument();
     expect(screen.getByText("injected_tx_001")).toBeInTheDocument();
   });
@@ -109,7 +109,8 @@ describe("DriverExperience", () => {
     render(<DriverExperience client={failingClient} stageDelayMs={0} />);
 
     await screen.findByText("Private Trip");
-    fireEvent.click(screen.getByRole("button", { name: "GENERATE DRIVEPROOF" }));
+    expect(screen.getByText("REAL CLIENT · PRODUCT SURFACE")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "CREATE PRIVATE PROOF" }));
     expect(await screen.findByText("DRIVEPROOF CLIENT ERROR")).toBeInTheDocument();
     expect(screen.getByText("proof runtime unavailable")).toBeInTheDocument();
     expect(screen.queryByText("Verification confirmed")).not.toBeInTheDocument();

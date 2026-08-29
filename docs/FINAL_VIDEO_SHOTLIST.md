@@ -6,7 +6,7 @@ transaction ID, block, or ledger value to fit the edit.
 
 ## Recording setup
 
-- Driver product: `http://localhost:5173/`
+- Driver product: `http://localhost:5173/driver`
 - Real evidence harness: `http://localhost:5173/wallet-debug/transaction?recording=1`
 - Insurer product: `http://localhost:5174/`
 - Product homepage and Insurer public-receipt shots are **PLACEHOLDER** while

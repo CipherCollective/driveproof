@@ -3,10 +3,13 @@ import {
   ArrowUpRight,
   Check,
   ChevronRight,
+  HelpCircle,
   Code2,
   Fingerprint,
+  LayoutDashboard,
   LockKeyhole,
   MapPinOff,
+  Menu,
   RotateCcw,
   ShieldCheck,
   SlidersHorizontal,
@@ -23,6 +26,17 @@ import {
 import type { DemoFixture, DriverFlowState, DriveProofClient, ProofResult, TripAttestation } from "@driveproof/types";
 import { WalletDebugPage } from "./WalletDebugPage";
 import { PreprodTransactionDebugPage } from "./PreprodTransactionDebugPage";
+import {
+  completeOnboardingTask,
+  loadOnboardingState,
+  onboardingProgress,
+  resetOnboardingState,
+  saveOnboardingState,
+  type OnboardingState,
+  type OnboardingTaskId
+} from "./onboarding";
+import { getDriverProofSteps } from "./driverPresentation";
+import { LandingPage } from "./LandingPage";
 
 const pendingStages = [
   "Preparing private witness",
@@ -129,7 +143,7 @@ export function PublicProofMetadata({ fields = pendingPublicProofMetadata }: { f
 
 function PrivacyPanel({ attestation }: { attestation: TripAttestation }) {
   return (
-    <div className="privacy-grid">
+    <div className="privacy-grid" id="privacy">
       <section className="panel privacy-panel">
         <div className="panel-padding">
           <div className="privacy-header">
@@ -168,11 +182,11 @@ function PrivacyPanel({ attestation }: { attestation: TripAttestation }) {
 function ProofPipeline() {
   return (
     <div className="proof-pipeline" aria-label="Private telemetry becomes a zero knowledge proof and policy result">
-      <div className="pipeline-node"><LockKeyhole size={13} /><span>PRIVATE TELEMETRY</span></div>
+      <div className="pipeline-node"><LockKeyhole size={13} /><span title="Private driving data used by the proof.">PRIVATE TELEMETRY</span></div>
       <ChevronRight className="pipeline-arrow" size={15} />
-      <div className="pipeline-node"><ShieldCheck size={13} /><span>ZK PROOF</span></div>
+      <div className="pipeline-node"><ShieldCheck size={13} /><span title="Proves a statement without revealing the underlying private data.">ZK PROOF</span></div>
       <ChevronRight className="pipeline-arrow" size={15} />
-      <div className="pipeline-node"><Check size={13} /><span>POLICY RESULT</span></div>
+      <div className="pipeline-node"><Check size={13} /><span title="The conditions the insurer requires the trip to satisfy.">POLICY RESULT</span></div>
     </div>
   );
 }
@@ -274,6 +288,236 @@ function DemoControls({ fixture, onFixtureChange }: { fixture: DemoFixture; onFi
   );
 }
 
+function ProductSidebar({
+  mode,
+  isOpen,
+  insurerUrl,
+  onNavigate,
+  onResume
+}: {
+  mode: DriveProofClient["mode"];
+  isOpen: boolean;
+  insurerUrl: string;
+  onNavigate: () => void;
+  onResume: () => void;
+}) {
+  return (
+    <aside className={`product-sidebar ${isOpen ? "product-sidebar--open" : ""}`} aria-label="Driver navigation">
+      <div className="product-sidebar-top">
+        <a className="brand" href="/" aria-label="DriveProof home">
+          <span className="brand-mark">D</span><span className="brand-word">DRIVEPROOF</span>
+        </a>
+        <button className="mobile-sidebar-close" onClick={onNavigate} type="button" aria-label="Close navigation"><X size={17} /></button>
+      </div>
+      <nav className="product-navigation" aria-label="Product sections">
+        <div className="product-navigation-label">Workspace</div>
+        <a className="product-nav-link product-nav-link--active" href="#overview" onClick={onNavigate}><LayoutDashboard size={15} /> Overview</a>
+        <a className="product-nav-link" href="#create-proof" onClick={onNavigate}><ShieldCheck size={15} /> Create proof</a>
+        <a className="product-nav-link" href="#privacy" onClick={onNavigate}><LockKeyhole size={15} /> Privacy</a>
+        <div className="product-navigation-divider" />
+        <div className="product-navigation-label">Surfaces</div>
+        <a className="product-nav-link" href={insurerUrl} onClick={onNavigate}><ArrowUpRight size={15} /> Insurer view</a>
+        <a className="product-nav-link" href="/wallet-debug" onClick={onNavigate}><Code2 size={15} /> Technical evidence <span className="product-nav-note">DEV</span></a>
+      </nav>
+      <div className="product-sidebar-footer">
+        <div className="product-sidebar-status">
+          <span>Network target</span>
+          <strong>MIDNIGHT PREPROD</strong>
+        </div>
+        <button className="product-help-button" onClick={onResume} type="button"><HelpCircle size={15} /> Help &amp; walkthrough</button>
+        <div className="product-sidebar-mode">{mode === "mock" ? "MOCK CLIENT · PRODUCT SURFACE" : "REAL CLIENT · PRODUCT SURFACE"}</div>
+      </div>
+    </aside>
+  );
+}
+
+function ProductStatusStrip({ client, hasAttestation }: { client: DriveProofClient; hasAttestation: boolean }) {
+  const isMock = client.mode === "mock";
+  return (
+    <section className="product-status-strip" aria-label="Driver readiness">
+      <div className="product-status-intro">
+        <div className="eyebrow">DRIVER OVERVIEW</div>
+        <h2>Your driving data stays private.</h2>
+        <p>The insurer receives only whether your signed trip satisfies the policy.</p>
+      </div>
+      <div className="product-status-items">
+        <div className="product-status-item">
+          <span>Wallet</span>
+          <strong>{isMock ? "MOCK MODE" : "CLIENT MANAGED"}</strong>
+          <small>{isMock ? "Lace lives in Technical evidence." : "Connection supplied by the client."}</small>
+        </div>
+        <div className="product-status-item">
+          <span>Network</span>
+          <strong>MIDNIGHT PREPROD</strong>
+          <small>{isMock ? "target environment" : "provided by client"}</small>
+        </div>
+        <div className="product-status-item">
+          <span>Proof readiness</span>
+          <strong className={hasAttestation ? "product-status-good" : ""}>{hasAttestation ? "READY" : "ACTION NEEDED"}</strong>
+          <small>{hasAttestation ? "attested trip loaded" : "prepare an attested trip"}</small>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ProductProofStepper({
+  client,
+  hasAttestation,
+  flowState,
+  result
+}: {
+  client: DriveProofClient;
+  hasAttestation: boolean;
+  flowState: DriverFlowState;
+  result?: ProofResult;
+}) {
+  const steps = getDriverProofSteps({ mode: client.mode, hasAttestation, flowState, result });
+  const stateLabel: Record<ReturnType<typeof getDriverProofSteps>[number]["state"], string> = {
+    complete: "complete",
+    current: "next",
+    upcoming: "up next",
+    unavailable: "mock path"
+  };
+
+  return (
+    <ol className="product-proof-stepper" aria-label="Private proof creation steps">
+      {steps.map((step, index) => (
+        <li className={`product-proof-step product-proof-step--${step.state}`} key={step.id}>
+          <span className="product-proof-step-number">{step.state === "complete" ? <Check size={12} strokeWidth={3} /> : String(index + 1).padStart(2, "0")}</span>
+          <div className="product-proof-step-copy">
+            <div className="product-proof-step-heading">
+              <strong>{step.label}</strong>
+              <span>{stateLabel[step.state]}</span>
+            </div>
+            <p>{step.description}</p>
+            {step.note && <small>{step.note}</small>}
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+const onboardingTasks: Array<{
+  id: OnboardingTaskId;
+  number: string;
+  title: string;
+  duration: string;
+  description: string;
+  why: string;
+  action: string;
+  href: string;
+}> = [
+  {
+    id: "connect-wallet",
+    number: "01",
+    title: "Connect Lace",
+    duration: "Required",
+    description: "Connect the browser wallet used to authorize Midnight transactions.",
+    why: "This is the boundary between the product surface and the engineering wallet path.",
+    action: "Open wallet path",
+    href: "/wallet-debug"
+  },
+  {
+    id: "privacy-boundary",
+    number: "02",
+    title: "Understand the privacy boundary",
+    duration: "~30 sec",
+    description: "See which driving fields stay private and which result can be shared.",
+    why: "A proof is useful because the insurer does not need the journey behind it.",
+    action: "View privacy boundary",
+    href: "#privacy"
+  },
+  {
+    id: "create-proof",
+    number: "03",
+    title: "Create your first private proof",
+    duration: "Required",
+    description: "Load an issuer-signed trip and evaluate it against the current policy.",
+    why: "The proof checks the signed measurement without displaying the raw trip to the insurer.",
+    action: "Open proof flow",
+    href: "#create-proof"
+  },
+  {
+    id: "insurer-result",
+    number: "04",
+    title: "View what an insurer receives",
+    duration: "~30 sec",
+    description: "Open the verifier view and inspect the public-safe result boundary.",
+    why: "The insurer sees a compliance result and relevant receipt metadata, not private telemetry.",
+    action: "Open Insurer",
+    href: "http://localhost:5174/"
+  }
+];
+
+function browserStorage(): Storage | undefined {
+  try {
+    return typeof window === "undefined" ? undefined : window.localStorage;
+  } catch {
+    return undefined;
+  }
+}
+
+function OnboardingChecklist({
+  insurerUrl,
+  state,
+  onStateChange
+}: {
+  insurerUrl: string;
+  state: OnboardingState;
+  onStateChange: (nextState: OnboardingState) => void;
+}) {
+  const progress = onboardingProgress(state);
+
+  if (state.dismissed) {
+    return <button className="onboarding-resume" onClick={() => onStateChange({ ...state, dismissed: false })} type="button"><RotateCcw size={14} /> Resume onboarding</button>;
+  }
+
+  return (
+    <section className="onboarding-panel" aria-labelledby="onboarding-title">
+      <div className="onboarding-header">
+        <div>
+          <div className="eyebrow">FIRST-RUN GUIDE</div>
+          <h2 id="onboarding-title">Get started with DriveProof</h2>
+          <p>Four short steps to understand the proof and its privacy boundary.</p>
+        </div>
+        <div className="onboarding-header-actions">
+          <span className="onboarding-progress-label">{progress.completed} / {progress.total} complete</span>
+          <button className="onboarding-text-button" onClick={() => onStateChange({ ...state, dismissed: true })} type="button">Dismiss</button>
+        </div>
+      </div>
+      <div className="onboarding-progress-track" aria-hidden="true"><span style={{ width: `${(progress.completed / progress.total) * 100}%` }} /></div>
+      <div className="onboarding-tasks">
+        {onboardingTasks.map((task) => {
+          const completed = state.completed[task.id];
+          const href = task.id === "insurer-result" ? insurerUrl : task.href;
+          return (
+            <details className={`onboarding-task ${completed ? "onboarding-task--complete" : ""}`} key={task.id}>
+              <summary>
+                <span className="onboarding-task-number">{completed ? <Check size={12} strokeWidth={3} /> : task.number}</span>
+                <span className="onboarding-task-title">{task.title}</span>
+                <span className="onboarding-task-duration">{completed ? "DONE · LOCAL UI" : task.duration}</span>
+              </summary>
+              <div className="onboarding-task-body">
+                <p>{task.description}</p>
+                <small><strong>Why it matters</strong> {task.why}</small>
+                <div className="onboarding-task-actions">
+                  <a className="secondary-button" href={href} onClick={() => task.id !== "connect-wallet" && onStateChange(completeOnboardingTask(state, task.id))}>{task.action} <ArrowUpRight size={13} /></a>
+                  <button className="onboarding-complete-button" onClick={() => onStateChange(completeOnboardingTask(state, task.id))} type="button">
+                    {completed ? "Completed locally" : "Mark complete"}
+                  </button>
+                </div>
+              </div>
+            </details>
+          );
+        })}
+      </div>
+      <div className="onboarding-footer"><span>Completion is saved in this browser only.</span><button className="onboarding-text-button" onClick={() => onStateChange(resetOnboardingState())} type="button">Restart walkthrough</button></div>
+    </section>
+  );
+}
+
 export type DriverExperienceProps = {
   client: DriveProofClient;
   stageDelayMs?: number;
@@ -281,6 +525,7 @@ export type DriverExperienceProps = {
 
 export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienceProps) {
   const isMock = client.mode === "mock";
+  const storage = browserStorage();
   const [fixture, setFixture] = useState<DemoFixture>("safe");
   const [attestation, setAttestation] = useState<TripAttestation>();
   const [result, setResult] = useState<ProofResult>();
@@ -288,7 +533,14 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
   const [flowState, setFlowState] = useState<DriverFlowState>("idle");
   const [errorMessage, setErrorMessage] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
+  const [isNavOpen, setIsNavOpen] = useState(false);
+  const [onboardingState, setOnboardingState] = useState<OnboardingState>(() => loadOnboardingState(storage));
   const isVerifying = flowState === "preparing" || flowState === "proving" || flowState === "submitting";
+
+  function updateOnboardingState(nextState: OnboardingState) {
+    setOnboardingState(nextState);
+    saveOnboardingState(storage, nextState);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -344,10 +596,14 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
   }
 
   return (
-    <div className="app-shell driver-shell">
-      <div className="shell-content">
-        <header className="topbar">
-          <a className="brand" href="/" aria-label="DriveProof Driver home"><span className="brand-mark">D</span><span className="brand-word">DRIVEPROOF</span></a>
+    <div className="app-shell driver-shell product-app-shell">
+      <ProductSidebar isOpen={isNavOpen} mode={client.mode} insurerUrl={insurerUrl} onNavigate={() => setIsNavOpen(false)} onResume={() => { setIsNavOpen(false); updateOnboardingState({ ...onboardingState, dismissed: false }); }} />
+      {isNavOpen && <button className="product-sidebar-scrim" onClick={() => setIsNavOpen(false)} type="button" aria-label="Close navigation" />}
+      <div className="product-main">
+        <div className="shell-content">
+        <header className="topbar product-topbar">
+          <button className="mobile-menu-button" onClick={() => setIsNavOpen(true)} type="button" aria-label="Open navigation"><Menu size={18} /></button>
+          <a className="brand product-mobile-brand" href="/" aria-label="DriveProof home"><span className="brand-mark">D</span><span className="brand-word">DRIVEPROOF</span></a>
           <div className="topbar-right">
             <a className="quiet-link" href={insurerUrl}>Insurer view <ArrowUpRight size={13} /></a>
             <span className="environment-chip"><span className="environment-dot" /> {client.displayName}</span>
@@ -355,7 +611,7 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
         </header>
 
         <main>
-          <section className="hero">
+          <section className="hero product-hero" id="overview">
             <div>
               <div className="eyebrow">DRIVER CONSOLE · {fixtureLabel(fixture)}</div>
               <h1>PRIVATE BY<br />DEFAULT.</h1>
@@ -363,6 +619,8 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
             </div>
             <div className="vehicle-card"><div className="eyebrow">VEHICLE</div><div className="vehicle-name">{VEHICLE_ID}</div><div className="vehicle-detail">Personal trip · Today, 09:42</div></div>
           </section>
+
+          <ProductStatusStrip client={client} hasAttestation={Boolean(attestation)} />
 
           <section className="dashboard-grid">
             <div>
@@ -382,19 +640,20 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
               <PrivacyPanel attestation={attestation} />
             </div>
 
-            <section className="panel proof-panel">
+            <section className="panel proof-panel" id="create-proof">
               <div className="panel-padding">
-                <div className="panel-heading"><div><h2 className="panel-title">DriveProof</h2><p className="panel-subtitle">A privacy-preserving compliance proof.</p></div><div className="status-label">{POLICY_ID}</div></div>
+                <div className="panel-heading"><div><div className="eyebrow">PRIVATE PROOF</div><h2 className="panel-title">Create a private proof</h2><p className="panel-subtitle">The insurer receives only whether your signed trip satisfies the policy.</p></div><div className="status-label">{POLICY_ID}</div></div>
+                <ProductProofStepper client={client} hasAttestation={Boolean(attestation)} flowState={flowState} result={result} />
                 <div className="proof-orbit"><ShieldCheck className="proof-orbit-icon" size={32} strokeWidth={1.3} /><span className="proof-orbit-label">PRIVATE WITNESS</span></div>
                 <ProofPipeline />
                 <div className="proof-list">
-                  <div className="proof-row"><span className="proof-row-label">Authorized attestation</span><span className="proof-row-value">ready</span></div>
-                  <div className="proof-row"><span className="proof-row-label">Safety policy</span><span className="proof-row-value">{POLICY_ID}</span></div>
+                  <div className="proof-row"><span className="proof-row-label" title="A cryptographic signature from an authorized telemetry source.">Authorized attestation</span><span className="proof-row-value">ready</span></div>
+                  <div className="proof-row"><span className="proof-row-label" title="The conditions the insurer requires the trip to satisfy.">Safety policy</span><span className="proof-row-value">{POLICY_ID}</span></div>
                   <div className="proof-row"><span className="proof-row-label">Replay protection</span><span className="proof-row-value">active</span></div>
                 </div>
                 <div style={{ marginTop: "auto", paddingTop: 23 }}>
                   <button className="primary-button" disabled={isVerifying} onClick={() => void generateProof()} type="button">
-                    {isVerifying ? "GENERATING PROOF" : result?.status === "verified" ? "RESUBMIT SAME ATTESTATION" : "GENERATE DRIVEPROOF"}
+                    {isVerifying ? "GENERATING PROOF" : result?.status === "verified" ? "RESUBMIT SAME ATTESTATION" : "CREATE PRIVATE PROOF"}
                     {isVerifying ? <Zap size={14} /> : <ChevronRight size={15} />}
                   </button>
                   <p className="proof-footnote"><Code2 size={11} style={{ verticalAlign: "-2px", marginRight: 4 }} /> {client.displayName} {isMock ? "· no chain transaction" : "· Lace approval required"}</p>
@@ -403,11 +662,14 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
             </section>
           </section>
 
+          <OnboardingChecklist insurerUrl={insurerUrl} state={onboardingState} onStateChange={updateOnboardingState} />
+
           {fixture === "tampered" && <TamperedNotice />}
           {flowState === "error" && errorMessage && <ClientErrorBanner message={errorMessage} />}
           {isVerifying && <VerificationFlow mode={client.mode} stage={stage} />}
           {result && !isVerifying && <><ResultBanner mode={client.mode} result={result} /><VerificationFlow mode={client.mode} stage={pendingStages.length - 1} result={result} /></>}
         </main>
+        </div>
       </div>
       <DemoControls fixture={fixture} onFixtureChange={setFixture} />
     </div>
@@ -425,6 +687,9 @@ export default function App({ client }: DriverAppProps) {
   }
   if (import.meta.env.DEV && window.location.pathname === "/wallet-debug/transaction") {
     return <PreprodTransactionDebugPage />;
+  }
+  if (window.location.pathname === "/" || window.location.pathname === "") {
+    return <LandingPage />;
   }
   return <DriverExperience client={client} />;
 }

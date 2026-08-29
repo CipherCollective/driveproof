@@ -97,7 +97,7 @@ export function WalletDebugPage({
     <div className="wallet-debug-shell">
       <main className="wallet-debug-card">
         <header className="wallet-debug-header">
-          <a className="wallet-debug-back" href="/" aria-label="Back to Driver"><ArrowLeft size={15} /> Driver</a>
+          <a className="wallet-debug-back" href="/driver" aria-label="Back to Driver"><ArrowLeft size={15} /> Driver</a>
           <div className="eyebrow">ENGINEERING INSTRUMENTATION · DEV ONLY</div>
         </header>
 

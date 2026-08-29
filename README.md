@@ -129,7 +129,7 @@ npm run dev:driver
 npm run dev:insurer
 ```
 
-Open `http://localhost:5173` for the Driver and `http://localhost:5174` for the Insurer. The product surfaces use `MockDriveProofClient` by default and label that mode clearly; mock transaction IDs are not blockchain transactions.
+Open `http://localhost:5173/` for the product landing page, `http://localhost:5173/driver` for the Driver, and `http://localhost:5174/` for the Insurer. The product surfaces use `MockDriveProofClient` by default and label that mode clearly; mock transaction IDs are not blockchain transactions.
 
 For the real harness, use [`docs/JUDGE_QUICKSTART.md`](docs/JUDGE_QUICKSTART.md). It requires Lace on Preprod, the local proof server on port `6300`, and the attestor simulator on port `4000`. Lace approval is always manual.
 

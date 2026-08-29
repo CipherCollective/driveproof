@@ -9,7 +9,7 @@ The recorded real results are in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md). A
 
 ## A. Hosted product surfaces
 
-- Driver: <https://driveproof-driver-atharv.vercel.app>
+- Landing / Driver: <https://driveproof-driver-atharv.vercel.app/> / <https://driveproof-driver-atharv.vercel.app/driver>
 - Insurer: <https://driveproof-insurer-atharv.vercel.app>
 
 The Driver demo controls switch between `safe`, `unsafe`, and `tampered`. The Insurer can also be opened directly with `?fixture=unsafe` or `?fixture=tampered`.
