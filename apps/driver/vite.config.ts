@@ -5,6 +5,11 @@ import wasm from "vite-plugin-wasm";
 export default defineConfig({
   define: { global: "globalThis" },
   plugins: [react(), wasm()],
+  resolve: {
+    alias: {
+      events: "events"
+    }
+  },
   optimizeDeps: {
     include: ["level", "browser-level", "abstract-level", "level-supports", "level-transcoder"],
     esbuildOptions: { target: "esnext" }

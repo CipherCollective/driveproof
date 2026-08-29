@@ -20,6 +20,7 @@
     "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
     "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
     "driveproof-contract": "0.1.0",
+    "events": "^3.3.0",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
