@@ -4,6 +4,7 @@ import type { CoinPublicKey, EncPublicKey } from "@midnight-ntwrk/ledger-v8";
 import { FetchZkConfigProvider } from "@midnight-ntwrk/midnight-js-fetch-zk-config-provider";
 import { httpClientProofProvider } from "@midnight-ntwrk/midnight-js-http-client-proof-provider";
 import { indexerPublicDataProvider } from "@midnight-ntwrk/midnight-js-indexer-public-data-provider";
+import { setNetworkId } from "@midnight-ntwrk/midnight-js-network-id";
 import {
   levelPrivateStateProvider,
   type PrivateStoragePasswordProvider
@@ -184,6 +185,8 @@ export async function createMidnightRuntime<
   const configuration = await connectedApi.getConfiguration();
   const connectionStatus = await connectedApi.getConnectionStatus();
   validatePreprodConfiguration(expectedNetwork, connectionStatus, configuration);
+  // Configure Midnight only after Lace has confirmed the expected network.
+  setNetworkId("preprod");
 
   const proofServer = await checkProofServer({
     url: options.proofServerUrl ?? DEFAULT_PROOF_SERVER_URL,
