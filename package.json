@@ -3,9 +3,15 @@
   "private": true,
   "version": "0.1.0",
   "description": "Privacy-preserving vehicle telemetry proofs on Midnight.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "workspaces": [
     "apps/*",
-    "shared/*"
+    "shared/*",
+    "contract",
+    "attestation/attestor-simulator"
   ],
   "scripts": {
     "dev:driver": "npm --workspace @driveproof/driver run dev",
