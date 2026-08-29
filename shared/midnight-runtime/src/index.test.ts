@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   MidnightRuntimeError,
   createRuntimeConfiguration,
+  normalizeErrorMessage,
   validatePreprodConfiguration
 } from "./index";
 import { checkProofServer, parseProofServerVersion } from "./proof-server";
@@ -11,6 +12,12 @@ function response(body: string, ok = true, status = 200): Response {
 }
 
 describe("Midnight runtime configuration", () => {
+  it("normalizes string and structured non-Error failures", () => {
+    expect(normalizeErrorMessage("wallet rejected")).toBe("wallet rejected");
+    expect(normalizeErrorMessage({ message: "wallet rejected" })).toBe("wallet rejected");
+    expect(normalizeErrorMessage({ code: "WALLET_REJECTED" })).toBe('{"code":"WALLET_REJECTED"}');
+  });
+
   it("fails closed when Lace reports the wrong network", () => {
     expect(() => validatePreprodConfiguration(
       "preprod",

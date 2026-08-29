@@ -7,7 +7,12 @@ import {
   type MidnightWalletConfig,
   type WalletConnectionState
 } from "@driveproof/midnight-wallet";
-import { createMidnightRuntime } from "@driveproof/midnight-runtime";
+import {
+  createMidnightRuntime,
+  normalizeErrorMessage,
+  type MidnightRuntimeDiagnostic,
+  type MidnightRuntimeDiagnosticStage
+} from "@driveproof/midnight-runtime";
 import { CompiledContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
 import type { Contract as MidnightContract } from "@midnight-ntwrk/midnight-js-protocol/compact-js";
 import { deployContract, findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
@@ -29,9 +34,8 @@ type DriveProofCircuitId = MidnightContract.ProvableCircuitId<DriveProofContract
 type DriveProofRuntime = Awaited<ReturnType<typeof createMidnightRuntime<DriveProofCircuitId, typeof PRIVATE_STATE_ID, DriveProofPrivateState>>>;
 type PublicTransaction = Pick<FinalizedTxData, "txId" | "txHash" | "blockHash" | "blockHeight" | "status">;
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
+type DeploymentStage = "IDLE" | MidnightRuntimeDiagnosticStage;
+type DeploymentFailure = { stage: MidnightRuntimeDiagnosticStage; message: string };
 
 function createStoragePassword(): string {
   const bytes = new Uint8Array(32);
@@ -76,11 +80,39 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
   const [complianceCount, setComplianceCount] = useState<string>();
   const [operation, setOperation] = useState("idle");
   const [error, setError] = useState<string>();
+  const [deploymentStage, setDeploymentStage] = useState<DeploymentStage>("IDLE");
+  const [deploymentFailure, setDeploymentFailure] = useState<DeploymentFailure>();
   const privateStatePassword = useRef<string | undefined>(undefined);
+  const deploymentStageRef = useRef<DeploymentStage>("IDLE");
+  const deploymentInFlight = useRef(false);
 
   const walletConnected = connection.status === "connected";
   const networkReady = walletConnected && connection.network === resolvedConfig.networkId;
   const session = connection.status === "connected" ? connection.session : undefined;
+
+  function applyDeploymentDiagnostic(diagnostic: MidnightRuntimeDiagnostic) {
+    deploymentStageRef.current = diagnostic.stage;
+    setDeploymentStage(diagnostic.stage);
+    if (diagnostic.outcome === "rejected" && diagnostic.error) {
+      setDeploymentFailure({ stage: diagnostic.stage, message: diagnostic.error });
+      setError(diagnostic.error);
+    }
+  }
+
+  function publishDeployDiagnostic(diagnostic: MidnightRuntimeDiagnostic) {
+    const payload = {
+      stage: diagnostic.stage,
+      outcome: diagnostic.outcome,
+      ...(diagnostic.metadata ?? {}),
+      ...(diagnostic.error ? { error: diagnostic.error } : {})
+    };
+    if (diagnostic.outcome === "rejected") {
+      console.error(`[DriveProofDeploy] ${diagnostic.event}`, payload);
+    } else {
+      console.log(`[DriveProofDeploy] ${diagnostic.event}`, payload);
+    }
+    applyDeploymentDiagnostic(diagnostic);
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -102,8 +134,8 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
       setConnection(next);
       setDetected(next.status !== "unavailable");
     } catch (connectError) {
-      setError(errorMessage(connectError));
-      setConnection({ status: "error", message: errorMessage(connectError) });
+      setError(normalizeErrorMessage(connectError));
+      setConnection({ status: "error", message: normalizeErrorMessage(connectError) });
     } finally {
       setOperation("idle");
     }
@@ -116,7 +148,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
       const state = await requestAttestorPrivateState(ATTESTOR_URL, tripId);
       setAttestation(state);
     } catch (attestorError) {
-      setError(errorMessage(attestorError));
+      setError(normalizeErrorMessage(attestorError));
     } finally {
       setOperation("idle");
     }
@@ -140,25 +172,39 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
           zkConfigBaseUrl: `${window.location.origin}${ZK_CONFIG_BASE_PATH}`,
           privateState: {
             privateStoragePasswordProvider: () => privateStatePassword.current ?? ""
-          }
+          },
+          onDiagnostic: applyDeploymentDiagnostic
         }
       );
       setRuntime(nextRuntime);
     } catch (runtimeError) {
-      setError(errorMessage(runtimeError));
+      setError(normalizeErrorMessage(runtimeError));
     } finally {
       setOperation("idle");
     }
   }
 
   async function deploy() {
+    if (deploymentInFlight.current) return;
     if (!runtime || !attestation) {
       setError("Request the safe attestation and construct providers first.");
       return;
     }
 
+    deploymentInFlight.current = true;
+    setDeploymentFailure(undefined);
     setError(undefined);
     setOperation("deploying");
+    publishDeployDiagnostic({
+      stage: "PREPARING DEPLOYMENT",
+      event: "deploy:start",
+      outcome: "start"
+    });
+    publishDeployDiagnostic({
+      stage: "BUILDING UNBOUND TX",
+      event: "deployContract:start",
+      outcome: "start"
+    });
     try {
       const result = await deployContract(runtime.providers, {
         compiledContract,
@@ -166,11 +212,28 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
         privateStateId: PRIVATE_STATE_ID,
         initialPrivateState: attestation
       });
+      publishDeployDiagnostic({
+        stage: "DEPLOYED",
+        event: "deployContract:resolved",
+        outcome: "resolved",
+        metadata: {
+          contractAddress: result.deployTxData.public.contractAddress,
+          transactionId: result.deployTxData.public.txId,
+          status: result.deployTxData.public.status,
+          blockHeight: result.deployTxData.public.blockHeight
+        }
+      });
       setContractAddress(result.deployTxData.public.contractAddress);
       setDeployment(publicTransaction(result.deployTxData.public));
     } catch (deploymentError) {
-      setError(errorMessage(deploymentError));
+      publishDeployDiagnostic({
+        stage: deploymentStageRef.current === "IDLE" ? "BUILDING UNBOUND TX" : deploymentStageRef.current,
+        event: "deploy:error",
+        outcome: "rejected",
+        error: normalizeErrorMessage(deploymentError)
+      });
     } finally {
+      deploymentInFlight.current = false;
       setOperation("idle");
     }
   }
@@ -198,7 +261,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
       if (!currentState) throw new Error("The deployed contract state was not returned by the indexer.");
       setComplianceCount(DriveProof.ledger(currentState.data).complianceCount.toString());
     } catch (proofError) {
-      setError(errorMessage(proofError));
+      setError(normalizeErrorMessage(proofError));
     } finally {
       setOperation("idle");
     }
@@ -217,7 +280,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
       const unsafeState = await requestAttestorPrivateState(ATTESTOR_URL, "unsafe");
       await joinAndProve(unsafeState, "proving-unsafe");
     } catch (attestorError) {
-      setError(errorMessage(attestorError));
+      setError(normalizeErrorMessage(attestorError));
     }
   }
 
@@ -226,7 +289,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
       const unsafeState = await requestAttestorPrivateState(ATTESTOR_URL, "unsafe");
       await joinAndProve({ ...unsafeState, speed: 71n }, "proving-tampered");
     } catch (attestorError) {
-      setError(errorMessage(attestorError));
+      setError(normalizeErrorMessage(attestorError));
     }
   }
 
@@ -289,6 +352,20 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
           <div className="wallet-debug-panel-heading"><span className="eyebrow">3 · DEPLOY CONSTRUCTOR-BOUND CONTRACT</span><span className={deployment ? "debug-good" : "debug-neutral"}>{deployment ? "CONFIRMED" : "NOT SUBMITTED"}</span></div>
           <p>Exact constructor: <code>speedLimit=80</code>, <code>attestorId=1</code>, and the handoff public key. Lace approval is required for the real deployment transaction.</p>
           <button className="debug-primary-button" disabled={busy || !runtime || !attestation || Boolean(deployment)} onClick={() => void deploy()} type="button">{operation === "deploying" ? "DEPLOYING · APPROVE LACE" : deployment ? "CONTRACT DEPLOYED" : "DEPLOY TO PREPROD"} {operation === "deploying" && <RefreshCw className="debug-spin" size={15} />}</button>
+          <div className="wallet-debug-details" aria-live="polite">
+            <div>
+              <span>Deployment stage</span>
+              <strong className={deploymentFailure ? "debug-bad" : deploymentStage === "DEPLOYED" ? "debug-good" : ""}>
+                {deploymentFailure ? `FAILED AT: ${deploymentFailure.stage}` : deploymentStage}
+              </strong>
+            </div>
+            {deploymentFailure && (
+              <div>
+                <span>Exact error</span>
+                <strong className="debug-bad">{deploymentFailure.message}</strong>
+              </div>
+            )}
+          </div>
           {contractAddress && <div className="wallet-debug-details"><div><span>Contract address</span><strong>{contractAddress}</strong></div></div>}
           {deployment && <TransactionDetails transaction={deployment} label="Deployment transaction" />}
         </section>
@@ -313,7 +390,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
         )}
 
         {connectionMessage && <div className="wallet-debug-message" role="alert"><TriangleAlert size={16} /><span>{connectionMessage}</span></div>}
-        {error && <div className="wallet-debug-message" role="alert"><TriangleAlert size={16} /><span>{error}</span></div>}
+        {error && !deploymentFailure && <div className="wallet-debug-message" role="alert"><TriangleAlert size={16} /><span>{error}</span></div>}
         {complianceCount === "1" && <p className="wallet-debug-note"><Check size={13} /> The observed ledger state is the only success signal shown by this page.</p>}
 
         <footer className="wallet-debug-footer">Artifacts: {ZK_CONFIG_BASE_PATH} · Attestor: {ATTESTOR_URL} · This page never falls back to the product mock client.</footer>

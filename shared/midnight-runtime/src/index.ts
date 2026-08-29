@@ -55,6 +55,29 @@ export type MidnightRuntimeOptions = {
     privateStoragePasswordProvider: PrivateStoragePasswordProvider;
   };
   fetch?: typeof fetch;
+  onDiagnostic?: (diagnostic: MidnightRuntimeDiagnostic) => void;
+};
+
+export type MidnightRuntimeDiagnosticStage =
+  | "PREPARING DEPLOYMENT"
+  | "BUILDING UNBOUND TX"
+  | "PROVING"
+  | "AWAITING LACE BALANCE"
+  | "BALANCE RETURNED"
+  | "DESERIALIZING BALANCED TX"
+  | "BALANCED"
+  | "AWAITING LACE SUBMISSION"
+  | "SUBMISSION RETURNED"
+  | "TX SUBMITTED"
+  | "WAITING FOR CONTRACT"
+  | "DEPLOYED";
+
+export type MidnightRuntimeDiagnostic = {
+  stage: MidnightRuntimeDiagnosticStage;
+  event: string;
+  outcome: "start" | "resolved" | "rejected";
+  metadata?: Record<string, string | number | boolean>;
+  error?: string;
 };
 
 export type MidnightRuntime<
@@ -85,6 +108,59 @@ export class MidnightRuntimeError extends Error {
     super(message);
     this.name = "MidnightRuntimeError";
   }
+}
+
+export function normalizeErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  if (typeof error === "string") return error;
+
+  if (error !== null && typeof error === "object" && "message" in error) {
+    const message = error.message;
+    if (typeof message === "string" && message) return message;
+  }
+
+  try {
+    const serialized = JSON.stringify(error);
+    return serialized ?? String(error);
+  } catch {
+    return String(error);
+  }
+}
+
+function publishDiagnostic(
+  onDiagnostic: MidnightRuntimeOptions["onDiagnostic"],
+  diagnostic: MidnightRuntimeDiagnostic
+): void {
+  const payload = {
+    stage: diagnostic.stage,
+    outcome: diagnostic.outcome,
+    ...(diagnostic.metadata ?? {}),
+    ...(diagnostic.error ? { error: diagnostic.error } : {})
+  };
+
+  if (diagnostic.outcome === "rejected") {
+    console.error(`[DriveProofDeploy] ${diagnostic.event}`, payload);
+  } else {
+    console.log(`[DriveProofDeploy] ${diagnostic.event}`, payload);
+  }
+
+  onDiagnostic?.(diagnostic);
+}
+
+function responseMetadata(response: unknown): Record<string, string | number | boolean> {
+  const metadata: Record<string, string | number | boolean> = {
+    responseType: response === null ? "null" : typeof response,
+    responseKeys: ""
+  };
+
+  if (response !== null && typeof response === "object") {
+    metadata.responseKeys = Object.keys(response).join(",");
+    if ("tx" in response && typeof response.tx === "string") {
+      metadata.txStringLength = response.tx.length;
+    }
+  }
+
+  return metadata;
 }
 
 export function validatePreprodConfiguration(
@@ -138,7 +214,8 @@ function hexToBytes(hex: string): Uint8Array {
 
 function createWalletProviders(
   connectedApi: ConnectedAPI,
-  addresses: { shieldedCoinPublicKey: string; shieldedEncryptionPublicKey: string }
+  addresses: { shieldedCoinPublicKey: string; shieldedEncryptionPublicKey: string },
+  onDiagnostic: MidnightRuntimeOptions["onDiagnostic"]
 ): { walletProvider: WalletProvider; midnightProvider: MidnightProvider } {
   const walletProvider: WalletProvider = {
     getCoinPublicKey(): CoinPublicKey {
@@ -148,24 +225,251 @@ function createWalletProviders(
       return addresses.shieldedEncryptionPublicKey;
     },
     async balanceTx(tx: UnboundTransaction): Promise<FinalizedTransaction> {
-      const result = await connectedApi.balanceUnsealedTransaction(bytesToHex(tx.serialize()));
-      return Transaction.deserialize(
-        "signature",
-        "proof",
-        "binding",
-        hexToBytes(result.tx)
-      ) as FinalizedTransaction;
+      let stage: MidnightRuntimeDiagnosticStage = "AWAITING LACE BALANCE";
+      publishDiagnostic(onDiagnostic, {
+        stage,
+        event: "balanceTx:start",
+        outcome: "start"
+      });
+
+      try {
+        const serializedTx = bytesToHex(tx.serialize());
+        publishDiagnostic(onDiagnostic, {
+          stage,
+          event: "balanceTx:wallet-request",
+          outcome: "start",
+          metadata: { txStringLength: serializedTx.length }
+        });
+
+        let result: { tx: string };
+        try {
+          result = await connectedApi.balanceUnsealedTransaction(serializedTx);
+        } catch (error) {
+          const message = normalizeErrorMessage(error);
+          publishDiagnostic(onDiagnostic, {
+            stage,
+            event: "balanceTx:wallet-rejected",
+            outcome: "rejected",
+            metadata: { resolved: false },
+            error: message
+          });
+          throw error;
+        }
+
+        publishDiagnostic(onDiagnostic, {
+          stage: "BALANCE RETURNED",
+          event: "balanceTx:wallet-response",
+          outcome: "resolved",
+          metadata: { ...responseMetadata(result), resolved: true }
+        });
+
+        stage = "DESERIALIZING BALANCED TX";
+        publishDiagnostic(onDiagnostic, {
+          stage,
+          event: "balanceTx:deserialize:start",
+          outcome: "start",
+          metadata: { txStringLength: typeof result.tx === "string" ? result.tx.length : 0 }
+        });
+
+        let balancedTx: FinalizedTransaction;
+        try {
+          balancedTx = Transaction.deserialize(
+            "signature",
+            "proof",
+            "binding",
+            hexToBytes(result.tx)
+          ) as FinalizedTransaction;
+        } catch (error) {
+          const message = normalizeErrorMessage(error);
+          publishDiagnostic(onDiagnostic, {
+            stage,
+            event: "balanceTx:deserialize:rejected",
+            outcome: "rejected",
+            metadata: { resolved: false },
+            error: message
+          });
+          throw error;
+        }
+
+        publishDiagnostic(onDiagnostic, {
+          stage: "BALANCED",
+          event: "balanceTx:deserialize:resolved",
+          outcome: "resolved"
+        });
+        return balancedTx;
+      } catch (error) {
+        const message = normalizeErrorMessage(error);
+        publishDiagnostic(onDiagnostic, {
+          stage,
+          event: "balanceTx:error",
+          outcome: "rejected",
+          metadata: { resolved: false },
+          error: message
+        });
+        throw error;
+      }
     }
   };
 
   const midnightProvider: MidnightProvider = {
     async submitTx(tx: FinalizedTransaction): Promise<string> {
-      await connectedApi.submitTransaction(bytesToHex(tx.serialize()));
-      return tx.identifiers()[0];
+      let stage: MidnightRuntimeDiagnosticStage = "AWAITING LACE SUBMISSION";
+      publishDiagnostic(onDiagnostic, {
+        stage,
+        event: "submitTx:start",
+        outcome: "start"
+      });
+
+      try {
+        const serializedTx = bytesToHex(tx.serialize());
+        publishDiagnostic(onDiagnostic, {
+          stage,
+          event: "submitTx:wallet-request",
+          outcome: "start",
+          metadata: { txStringLength: serializedTx.length }
+        });
+
+        let walletResponse: unknown;
+        try {
+          walletResponse = await connectedApi.submitTransaction(serializedTx);
+        } catch (error) {
+          const message = normalizeErrorMessage(error);
+          publishDiagnostic(onDiagnostic, {
+            stage,
+            event: "submitTx:wallet-rejected",
+            outcome: "rejected",
+            metadata: { resolved: false },
+            error: message
+          });
+          throw error;
+        }
+
+        stage = "SUBMISSION RETURNED";
+        publishDiagnostic(onDiagnostic, {
+          stage,
+          event: "submitTx:wallet-response",
+          outcome: "resolved",
+          metadata: { ...responseMetadata(walletResponse), resolved: true }
+        });
+
+        publishDiagnostic(onDiagnostic, {
+          stage,
+          event: "submitTx:transaction-id:start",
+          outcome: "start"
+        });
+        let transactionId: string;
+        try {
+          transactionId = tx.identifiers()[0];
+        } catch (error) {
+          const message = normalizeErrorMessage(error);
+          publishDiagnostic(onDiagnostic, {
+            stage,
+            event: "submitTx:transaction-id:rejected",
+            outcome: "rejected",
+            metadata: { resolved: false },
+            error: message
+          });
+          throw error;
+        }
+        publishDiagnostic(onDiagnostic, {
+          stage: "TX SUBMITTED",
+          event: "submitTx:transaction-id:resolved",
+          outcome: "resolved",
+          metadata: { transactionId: transactionId ?? "<undefined>" }
+        });
+        return transactionId;
+      } catch (error) {
+        const message = normalizeErrorMessage(error);
+        publishDiagnostic(onDiagnostic, {
+          stage,
+          event: "submitTx:error",
+          outcome: "rejected",
+          metadata: { resolved: false },
+          error: message
+        });
+        throw error;
+      }
     }
   };
 
   return { walletProvider, midnightProvider };
+}
+
+function createDiagnosticProofProvider(
+  proofProvider: ProofProvider,
+  onDiagnostic: MidnightRuntimeOptions["onDiagnostic"]
+): ProofProvider {
+  return {
+    async proveTx(unprovenTx, proveTxConfig) {
+      publishDiagnostic(onDiagnostic, {
+        stage: "PROVING",
+        event: "proveTx:start",
+        outcome: "start"
+      });
+
+      try {
+        const result = await proofProvider.proveTx(unprovenTx, proveTxConfig);
+        publishDiagnostic(onDiagnostic, {
+          stage: "PROVING",
+          event: "proveTx:resolved",
+          outcome: "resolved"
+        });
+        return result;
+      } catch (error) {
+        const message = normalizeErrorMessage(error);
+        publishDiagnostic(onDiagnostic, {
+          stage: "PROVING",
+          event: "proveTx:rejected",
+          outcome: "rejected",
+          metadata: { resolved: false },
+          error: message
+        });
+        throw error;
+      }
+    }
+  };
+}
+
+function createDiagnosticPublicDataProvider(
+  publicDataProvider: PublicDataProvider,
+  onDiagnostic: MidnightRuntimeOptions["onDiagnostic"]
+): PublicDataProvider {
+  return {
+    ...publicDataProvider,
+    async watchForTxData(transactionId) {
+      publishDiagnostic(onDiagnostic, {
+        stage: "WAITING FOR CONTRACT",
+        event: "contract:indexer-confirmation:start",
+        outcome: "start",
+        metadata: { transactionId }
+      });
+
+      try {
+        const result = await publicDataProvider.watchForTxData(transactionId);
+        publishDiagnostic(onDiagnostic, {
+          stage: "WAITING FOR CONTRACT",
+          event: "contract:indexer-confirmation:resolved",
+          outcome: "resolved",
+          metadata: {
+            transactionId,
+            status: result.status,
+            blockHeight: result.blockHeight
+          }
+        });
+        return result;
+      } catch (error) {
+        const message = normalizeErrorMessage(error);
+        publishDiagnostic(onDiagnostic, {
+          stage: "WAITING FOR CONTRACT",
+          event: "contract:indexer-confirmation:rejected",
+          outcome: "rejected",
+          metadata: { transactionId, resolved: false },
+          error: message
+        });
+        throw error;
+      }
+    }
+  };
 }
 
 /**
@@ -211,15 +515,15 @@ export async function createMidnightRuntime<
     accountId: options.privateState.accountId ?? addresses.shieldedAddress,
     privateStoragePasswordProvider: options.privateState.privateStoragePasswordProvider
   });
-  const publicDataProvider: PublicDataProvider = indexerPublicDataProvider(
+  const publicDataProvider = createDiagnosticPublicDataProvider(indexerPublicDataProvider(
     configuration.indexerUri,
     configuration.indexerWsUri
-  );
-  const proofProvider: ProofProvider = httpClientProofProvider(
+  ), options.onDiagnostic);
+  const proofProvider = createDiagnosticProofProvider(httpClientProofProvider(
     proofServer.url,
     zkConfigProvider
-  );
-  const { walletProvider, midnightProvider } = createWalletProviders(connectedApi, addresses);
+  ), options.onDiagnostic);
+  const { walletProvider, midnightProvider } = createWalletProviders(connectedApi, addresses, options.onDiagnostic);
 
   return {
     connectedApi,
