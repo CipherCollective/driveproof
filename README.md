@@ -54,7 +54,8 @@ The frontend boundary lives in `shared/types` and `shared/driveproof-client`. Re
 - Safe, unsafe, tampered, and replay UX paths are implemented through an explicitly labeled mock.
 - Deterministic fixtures and frontend tests are included.
 - PWA metadata and a lightweight production service worker are included for the Driver app.
-- Real Midnight proof generation, wallet signing, generated artifacts, contract deployment, and Preprod verification are unfinished by design.
+- Real Lace browser detection, authorization, Preprod network validation, and the isolated provider/proof-server diagnostic path are implemented; hosted-origin acceptance is documented separately.
+- Real Midnight proof generation, generated artifacts, contract deployment, and DriveProof Preprod verification are unfinished by design.
 
 ## Local setup
 
@@ -68,6 +69,8 @@ npm run dev:insurer
 ```
 
 Open `http://localhost:5173` for the Driver PWA and `http://localhost:5174` for the Insurer verifier. The small bottom-right demo control switches fixtures without dominating the product surface. `VITE_DRIVEPROOF_CLIENT_MODE` defaults to `mock`; setting it to `midnight` intentionally fails until the real client is wired.
+
+For the wallet-only local diagnostic, start the local proof server documented in [`docs/MIDNIGHT_RUNTIME_HANDOFF.md`](docs/MIDNIGHT_RUNTIME_HANDOFF.md), then open `http://localhost:5173/wallet-debug`. Hosted deployment commands, public URLs, and the HTTPS-to-localhost proof-server result are recorded in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
 ## Team split
 

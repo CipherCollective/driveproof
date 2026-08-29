@@ -61,7 +61,7 @@ Before any provider object is constructed, the runtime builder:
 
 Wrong network, disconnected Lace, proof-server transport failure, non-2xx `/version`, missing version, and version mismatch all raise a typed `MidnightRuntimeError` or return a typed `ProofServerStatus`. A passing check is only provider-infrastructure readiness. It does not prove contract, transaction, or DriveProof readiness.
 
-The DEV-only `/wallet-debug` page runs the Lace connection and proof-server check. It does not claim `CONTRACT READY`. Full `MidnightProviders` construction is shown as gated until the two explicit inputs below exist: generated ZK assets and an app-owned private-state password callback.
+The `/wallet-debug` page runs the Lace connection and proof-server check. It is DEV-only by default; a hosted acceptance deployment may explicitly opt in with `VITE_ENABLE_WALLET_DEBUG=true`. It does not claim `CONTRACT READY`. Full `MidnightProviders` construction is shown as gated until the two explicit inputs below exist: generated ZK assets and an app-owned private-state password callback.
 
 ## Configuration and endpoints
 

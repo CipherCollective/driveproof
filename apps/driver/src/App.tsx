@@ -359,7 +359,8 @@ export function DriverExperience({ client: providedClient, stageDelayMs = 650 }:
 }
 
 export default function App() {
-  if (import.meta.env.DEV && window.location.pathname === "/wallet-debug") {
+  const walletDebugEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_WALLET_DEBUG === "true";
+  if (walletDebugEnabled && window.location.pathname === "/wallet-debug") {
     return <WalletDebugPage />;
   }
   return <DriverExperience />;

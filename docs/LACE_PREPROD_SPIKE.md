@@ -131,7 +131,7 @@ The Driver dev server exposes the isolated page at:
 http://localhost:5173/wallet-debug
 ```
 
-The page is only rendered when Vite is in development mode. The normal Driver route and the Insurer app are unchanged.
+The page is rendered in development by default. A hosted acceptance deployment may explicitly set the public, non-secret `VITE_ENABLE_WALLET_DEBUG=true` flag; the normal Driver route remains unchanged and the instrumentation is still available only at `/wallet-debug`.
 
 ## Future client handoff
 
