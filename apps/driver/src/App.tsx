@@ -22,6 +22,7 @@ import {
   VEHICLE_ID
 } from "@driveproof/fixtures";
 import type { DemoFixture, DriveProofClient, ProofResult, TripAttestation } from "@driveproof/types";
+import { WalletDebugPage } from "./WalletDebugPage";
 
 const pendingStages = [
   "Preparing private witness",
@@ -358,5 +359,8 @@ export function DriverExperience({ client: providedClient, stageDelayMs = 650 }:
 }
 
 export default function App() {
+  if (import.meta.env.DEV && window.location.pathname === "/wallet-debug") {
+    return <WalletDebugPage />;
+  }
   return <DriverExperience />;
 }

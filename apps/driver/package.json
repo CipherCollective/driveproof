@@ -11,6 +11,7 @@
   "dependencies": {
     "@driveproof/driveproof-client": "1.0.0",
     "@driveproof/fixtures": "1.0.0",
+    "@driveproof/midnight-wallet": "1.0.0",
     "@driveproof/types": "1.0.0",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
