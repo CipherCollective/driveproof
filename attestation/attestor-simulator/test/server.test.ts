@@ -63,6 +63,8 @@ describe('Attestor simulator server', () => {
     expect(body.message.tripId).toBe('safe');
     expect(body.message.speed).toBe('67');
     expect(body.message.driverBinding).toBe(driverBinding);
+    expect(body.message.attestationId).toBeDefined();
+    expect(body.message.attestationId.length).toBeGreaterThan(0);
   });
 
   it('POST /attest with tripId unsafe returns speed 112 attestation', async () => {

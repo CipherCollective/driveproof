@@ -11,6 +11,7 @@ import {
   createSignedSpeedState,
   generateAttestorKeyPair,
   generateDriverSecret,
+  DEFAULT_POLICY_ID,
 } from './utils/test-data.js';
 
 const toHexPadded = (str: string, len = 64) => Buffer.from(str, 'ascii').toString('hex').padStart(len, '0');
@@ -76,15 +77,30 @@ export class DriveProofSimulator {
     return this.circuitContext.currentPrivateState;
   }
 
-  setSignedSpeedState(speed: bigint, driverSecret: Uint8Array = this.driverSecretKey): void {
+  setSignedSpeedState(
+    speed: bigint,
+    driverSecret: Uint8Array = this.driverSecretKey,
+    attestationId?: bigint,
+  ): void {
     this.circuitContext = {
       ...this.circuitContext,
-      currentPrivateState: createSignedSpeedState(speed, this.attestorSk, driverSecret, this.attestorId),
+      currentPrivateState: createSignedSpeedState(
+        speed,
+        this.attestorSk,
+        driverSecret,
+        this.attestorId,
+        attestationId,
+      ),
     };
   }
 
-  proveCompliance(): Ledger {
-    this.circuitContext = this.contract.impureCircuits.proveCompliance(this.circuitContext).context;
+  proveCompliance(policyId: bigint = DEFAULT_POLICY_ID): Ledger {
+    this.circuitContext = this.contract.impureCircuits.proveCompliance(
+      this.circuitContext,
+      policyId,
+    ).context;
     return ledger(this.circuitContext.currentQueryContext.state);
   }
 }
+
+export { DEFAULT_POLICY_ID };

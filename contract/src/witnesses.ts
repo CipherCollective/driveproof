@@ -8,6 +8,7 @@ export type SchnorrSignature = {
 
 export type DriveProofPrivateState = {
   speed: bigint;
+  attestationId: bigint;
   attestationSignature: SchnorrSignature;
   attestorId: bigint;
   driverSecretKey: Uint8Array;
@@ -20,11 +21,11 @@ export const witnesses = {
     privateState,
   }: WitnessContext<Ledger, DriveProofPrivateState>): [
     DriveProofPrivateState,
-    [{ speed: bigint }, SchnorrSignature, bigint],
+    [{ speed: bigint; attestationId: bigint }, SchnorrSignature, bigint],
   ] => [
     privateState,
     [
-      { speed: privateState.speed },
+      { speed: privateState.speed, attestationId: privateState.attestationId },
       privateState.attestationSignature,
       privateState.attestorId,
     ],

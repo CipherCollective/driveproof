@@ -1,6 +1,6 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { JubjubPoint } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import { signTripAttestation } from './signing.js';
+import { signTripAttestation, generateAttestationId } from './signing.js';
 import { resolveDemoTripSpeed } from './trips.js';
 
 export interface AttestationRequest {
@@ -18,6 +18,7 @@ export interface AttestationResponse {
     tripId: string;
     speed: string;
     driverBinding: string;
+    attestationId: string;
   };
 }
 
@@ -104,7 +105,8 @@ export function createServer(providerSk: bigint, providerId: number, providerPk:
         }
 
         const driverBinding = BigInt(body.driverBinding);
-        const signature = signTripAttestation(providerSk, speed, driverBinding);
+        const attestationId = generateAttestationId();
+        const signature = signTripAttestation(providerSk, speed, driverBinding, attestationId);
         const response: AttestationResponse = {
           signature: {
             announcement: {
@@ -117,6 +119,7 @@ export function createServer(providerSk: bigint, providerId: number, providerPk:
             tripId: body.tripId,
             speed: speed.toString(),
             driverBinding: driverBinding.toString(),
+            attestationId: attestationId.toString(),
           },
         };
         sendJson(res, 200, response);

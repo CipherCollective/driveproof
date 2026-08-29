@@ -28,6 +28,14 @@ export function getPublicKey(sk: bigint): JubjubPoint {
   return ecMulGenerator(((sk % JUBJUB_ORDER) + JUBJUB_ORDER) % JUBJUB_ORDER);
 }
 
+const FIELD_MODULUS = 52435875175126190479447740508185965837690552500527637822603658699938581184513n;
+
+export function generateAttestationId(): bigint {
+  const bytes = crypto.randomBytes(32);
+  const val = BigInt('0x' + bytes.toString('hex'));
+  return val % FIELD_MODULUS;
+}
+
 export function sign(sk: bigint, msg: bigint[]): SchnorrSignature {
   sk = ((sk % JUBJUB_ORDER) + JUBJUB_ORDER) % JUBJUB_ORDER;
   const pk = ecMulGenerator(sk);
@@ -39,9 +47,14 @@ export function sign(sk: bigint, msg: bigint[]): SchnorrSignature {
   return { announcement: R, response: s };
 }
 
-/** Signs [speed, driverBinding]. Driver sends driverBinding = H(domain, driverSecret), never the secret. */
-export function signTripAttestation(sk: bigint, speed: number, driverBinding: bigint): SchnorrSignature {
-  return sign(sk, [BigInt(speed), driverBinding]);
+/** Signs [speed, driverBinding, attestationId]. */
+export function signTripAttestation(
+  sk: bigint,
+  speed: number,
+  driverBinding: bigint,
+  attestationId: bigint,
+): SchnorrSignature {
+  return sign(sk, [BigInt(speed), driverBinding, attestationId]);
 }
 
 export function computeDriverBinding(driverSecret: Uint8Array): bigint {

@@ -9,7 +9,8 @@ export type Schnorr_SchnorrSignature = { announcement: __compactRuntime.JubjubPo
 export type Witnesses<PS> = {
   getSchnorrReduction(context: __compactRuntime.WitnessContext<Ledger, PS>,
                       challengeHash_0: bigint): [PS, [bigint, bigint]];
-  getAttestedSpeedWitness(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, [{ speed: bigint
+  getAttestedSpeedWitness(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, [{ speed: bigint,
+                                                                                         attestationId: bigint
                                                                                        },
                                                                                        Schnorr_SchnorrSignature,
                                                                                        bigint]];
@@ -17,15 +18,18 @@ export type Witnesses<PS> = {
 }
 
 export type ImpureCircuits<PS> = {
-  proveCompliance(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
+  proveCompliance(context: __compactRuntime.CircuitContext<PS>,
+                  policyId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type ProvableCircuits<PS> = {
-  proveCompliance(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
+  proveCompliance(context: __compactRuntime.CircuitContext<PS>,
+                  policyId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type PureCircuits = {
   deriveDriverBinding(secret_0: DriverSecret): bigint;
+  deriveNullifier(attestationId_0: bigint, policyId_0: bigint): bigint;
   schnorrChallenge(ann_x_0: bigint,
                    ann_y_0: bigint,
                    pk_x_0: bigint,
@@ -36,7 +40,11 @@ export type PureCircuits = {
 export type Circuits<PS> = {
   deriveDriverBinding(context: __compactRuntime.CircuitContext<PS>,
                       secret_0: DriverSecret): __compactRuntime.CircuitResults<PS, bigint>;
-  proveCompliance(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
+  deriveNullifier(context: __compactRuntime.CircuitContext<PS>,
+                  attestationId_0: bigint,
+                  policyId_0: bigint): __compactRuntime.CircuitResults<PS, bigint>;
+  proveCompliance(context: __compactRuntime.CircuitContext<PS>,
+                  policyId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   schnorrChallenge(context: __compactRuntime.CircuitContext<PS>,
                    ann_x_0: bigint,
                    ann_y_0: bigint,
@@ -55,6 +63,12 @@ export type Ledger = {
   };
   readonly speedLimit: bigint;
   readonly complianceCount: bigint;
+  usedNullifiers: {
+    isEmpty(): boolean;
+    size(): bigint;
+    member(elem_0: bigint): boolean;
+    [Symbol.iterator](): Iterator<bigint>
+  };
 }
 
 export type ContractReferenceLocations = any;

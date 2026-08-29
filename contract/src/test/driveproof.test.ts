@@ -1,6 +1,6 @@
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { describe, it, expect } from 'vitest';
-import { DriveProofSimulator, DEFAULT_SPEED_LIMIT } from './driveproof.simulator.js';
+import { DriveProofSimulator, DEFAULT_SPEED_LIMIT, DEFAULT_POLICY_ID } from './driveproof.simulator.js';
 import { createSignedSpeedState, generateDriverSecret } from './utils/test-data.js';
 
 setNetworkId('undeployed');
@@ -29,6 +29,7 @@ describe('DriveProof Phase 1 — single signed speed value', () => {
     expect(thrown).toBeDefined();
     expect(thrown!.message).toContain('Speed exceeds policy limit');
     expect(thrown!.message).not.toContain('Invalid attestation signature');
+    expect(thrown!.message).not.toContain('Attestation already used');
     expect(simulator.getLedger().complianceCount).toEqual(0n);
   });
 
@@ -59,6 +60,7 @@ describe('DriveProof Phase 1 — single signed speed value', () => {
     expect(thrown).toBeDefined();
     expect(thrown!.message).toContain('Invalid attestation signature');
     expect(thrown!.message).not.toContain('Speed exceeds policy limit');
+    expect(thrown!.message).not.toContain('Attestation already used');
     expect(simulator.getLedger().complianceCount).toEqual(0n);
   });
 
@@ -74,8 +76,6 @@ describe('DriveProof Phase 1 — single signed speed value', () => {
 });
 
 describe('DriveProof Phase 2 — subject binding', () => {
-  // Binding proves possession-bound pseudonymous attribution, not legal identity
-  // or who physically sat behind the wheel.
   it('subject B cannot prove subject A possession-bound attestation', () => {
     const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT);
     const subjectA = simulator.driverSecretKey;
@@ -115,5 +115,49 @@ describe('DriveProof Phase 2 — subject binding', () => {
     simulator.proveCompliance();
 
     expect(simulator.getLedger().complianceCount).toEqual(1n);
+  });
+});
+
+describe('DriveProof Phase 3 — replay nullifier', () => {
+  it('first use of an attestation against a policy succeeds', () => {
+    const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT);
+    const attestationId = 42424242n;
+    simulator.setSignedSpeedState(67n, simulator.driverSecretKey, attestationId);
+
+    simulator.proveCompliance(DEFAULT_POLICY_ID);
+
+    expect(simulator.getLedger().complianceCount).toEqual(1n);
+  });
+
+  it('exact replay of the same attestation against the same policy fails at nullifier check', () => {
+    const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT);
+    const attestationId = 42424242n;
+    simulator.setSignedSpeedState(67n, simulator.driverSecretKey, attestationId);
+
+    simulator.proveCompliance(DEFAULT_POLICY_ID);
+
+    let thrown: Error | undefined;
+    try {
+      simulator.proveCompliance(DEFAULT_POLICY_ID);
+    } catch (err) {
+      thrown = err as Error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown!.message).toContain('Attestation already used for this policy');
+    expect(thrown!.message).not.toContain('Invalid attestation signature');
+    expect(thrown!.message).not.toContain('Speed exceeds policy limit');
+    expect(simulator.getLedger().complianceCount).toEqual(1n);
+  });
+
+  it('same attestation can be used against a different policyId', () => {
+    const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT);
+    const attestationId = 99999999n;
+    simulator.setSignedSpeedState(67n, simulator.driverSecretKey, attestationId);
+
+    simulator.proveCompliance(1n);
+    simulator.proveCompliance(2n);
+
+    expect(simulator.getLedger().complianceCount).toEqual(2n);
   });
 });

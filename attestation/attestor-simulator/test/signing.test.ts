@@ -17,8 +17,9 @@ describe('Attestor Schnorr signing', () => {
     const { sk, pk } = generateKeyPair();
     const driverSecret = new Uint8Array(crypto.randomBytes(32));
     const driverBinding = computeDriverBinding(driverSecret);
-    const msg = [67n, driverBinding];
-    const sig = signTripAttestation(sk, 67, driverBinding);
+    const attestationId = 12345n;
+    const msg = [67n, driverBinding, attestationId];
+    const sig = signTripAttestation(sk, 67, driverBinding, attestationId);
 
     const cFull = pureCircuits.schnorrChallenge(sig.announcement.x, sig.announcement.y, pk.x, pk.y, msg);
     const c = cFull % TWO_248;
@@ -30,12 +31,11 @@ describe('Attestor Schnorr signing', () => {
     expect(lhs.y).toEqual(rhs.y);
   });
 
-  it('produces different signatures for different driver bindings', () => {
+  it('produces different signatures for different attestationIds', () => {
     const { sk } = generateKeyPair();
-    const bindingA = computeDriverBinding(new Uint8Array(crypto.randomBytes(32)));
-    const bindingB = computeDriverBinding(new Uint8Array(crypto.randomBytes(32)));
-    const sigA = signTripAttestation(sk, 67, bindingA);
-    const sigB = signTripAttestation(sk, 67, bindingB);
+    const binding = computeDriverBinding(new Uint8Array(crypto.randomBytes(32)));
+    const sigA = signTripAttestation(sk, 67, binding, 1n);
+    const sigB = signTripAttestation(sk, 67, binding, 2n);
     expect(sigA.response).not.toEqual(sigB.response);
   });
 
@@ -43,7 +43,7 @@ describe('Attestor Schnorr signing', () => {
     const { sk } = generateKeyPair();
     const binding = computeDriverBinding(new Uint8Array(crypto.randomBytes(32)));
     for (let i = 0; i < 5; i++) {
-      const sig = sign(sk, [BigInt(67 + i), binding]);
+      const sig = sign(sk, [BigInt(67 + i), binding, BigInt(i + 1)]);
       expect(sig.response).toBeGreaterThanOrEqual(0n);
       expect(sig.response).toBeLessThan(JUBJUB_ORDER);
     }
