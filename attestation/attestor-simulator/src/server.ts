@@ -1,9 +1,10 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { JubjubPoint } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
 import { signSpeed } from './signing.js';
+import { resolveDemoTripSpeed } from './trips.js';
 
 export interface AttestationRequest {
-  speed: number;
+  tripId: string;
 }
 
 export interface AttestationResponse {
@@ -12,6 +13,7 @@ export interface AttestationResponse {
     response: string;
   };
   message: {
+    tripId: string;
     speed: string;
   };
 }
@@ -83,12 +85,18 @@ export function createServer(providerSk: bigint, providerId: number, providerPk:
     if (req.method === 'POST' && url === '/attest') {
       try {
         const body = (await readJsonBody(req)) as AttestationRequest;
-        if (body.speed == null) {
-          sendJson(res, 400, { error: 'Missing required field: speed' });
+        if (!body.tripId) {
+          sendJson(res, 400, { error: 'Missing required field: tripId' });
           return;
         }
 
-        const signature = signSpeed(providerSk, body.speed);
+        const speed = resolveDemoTripSpeed(body.tripId);
+        if (speed === undefined) {
+          sendJson(res, 400, { error: 'Unknown tripId — use "safe" or "unsafe"' });
+          return;
+        }
+
+        const signature = signSpeed(providerSk, speed);
         const response: AttestationResponse = {
           signature: {
             announcement: {
@@ -98,7 +106,8 @@ export function createServer(providerSk: bigint, providerId: number, providerPk:
             response: signature.response.toString(),
           },
           message: {
-            speed: body.speed.toString(),
+            tripId: body.tripId,
+            speed: speed.toString(),
           },
         };
         sendJson(res, 200, response);

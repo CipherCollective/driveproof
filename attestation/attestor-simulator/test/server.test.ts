@@ -47,22 +47,44 @@ describe('Attestor simulator server', () => {
     expect(body.publicKey.y).toBe(pk.y.toString());
   });
 
-  it('POST /attest returns valid speed attestation', async () => {
+  it('POST /attest with tripId safe returns speed 67 attestation', async () => {
     const res = await fetch(`${baseUrl}/attest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ speed: 67 }),
+      body: JSON.stringify({ tripId: 'safe' }),
     });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.signature).toBeDefined();
     expect(body.signature.announcement.x).toBeDefined();
-    expect(body.signature.announcement.y).toBeDefined();
-    expect(body.signature.response).toBeDefined();
+    expect(body.message.tripId).toBe('safe');
     expect(body.message.speed).toBe('67');
   });
 
-  it('POST /attest returns 400 for missing speed', async () => {
+  it('POST /attest with tripId unsafe returns speed 112 attestation', async () => {
+    const res = await fetch(`${baseUrl}/attest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tripId: 'unsafe' }),
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.message.tripId).toBe('unsafe');
+    expect(body.message.speed).toBe('112');
+  });
+
+  it('POST /attest ignores client-supplied speed', async () => {
+    const res = await fetch(`${baseUrl}/attest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tripId: 'safe', speed: 999 }),
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.message.speed).toBe('67');
+  });
+
+  it('POST /attest returns 400 for missing tripId', async () => {
     const res = await fetch(`${baseUrl}/attest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -71,5 +93,16 @@ describe('Attestor simulator server', () => {
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toContain('Missing required field');
+  });
+
+  it('POST /attest returns 400 for unknown tripId', async () => {
+    const res = await fetch(`${baseUrl}/attest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tripId: 'tampered' }),
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('Unknown tripId');
   });
 });

@@ -14,16 +14,10 @@ export type Witnesses<PS> = {
 }
 
 export type ImpureCircuits<PS> = {
-  registerAttestor(context: __compactRuntime.CircuitContext<PS>,
-                   attestorId_0: bigint,
-                   attestorPk_0: __compactRuntime.JubjubPoint): __compactRuntime.CircuitResults<PS, []>;
   proveCompliance(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type ProvableCircuits<PS> = {
-  registerAttestor(context: __compactRuntime.CircuitContext<PS>,
-                   attestorId_0: bigint,
-                   attestorPk_0: __compactRuntime.JubjubPoint): __compactRuntime.CircuitResults<PS, []>;
   proveCompliance(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
 }
 
@@ -36,9 +30,6 @@ export type PureCircuits = {
 }
 
 export type Circuits<PS> = {
-  registerAttestor(context: __compactRuntime.CircuitContext<PS>,
-                   attestorId_0: bigint,
-                   attestorPk_0: __compactRuntime.JubjubPoint): __compactRuntime.CircuitResults<PS, []>;
   proveCompliance(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
   schnorrChallenge(context: __compactRuntime.CircuitContext<PS>,
                    ann_x_0: bigint,
@@ -70,7 +61,10 @@ export declare class Contract<PS = any, W extends Witnesses<PS> = Witnesses<PS>>
   impureCircuits: ImpureCircuits<PS>;
   provableCircuits: ProvableCircuits<PS>;
   constructor(witnesses: W);
-  initialState(context: __compactRuntime.ConstructorContext<PS>, limit_0: bigint): __compactRuntime.ConstructorResult<PS>;
+  initialState(context: __compactRuntime.ConstructorContext<PS>,
+               limit_0: bigint,
+               attestorId_0: bigint,
+               attestorPk_0: __compactRuntime.JubjubPoint): __compactRuntime.ConstructorResult<PS>;
 }
 
 export declare function ledger(state: __compactRuntime.StateValue | __compactRuntime.ChargedState): Ledger;

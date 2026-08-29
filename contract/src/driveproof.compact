@@ -19,11 +19,8 @@ export ledger complianceCount: Uint<32>;
 
 witness getAttestedSpeedWitness(): [SpeedReading, Schnorr_SchnorrSignature, Uint<16>];
 
-constructor(limit: Uint<16>) {
+constructor(limit: Uint<16>, attestorId: Uint<16>, attestorPk: JubjubPoint) {
     speedLimit = disclose(limit);
-}
-
-export circuit registerAttestor(attestorId: Uint<16>, attestorPk: JubjubPoint): [] {
     attestors.insert(disclose(attestorId), disclose(attestorPk));
 }
 

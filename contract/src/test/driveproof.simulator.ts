@@ -42,6 +42,8 @@ export class DriveProofSimulator {
     const { currentPrivateState, currentContractState, currentZswapLocalState } = this.contract.initialState(
       createConstructorContext(initialPrivateState, deployer.left.hex),
       speedLimit,
+      this.attestorId,
+      this.attestorPk,
     );
     this.circuitContext = createCircuitContext(
       sampleContractAddress(),
@@ -49,8 +51,6 @@ export class DriveProofSimulator {
       currentContractState,
       currentPrivateState,
     );
-
-    this.registerAttestor(this.attestorId, this.attestorPk);
   }
 
   getLedger(): Ledger {
@@ -70,15 +70,6 @@ export class DriveProofSimulator {
 
   proveCompliance(): Ledger {
     this.circuitContext = this.contract.impureCircuits.proveCompliance(this.circuitContext).context;
-    return ledger(this.circuitContext.currentQueryContext.state);
-  }
-
-  registerAttestor(attestorId: bigint, attestorPk: JubjubPoint): Ledger {
-    this.circuitContext = this.contract.impureCircuits.registerAttestor(
-      this.circuitContext,
-      attestorId,
-      attestorPk,
-    ).context;
     return ledger(this.circuitContext.currentQueryContext.state);
   }
 }

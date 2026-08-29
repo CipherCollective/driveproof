@@ -57,7 +57,7 @@ describe('DriveProof Phase 1 — single signed speed value', () => {
     expect(simulator.getLedger().complianceCount).toEqual(0n);
   });
 
-  it('registers attestor on-chain and looks up public key', () => {
+  it('registers attestor in constructor and looks up public key', () => {
     const simulator = new DriveProofSimulator();
     const ledger = simulator.getLedger();
 
