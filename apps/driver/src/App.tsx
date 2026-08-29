@@ -5,8 +5,6 @@ import {
   ChevronRight,
   Code2,
   Fingerprint,
-  Gauge,
-  KeyRound,
   LockKeyhole,
   MapPinOff,
   RotateCcw,
@@ -42,23 +40,40 @@ function configuredClient(): DriveProofClient {
 
 function RouteVisualization({ attestation }: { attestation: TripAttestation }) {
   const points = attestation.samples.map((sample) => `${sample.gridX},${sample.gridY}`).join(" ");
+  const start = attestation.samples[0];
+  const end = attestation.samples[attestation.samples.length - 1];
   return (
-    <div className="route-stage" aria-label="Stylized private route visualization">
-      <span className="route-tag route-tag--top">PRIVATE GRID · 16 OBSERVATIONS</span>
-      <span className="route-tag route-tag--bottom">GPS COORDINATES · NOT DISCLOSED</span>
-      <svg className="route-svg" viewBox="0 0 360 120" role="img" aria-label="Deterministic route grid">
-        <polyline className="route-line-secondary" points="8,48 55,48 80,30 132,30 170,44 226,44 260,26 346,26" />
-        <polyline className="route-line-secondary" points="25,110 55,94 82,94 115,109 171,109 205,92 254,92 293,107 350,107" />
+    <div className="route-stage" aria-label="Stylized private journey visualization">
+      <span className="route-tag route-tag--top">PRIVATE GRID · 16 SAMPLES</span>
+      <span className="route-tag route-tag--bottom">NO GPS COORDINATES</span>
+      <svg className="route-svg" viewBox="0 0 360 120" role="img" aria-label="Deterministic private journey grid with start and end nodes">
+        <g className="route-roads" aria-hidden="true">
+          <path d="M0 20H360 M0 47H360 M0 104H360" />
+          <path d="M40 0V120 M88 0V120 M172 0V120 M246 0V120 M312 0V120" />
+          <path d="M8 120L110 0 M126 120L208 0 M232 120L346 28" />
+        </g>
+        <g className="route-intersections" aria-hidden="true">
+          <circle cx="40" cy="20" r="2" /><circle cx="88" cy="47" r="2" /><circle cx="172" cy="47" r="2" />
+          <circle cx="246" cy="104" r="2" /><circle cx="312" cy="20" r="2" /><circle cx="208" cy="47" r="2" />
+        </g>
         <polyline className="route-line" points={points} />
         {attestation.samples.map((sample, index) => (
           <circle
-            className={index === attestation.samples.length - 1 ? "route-node route-node--last" : "route-node"}
+            className={index === 0 ? "route-node route-node--start" : index === attestation.samples.length - 1 ? "route-node route-node--end" : "route-node"}
             cx={sample.gridX}
             cy={sample.gridY}
             key={`${sample.gridX}-${sample.gridY}`}
             r={index === 0 || index === attestation.samples.length - 1 ? 4 : 2.2}
           />
         ))}
+        <g className="route-endpoint" transform={`translate(${start.gridX} ${start.gridY})`}>
+          <circle className="route-endpoint-ring" r="8" />
+          <text x="-4" y="-10">START</text>
+        </g>
+        <g className="route-endpoint route-endpoint--end" transform={`translate(${end.gridX} ${end.gridY})`}>
+          <circle className="route-endpoint-ring" r="8" />
+          <text x="-6" y="-10">END</text>
+        </g>
       </svg>
     </div>
   );
@@ -72,6 +87,41 @@ function Metric({ label, value, unit }: { label: string; value: string | number;
         {value} {unit && <span>{unit}</span>}
       </dd>
     </div>
+  );
+}
+
+type PublicProofMetadataField = {
+  label: string;
+  value: string;
+  note: string;
+};
+
+const pendingPublicProofMetadata: PublicProofMetadataField[] = [
+  { label: "Policy identifier", value: "—", note: "awaiting Midnight field" },
+  { label: "Attestor identifier", value: "—", note: "awaiting Midnight field" },
+  { label: "Nullifier", value: "—", note: "awaiting Midnight field" },
+  { label: "Proof reference", value: "—", note: "awaiting Midnight field" }
+];
+
+function PublicProofMetadata({ fields = pendingPublicProofMetadata }: { fields?: PublicProofMetadataField[] }) {
+  return (
+    <section className="panel public-metadata-panel">
+      <div className="panel-padding">
+        <div className="public-metadata-heading">
+          <div><div className="eyebrow">PUBLIC PROOF METADATA</div><p>Reserved for the exact public fields returned by Midnight.</p></div>
+          <span className="metadata-pending">NOT WIRED</span>
+        </div>
+        <div className="public-metadata-grid">
+          {fields.map((field) => (
+            <div className="public-metadata-item" key={field.label}>
+              <span>{field.label}</span>
+              <strong>{field.value}</strong>
+              <small>{field.note}</small>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -105,9 +155,22 @@ function PrivacyPanel({ attestation }: { attestation: TripAttestation }) {
             <div className="privacy-item"><span>Speed samples</span><span>0</span></div>
             <div className="privacy-item"><span>Braking samples</span><span>0</span></div>
           </div>
-          <div className="lock-line"><ShieldCheck size={12} /> only the proof crosses the boundary</div>
+          <div className="lock-line"><ShieldCheck size={12} /> raw values stay private</div>
         </div>
       </section>
+      <PublicProofMetadata />
+    </div>
+  );
+}
+
+function ProofPipeline() {
+  return (
+    <div className="proof-pipeline" aria-label="Private telemetry becomes a zero knowledge proof and policy result">
+      <div className="pipeline-node"><LockKeyhole size={13} /><span>PRIVATE TELEMETRY</span></div>
+      <ChevronRight className="pipeline-arrow" size={15} />
+      <div className="pipeline-node"><ShieldCheck size={13} /><span>ZK PROOF</span></div>
+      <ChevronRight className="pipeline-arrow" size={15} />
+      <div className="pipeline-node"><Check size={13} /><span>POLICY RESULT</span></div>
     </div>
   );
 }
@@ -267,6 +330,7 @@ export function DriverExperience({ client: providedClient, stageDelayMs = 650 }:
               <div className="panel-padding">
                 <div className="panel-heading"><div><h2 className="panel-title">DriveProof</h2><p className="panel-subtitle">A privacy-preserving compliance proof.</p></div><div className="status-label">{POLICY_ID}</div></div>
                 <div className="proof-orbit"><ShieldCheck className="proof-orbit-icon" size={32} strokeWidth={1.3} /><span className="proof-orbit-label">PRIVATE WITNESS</span></div>
+                <ProofPipeline />
                 <div className="proof-list">
                   <div className="proof-row"><span className="proof-row-label">Authorized attestation</span><span className="proof-row-value">ready</span></div>
                   <div className="proof-row"><span className="proof-row-label">Safety policy</span><span className="proof-row-value">{POLICY_ID}</span></div>
@@ -277,7 +341,7 @@ export function DriverExperience({ client: providedClient, stageDelayMs = 650 }:
                     {isVerifying ? "GENERATING PROOF" : result?.status === "verified" ? "RESUBMIT SAME ATTESTATION" : "GENERATE DRIVEPROOF"}
                     {isVerifying ? <Zap size={14} /> : <ChevronRight size={15} />}
                   </button>
-                  <p className="proof-footnote"><Code2 size={11} style={{ verticalAlign: "-2px", marginRight: 4 }} /> {client.displayName}. UX stages are simulated for local development.</p>
+                  <p className="proof-footnote"><Code2 size={11} style={{ verticalAlign: "-2px", marginRight: 4 }} /> {client.displayName} · no chain transaction</p>
                 </div>
               </div>
             </section>

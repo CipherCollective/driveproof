@@ -12,6 +12,10 @@ describe("DriverExperience", () => {
     expect(screen.getByText("67")).toBeInTheDocument();
     expect(screen.getByText("16", { selector: "dd" })).toBeInTheDocument();
     expect(screen.getByText("RAW TELEMETRY DISCLOSED")).toBeInTheDocument();
+    expect(screen.getByText("issuer-signed")).toBeInTheDocument();
+    expect(screen.getByText("PUBLIC PROOF METADATA")).toBeInTheDocument();
+    expect(screen.getByText("NOT WIRED")).toBeInTheDocument();
+    expect(screen.queryByText("only the proof crosses the boundary")).not.toBeInTheDocument();
   });
 
   it("renders the unsafe fixture and rejects the mock flow", async () => {

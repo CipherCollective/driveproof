@@ -384,3 +384,96 @@ a { color: inherit; text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
+
+/* Mission 01 visual polish: denser proof hierarchy, clearer telemetry geometry, and a stronger mobile composition. */
+.eyebrow { font-size: 11px; }
+.environment-chip { font-size: 11px; }
+.hero-copy { font-size: 16px; }
+.panel-subtitle { font-size: 13px; }
+.status-label { font-size: 11px; }
+.metric dt { font-size: 12px; }
+.metric dd { font-size: 22px; }
+.metric dd span { font-size: 12px; }
+.privacy-item span:first-child { font-size: 12px; }
+.privacy-item span:last-child { font-size: 11px; }
+.lock-line { font-size: 10px; }
+.proof-footnote { font-size: 11px; }
+.state-banner h3 { font-size: 13px; }
+.state-banner p { font-size: 12px; }
+.verification-stage { font-size: 12px; }
+.mock-callout p { font-size: 11px; }
+
+.route-roads path { fill: none; opacity: 0.32; stroke: rgba(210, 232, 220, 0.32); stroke-dasharray: 2 7; stroke-linecap: round; stroke-width: 0.8; }
+.route-roads path:nth-child(3) { opacity: 0.2; stroke: rgba(200, 243, 109, 0.48); stroke-dasharray: 1 5; }
+.route-intersections circle { fill: rgba(212, 233, 220, 0.45); }
+.route-node--start { fill: var(--accent); stroke: var(--accent); }
+.route-node--end { fill: #0b0f0e; stroke: var(--accent); stroke-width: 2; }
+.route-endpoint-ring { fill: none; stroke: rgba(200, 243, 109, 0.6); stroke-dasharray: 2 3; stroke-width: 0.8; }
+.route-endpoint text { fill: var(--accent); font-family: var(--mono); font-size: 6px; letter-spacing: 0.1em; }
+.route-endpoint--end text { fill: var(--muted-strong); }
+
+.proof-panel { min-height: 0; }
+.proof-panel > .panel-padding { flex: initial; }
+.proof-panel > .panel-padding > div:last-child { margin-top: 0 !important; padding-top: 18px !important; }
+.proof-orbit { height: 104px; margin: 7px auto 23px; width: 104px; }
+.proof-orbit-label { bottom: -28px; font-size: 10px; }
+.proof-list { margin-top: 0; }
+.proof-row { padding: 12px 0; }
+
+.proof-pipeline { align-items: center; border-bottom: 1px solid var(--line); border-top: 1px solid var(--line); display: flex; gap: 5px; justify-content: space-between; margin-bottom: 15px; padding: 11px 0; }
+.pipeline-node { align-items: center; color: var(--muted-strong); display: flex; flex: 1; font-family: var(--mono); font-size: 10px; gap: 6px; justify-content: center; letter-spacing: 0.04em; text-align: center; white-space: nowrap; }
+.pipeline-node svg { color: var(--accent); flex: 0 0 auto; }
+.pipeline-arrow { color: var(--muted); flex: 0 0 auto; }
+
+.public-metadata-panel { grid-column: 1 / -1; margin-top: 0; }
+.public-metadata-heading { align-items: start; display: flex; gap: 16px; justify-content: space-between; }
+.public-metadata-heading p { color: var(--muted); font-size: 12px; line-height: 1.45; margin: 6px 0 0; }
+.metadata-pending { border: 1px solid var(--line-strong); border-radius: 999px; color: var(--muted); font-family: var(--mono); font-size: 10px; letter-spacing: 0.06em; padding: 6px 8px; white-space: nowrap; }
+.public-metadata-grid { display: grid; gap: 10px; grid-template-columns: repeat(4, 1fr); margin-top: 17px; }
+.public-metadata-item { background: rgba(14, 20, 19, 0.62); border: 1px solid var(--line); border-radius: 9px; display: grid; gap: 5px; min-height: 74px; padding: 11px 12px; }
+.public-metadata-item > span { color: var(--muted); font-size: 11px; }
+.public-metadata-item strong { color: var(--muted-strong); font-family: var(--mono); font-size: 12px; font-weight: 400; }
+.public-metadata-item small { color: var(--muted); font-size: 10px; }
+
+.state-banner { animation: state-in 300ms ease-out both; }
+.state-banner--verified { animation: verified-in 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both; box-shadow: 0 12px 34px rgba(200, 243, 109, 0.08); }
+.state-banner--rejected { animation: rejected-in 220ms ease-out both; }
+
+@keyframes state-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes verified-in { from { opacity: 0; transform: translateY(7px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes rejected-in { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
+
+@media (max-width: 640px) {
+  .shell-content { padding-left: 18px; padding-right: 18px; }
+  .topbar { padding-bottom: 24px; }
+  .environment-chip { font-size: 10px; }
+  .hero { gap: 16px; margin-bottom: 19px; }
+  .hero h1 { font-size: 42px; }
+  .hero-copy { font-size: 14px; line-height: 1.5; }
+  .vehicle-card { padding: 12px 14px; }
+  .driver-shell .dashboard-grid { display: flex; flex-direction: column; }
+  .driver-shell .proof-panel { order: -1; }
+  .driver-shell .proof-panel > .panel-padding { padding: 18px; }
+  .driver-shell .proof-orbit { height: 92px; margin-bottom: 21px; width: 92px; }
+  .driver-shell .proof-orbit-label { bottom: -26px; }
+  .route-stage, .route-svg { min-height: 198px; }
+  .route-tag { font-size: 10px; }
+  .route-tag--top { left: 16px; top: 16px; }
+  .route-tag--bottom { bottom: 14px; right: 16px; }
+  .route-metric-grid { padding-bottom: 16px; padding-top: 16px; }
+  .public-metadata-grid { grid-template-columns: repeat(2, 1fr); }
+  .public-metadata-panel .panel-padding { padding: 18px; }
+  .public-metadata-heading p { font-size: 11px; }
+  .metadata-pending { font-size: 9px; }
+  .public-metadata-item > span { font-size: 10px; }
+  .public-metadata-item small { font-size: 9px; }
+  .pipeline-node { font-size: 8px; gap: 4px; letter-spacing: 0.02em; }
+  .pipeline-node svg { height: 12px; width: 12px; }
+  .pipeline-arrow { height: 13px; width: 13px; }
+  .verification-stage { font-size: 11px; }
+  .state-banner { padding: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
