@@ -493,6 +493,14 @@ a { color: inherit; text-decoration: none; }
 .state-banner--verified { animation: verified-in 480ms cubic-bezier(0.2, 0.8, 0.2, 1) both; box-shadow: 0 12px 34px rgba(200, 243, 109, 0.08); }
 .state-banner--rejected { animation: rejected-in 220ms ease-out both; }
 
+.proof-rejection { align-items: flex-start; animation: rejected-in 220ms ease-out both; background: var(--danger-soft); border: 1px solid rgba(255, 158, 140, 0.25); border-radius: 10px; display: flex; gap: 11px; margin-top: 14px; padding: 14px; }
+.proof-rejection-icon { align-items: center; color: var(--danger); display: flex; flex: 0 0 auto; justify-content: center; padding-top: 1px; }
+.proof-rejection .eyebrow { color: var(--danger); }
+.proof-rejection h3 { color: var(--text); font-size: 15px; letter-spacing: -0.03em; margin: 6px 0 0; }
+.proof-rejection p { color: var(--muted-strong); font-size: 12px; line-height: 1.5; margin: 6px 0 0; }
+.proof-rejection .proof-rejection-note { color: var(--text); font-weight: 600; margin-top: 8px; }
+.proof-rejection-detail { color: var(--danger); font-family: var(--mono); font-size: 10px; line-height: 1.45; margin-top: 10px; overflow-wrap: anywhere; }
+
 @keyframes state-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes verified-in { from { opacity: 0; transform: translateY(7px) scale(0.99); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes rejected-in { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }

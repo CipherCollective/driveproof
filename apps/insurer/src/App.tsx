@@ -69,7 +69,7 @@ function PrivateBoundary() {
         <div className="eyebrow">INFORMATION BOUNDARY</div>
         <h2 className="panel-title" style={{ fontSize: "22px", letterSpacing: "-0.05em", marginTop: 9 }}>Driver knows everything.<br />Insurer learns only the proof.</h2>
         <div className="boundary-stack">
-          <div className="boundary-item"><ShieldCheck size={17} /><div><h3>DRIVER KNOWS EVERYTHING</h3><p>Private telemetry stays with the person who generated the witness.</p></div></div>
+          <div className="boundary-item"><ShieldCheck size={17} /><div><h3>DRIVER KNOWS EVERYTHING</h3><p>Raw driving telemetry is not revealed to the insurer or public ledger.</p></div></div>
           <div className="boundary-arrow"><ArrowDown size={15} /></div>
           <div className="boundary-item"><EyeOff size={17} /><div><h3>INSURER LEARNS ONLY THE PROOF</h3><p>A policy result, attestation status, and replay-safe reference.</p></div></div>
         </div>
@@ -99,6 +99,7 @@ function PrivateDataStrip() {
 
 export function InsurerExperience({ client: providedClient, initialFixtureOverride }: { client?: DriveProofClient; initialFixtureOverride?: DemoFixture }) {
   const client = useMemo(() => providedClient ?? configuredClient(), [providedClient]);
+  const isMock = client.mode === "mock";
   const [fixture, setFixture] = useState<DemoFixture>(initialFixtureOverride ?? initialFixture);
   const [attestation, setAttestation] = useState<TripAttestation>();
   const [result, setResult] = useState<ProofResult>();
@@ -169,8 +170,10 @@ export function InsurerExperience({ client: providedClient, initialFixtureOverri
                   </div>
                 </div>
                 <ProofChecks verified={verified} />
-                {verified && <div className="result-transaction"><div className="eyebrow">TRANSACTION REFERENCE · MOCK ONLY</div><div className="transaction-value">{result.transactionId}</div></div>}
-                <div className="mock-callout"><Code2Icon /><p><strong>{client.displayName}.</strong> This verifier view is a product-development simulation. It did not contact Midnight.</p></div>
+                {verified && <div className="result-transaction"><div className="eyebrow">{isMock ? "TRANSACTION REFERENCE · MOCK ONLY" : "TRANSACTION REFERENCE · MIDNIGHT PREPROD"}</div><div className="transaction-value">{result.transactionId}</div></div>}
+                <div className="mock-callout"><Code2Icon /><p>{isMock
+                  ? <><strong>{client.displayName}.</strong> This verifier view is a product-development simulation. It did not contact Midnight.</>
+                  : <><strong>{client.displayName}.</strong> The verifier receives the compliance result without raw driving telemetry.</>}</p></div>
                 <button className="secondary-button" disabled={isResubmitting} onClick={() => void resubmit()} style={{ marginTop: 13, width: "100%" }} type="button">
                   {isResubmitting ? "RESUBMITTING" : "RESUBMIT SAME ATTESTATION"} <RotateCcw size={13} />
                 </button>

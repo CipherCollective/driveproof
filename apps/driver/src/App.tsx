@@ -92,7 +92,7 @@ function Metric({ label, value, unit }: { label: string; value: string | number;
   );
 }
 
-type PublicProofMetadataField = {
+export type PublicProofMetadataField = {
   label: string;
   value: string;
   note: string;
@@ -102,10 +102,10 @@ const pendingPublicProofMetadata: PublicProofMetadataField[] = [
   { label: "Policy identifier", value: "—", note: "awaiting Midnight field" },
   { label: "Attestor identifier", value: "—", note: "awaiting Midnight field" },
   { label: "Nullifier", value: "—", note: "awaiting Midnight field" },
-  { label: "Proof reference", value: "—", note: "awaiting Midnight field" }
+  { label: "Transaction / proof reference", value: "—", note: "awaiting Midnight field" }
 ];
 
-function PublicProofMetadata({ fields = pendingPublicProofMetadata }: { fields?: PublicProofMetadataField[] }) {
+export function PublicProofMetadata({ fields = pendingPublicProofMetadata }: { fields?: PublicProofMetadataField[] }) {
   return (
     <section className="panel public-metadata-panel">
       <div className="panel-padding">
@@ -143,7 +143,7 @@ function PrivacyPanel({ attestation }: { attestation: TripAttestation }) {
             <div className="privacy-item"><span>Braking history</span><span>private</span></div>
             <div className="privacy-item"><span>Attestation</span><span>issuer-signed</span></div>
           </div>
-          <div className="lock-line"><Fingerprint size={12} /> witness stays in the driver flow</div>
+          <div className="lock-line"><Fingerprint size={12} /> the authorized attestor signs the private measurement</div>
         </div>
       </section>
       <section className="panel privacy-panel privacy-panel--public">
@@ -157,7 +157,7 @@ function PrivacyPanel({ attestation }: { attestation: TripAttestation }) {
             <div className="privacy-item"><span>Speed samples</span><span>0</span></div>
             <div className="privacy-item"><span>Braking samples</span><span>0</span></div>
           </div>
-          <div className="lock-line"><ShieldCheck size={12} /> raw values stay private</div>
+          <div className="lock-line"><ShieldCheck size={12} /> raw driving telemetry is not revealed to the insurer or public ledger</div>
         </div>
       </section>
       <PublicProofMetadata />
@@ -177,15 +177,22 @@ function ProofPipeline() {
   );
 }
 
-function VerificationFlow({ stage, result }: { stage: number; result?: ProofResult }) {
+function VerificationFlow({ stage, result, mode }: { stage: number; result?: ProofResult; mode: DriveProofClient["mode"] }) {
   const verified = result?.status === "verified";
+  const isMock = mode === "mock";
   const displayStages = verified ? [...pendingStages, "Verification confirmed"] : pendingStages;
   const progress = result ? 100 : Math.round(((stage + 1) / pendingStages.length) * 100);
   return (
     <section className="verification-panel" aria-live="polite">
-      <div className="eyebrow">{result ? "MOCK RESULT" : "MOCK UX SIMULATION"}</div>
+      <div className="eyebrow">{isMock ? (result ? "MOCK RESULT" : "MOCK UX SIMULATION") : result ? "MIDNIGHT PREPROD RESULT" : "MIDNIGHT PREPROD FLOW"}</div>
       <h2>{result ? (result.status === "verified" ? "Verification confirmed" : result.reason === "replay" ? "Replay rejected" : "Proof generation rejected") : "Building your DriveProof"}</h2>
-      <p>{result ? "This product shell is ready for the generated Midnight client. No real proof or chain transaction was created in this run." : "A calm, staged view of the private proving flow. The current client is development-only."}</p>
+      <p>{result
+        ? isMock
+          ? "This product shell is ready for the generated Midnight client. No real proof or chain transaction was created in this run."
+          : "The private witness was evaluated through the configured Midnight Preprod client."
+        : isMock
+          ? "A calm, staged view of the private proving flow. The current client is development-only."
+          : "A staged view of the private proving flow, from attestation to Midnight verification."}</p>
       <div className="verification-stages">
         {displayStages.map((label, index) => {
           const isConfirmation = label === "Verification confirmed";
@@ -204,15 +211,22 @@ function VerificationFlow({ stage, result }: { stage: number; result?: ProofResu
   );
 }
 
-function ResultBanner({ result }: { result: ProofResult }) {
+function ResultBanner({ result, mode }: { result: ProofResult; mode: DriveProofClient["mode"] }) {
   const verified = result.status === "verified";
   const replay = result.status === "rejected" && result.reason === "replay";
+  const isMock = mode === "mock";
   return (
     <section className={`state-banner ${verified ? "state-banner--verified" : "state-banner--rejected"}`}>
       {verified ? <Check size={16} /> : replay ? <RotateCcw size={16} /> : <X size={16} />}
       <div>
-        <h3>{verified ? "DRIVEPROOF VERIFIED IN MOCK MODE" : replay ? "REPLAY REJECTED" : "PROOF GENERATION REJECTED"}</h3>
-        <p>{verified ? "The safe fixture satisfied the demo policy. The insurer view receives only this proof-shaped result." : replay ? `This attestation has already been used against ${POLICY_ID}.` : `This private witness cannot produce a valid proof for policy ${POLICY_ID}. Underlying telemetry remains private.`}</p>
+        <h3>{verified ? isMock ? "DRIVEPROOF VERIFIED IN MOCK MODE" : "DRIVEPROOF VERIFIED ON MIDNIGHT PREPROD" : replay ? "REPLAY REJECTED" : "PROOF GENERATION REJECTED"}</h3>
+        <p>{verified
+          ? isMock
+            ? "The safe fixture satisfied the demo policy. The insurer view receives only this proof-shaped result."
+            : "The submitted private witness satisfied the authorized safety policy on Midnight Preprod. Only the compliance result was recorded; raw driving telemetry was not revealed."
+          : replay
+            ? `This attestation has already been used against ${POLICY_ID}.`
+            : `This private witness cannot produce a valid proof for policy ${POLICY_ID}. Underlying telemetry remains private.`}</p>
         {verified && <div className="state-mono">{result.transactionId}</div>}
       </div>
     </section>
@@ -249,6 +263,7 @@ function DemoControls({ fixture, onFixtureChange }: { fixture: DemoFixture; onFi
 
 export function DriverExperience({ client: providedClient, stageDelayMs = 650 }: { client?: DriveProofClient; stageDelayMs?: number }) {
   const client = useMemo(() => providedClient ?? configuredClient(), [providedClient]);
+  const isMock = client.mode === "mock";
   const [fixture, setFixture] = useState<DemoFixture>("safe");
   const [attestation, setAttestation] = useState<TripAttestation>();
   const [result, setResult] = useState<ProofResult>();
@@ -343,15 +358,15 @@ export function DriverExperience({ client: providedClient, stageDelayMs = 650 }:
                     {isVerifying ? "GENERATING PROOF" : result?.status === "verified" ? "RESUBMIT SAME ATTESTATION" : "GENERATE DRIVEPROOF"}
                     {isVerifying ? <Zap size={14} /> : <ChevronRight size={15} />}
                   </button>
-                  <p className="proof-footnote"><Code2 size={11} style={{ verticalAlign: "-2px", marginRight: 4 }} /> {client.displayName} · no chain transaction</p>
+                  <p className="proof-footnote"><Code2 size={11} style={{ verticalAlign: "-2px", marginRight: 4 }} /> {client.displayName} {isMock ? "· no chain transaction" : "· Lace approval required"}</p>
                 </div>
               </div>
             </section>
           </section>
 
           {fixture === "tampered" && <TamperedNotice />}
-          {isVerifying && <VerificationFlow stage={stage} />}
-          {result && !isVerifying && <><ResultBanner result={result} /><VerificationFlow stage={pendingStages.length - 1} result={result} /></>}
+          {isVerifying && <VerificationFlow mode={client.mode} stage={stage} />}
+          {result && !isVerifying && <><ResultBanner mode={client.mode} result={result} /><VerificationFlow mode={client.mode} stage={pendingStages.length - 1} result={result} /></>}
         </main>
       </div>
       <DemoControls fixture={fixture} onFixtureChange={setFixture} />

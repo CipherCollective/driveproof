@@ -22,6 +22,8 @@ import type { Contract as MidnightContract } from "@midnight-ntwrk/midnight-js-p
 import { deployContract, findDeployedContract } from "@midnight-ntwrk/midnight-js-contracts";
 import type { FinalizedTxData } from "@midnight-ntwrk/midnight-js-types";
 import { DriveProof, witnesses, type DriveProofPrivateState } from "driveproof-contract";
+import { classifyExpectedProofRejection, type ExpectedProofRejection } from "./proofErrorPresentation";
+import { deploymentStageLabel } from "./preprodPresentation";
 
 const ATTESTOR_URL = import.meta.env.VITE_MIDNIGHT_ATTESTOR_URL?.trim() || "http://localhost:4000";
 const PRIVATE_STATE_ID = "driveproofPrivateState";
@@ -96,6 +98,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
   const [error, setError] = useState<string>();
   const [deploymentStage, setDeploymentStage] = useState<DeploymentStage>("IDLE");
   const [deploymentFailure, setDeploymentFailure] = useState<DeploymentFailure>();
+  const [expectedProofRejection, setExpectedProofRejection] = useState<ExpectedProofRejection>();
   const [walletDiagnostics, setWalletDiagnostics] = useState<MidnightWalletDiagnostics>();
   const [walletDiagnosticsError, setWalletDiagnosticsError] = useState<string>();
   const [walletDiagnosticsBusy, setWalletDiagnosticsBusy] = useState(false);
@@ -172,6 +175,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
 
   async function connect() {
     setError(undefined);
+    setExpectedProofRejection(undefined);
     setWalletDiagnostics(undefined);
     setWalletDiagnosticsError(undefined);
     setOperation("connecting");
@@ -189,6 +193,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
 
   async function requestAttestation(tripId: AttestorTripId) {
     setError(undefined);
+    setExpectedProofRejection(undefined);
     setOperation(`attesting-${tripId}`);
     try {
       const state = await requestAttestorPrivateState(ATTESTOR_URL, tripId);
@@ -207,6 +212,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     }
 
     setError(undefined);
+    setExpectedProofRejection(undefined);
     setOperation("building-runtime");
     try {
       if (!privateStatePassword.current) privateStatePassword.current = createStoragePassword();
@@ -239,6 +245,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
 
     deploymentInFlight.current = true;
     setDeploymentFailure(undefined);
+    setExpectedProofRejection(undefined);
     setError(undefined);
     setOperation("deploying");
     publishDeployDiagnostic({
@@ -293,6 +300,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     }
 
     setError(undefined);
+    setExpectedProofRejection(undefined);
     setOperation(operationName);
     try {
       const joined = await findDeployedContract(runtime.providers, {
@@ -309,13 +317,20 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
       if (!currentState) throw new Error("The deployed contract state was not returned by the indexer.");
       setComplianceCount(DriveProof.ledger(currentState.data).complianceCount.toString());
     } catch (proofError) {
-      setError(normalizeErrorMessage(proofError));
+      const expectedRejection = classifyExpectedProofRejection(proofError);
+      if (expectedRejection) {
+        setExpectedProofRejection(expectedRejection);
+        setError(undefined);
+      } else {
+        setError(normalizeErrorMessage(proofError));
+      }
     } finally {
       setOperation("idle");
     }
   }
 
   async function proveSafe() {
+    setExpectedProofRejection(undefined);
     if (!attestation) {
       setError("Request the safe attestation first.");
       return;
@@ -324,6 +339,8 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
   }
 
   async function proveUnsafe() {
+    setExpectedProofRejection(undefined);
+    setError(undefined);
     try {
       const unsafeState = await requestAttestorPrivateState(ATTESTOR_URL, "unsafe");
       await joinAndProve(unsafeState, "proving-unsafe");
@@ -333,6 +350,8 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
   }
 
   async function proveTampered() {
+    setExpectedProofRejection(undefined);
+    setError(undefined);
     try {
       const unsafeState = await requestAttestorPrivateState(ATTESTOR_URL, "unsafe");
       await joinAndProve({ ...unsafeState, speed: 71n }, "proving-tampered");
@@ -372,7 +391,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
           <div className="wallet-debug-status"><span>Wallet</span><strong className={statusClass(walletConnected)}>{walletConnected ? "CONNECTED" : "DISCONNECTED"}</strong></div>
           <div className="wallet-debug-status"><span>Network</span><strong className={statusClass(networkReady)}>{networkReady ? "PREPROD" : connection.status === "wrong-network" ? "WRONG NETWORK" : "PREPROD TARGET"}</strong></div>
           <div className="wallet-debug-status"><span>Proof server</span><strong>LOCAL · 8.1.0</strong></div>
-          <div className="wallet-debug-status"><span>Contract</span><strong className={statusClass(Boolean(contractAddress))}>{contractAddress ? "DEPLOYED" : "NOT DEPLOYED"}</strong></div>
+          <div className="wallet-debug-status"><span>Contract</span><strong className={statusClass(Boolean(deployment))}>{deployment ? "CONFIRMED ON PREPROD" : "NOT DEPLOYED"}</strong></div>
         </section>
 
         <section className="wallet-debug-panel">
@@ -475,14 +494,14 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
         </section>
 
         <section className="wallet-debug-panel">
-          <div className="wallet-debug-panel-heading"><span className="eyebrow">3 · DEPLOY CONSTRUCTOR-BOUND CONTRACT</span><span className={deployment ? "debug-good" : "debug-neutral"}>{deployment ? "CONFIRMED" : "NOT SUBMITTED"}</span></div>
+          <div className="wallet-debug-panel-heading"><span className="eyebrow">3 · DEPLOY CONSTRUCTOR-BOUND CONTRACT</span><span className={deployment ? "debug-good" : "debug-neutral"}>{deployment ? "CONFIRMED ON PREPROD" : "NOT SUBMITTED"}</span></div>
           <p>Exact constructor: <code>speedLimit=80</code>, <code>attestorId=1</code>, and the handoff public key. Lace approval is required for the real deployment transaction.</p>
           <button className="debug-primary-button" disabled={busy || !runtime || !attestation || Boolean(deployment)} onClick={() => void deploy()} type="button">{operation === "deploying" ? "DEPLOYING · APPROVE LACE" : deployment ? "CONTRACT DEPLOYED" : "DEPLOY TO PREPROD"} {operation === "deploying" && <RefreshCw className="debug-spin" size={15} />}</button>
           <div className="wallet-debug-details" aria-live="polite">
             <div>
               <span>Deployment stage</span>
-              <strong className={deploymentFailure ? "debug-bad" : deploymentStage === "DEPLOYED" ? "debug-good" : ""}>
-                {deploymentFailure ? `FAILED AT: ${deploymentFailure.stage}` : deploymentStage}
+              <strong className={deploymentFailure ? "debug-bad" : deployment ? "debug-good" : deploymentStage === "DEPLOYED" ? "debug-good" : ""}>
+                {deploymentStageLabel(Boolean(deployment), deploymentFailure?.stage, deploymentStage)}
               </strong>
             </div>
             {deploymentFailure && (
@@ -514,6 +533,18 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
           <div className="wallet-debug-panel-heading"><span className="eyebrow">4 · PROVE SAFE 67</span><span className={proof && complianceCount === "1" ? "debug-good" : "debug-neutral"}>{complianceCount === "1" ? "LEDGER COUNT · 1" : "NOT SUBMITTED"}</span></div>
           <p>Stores the attestor response through the encrypted private-state provider, joins the deployed contract, and invokes generated <code>proveCompliance()</code>.</p>
           <button className="debug-primary-button" disabled={busy || !contractAddress || !runtime || !attestation || complianceCount === "1"} onClick={() => void proveSafe()} type="button">{operation === "proving-safe" ? "PROVING · APPROVE LACE" : "PROVE SAFE 67"} {operation === "proving-safe" && <RefreshCw className="debug-spin" size={15} />}</button>
+          {expectedProofRejection && (
+            <div className={`proof-rejection proof-rejection--${expectedProofRejection.kind}`} role="status">
+              <div className="proof-rejection-icon"><TriangleAlert size={17} /></div>
+              <div>
+                <div className="eyebrow">{expectedProofRejection.eyebrow}</div>
+                <h3>{expectedProofRejection.heading}</h3>
+                <p>{expectedProofRejection.description}</p>
+                <p className="proof-rejection-note">No compliant proof was recorded.</p>
+                <div className="proof-rejection-detail">Technical detail: {expectedProofRejection.technicalDetail}</div>
+              </div>
+            </div>
+          )}
           {proof && <TransactionDetails transaction={proof} label="Safe proof transaction" />}
           {complianceCount && <div className="wallet-debug-details"><div><span>Observed complianceCount</span><strong className={complianceCount === "1" ? "debug-good" : ""}>{complianceCount}</strong></div></div>}
         </section>
