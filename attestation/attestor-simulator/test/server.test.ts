@@ -9,11 +9,11 @@ setNetworkId('undeployed');
 describe('Attestor simulator server', () => {
   let server: Server;
   let baseUrl: string;
-  const { pk } = generateKeyPair();
+  const { sk, pk } = generateKeyPair();
   const providerId = 42;
 
   beforeAll(async () => {
-    server = createServer(providerId, pk);
+    server = createServer(sk, providerId, pk);
     await new Promise<void>((resolve) => {
       server.listen(0, () => {
         const addr = server.address();
@@ -45,5 +45,31 @@ describe('Attestor simulator server', () => {
     expect(body.providerId).toBe(providerId);
     expect(body.publicKey.x).toBe(pk.x.toString());
     expect(body.publicKey.y).toBe(pk.y.toString());
+  });
+
+  it('POST /attest returns valid speed attestation', async () => {
+    const res = await fetch(`${baseUrl}/attest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ speed: 67 }),
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.signature).toBeDefined();
+    expect(body.signature.announcement.x).toBeDefined();
+    expect(body.signature.announcement.y).toBeDefined();
+    expect(body.signature.response).toBeDefined();
+    expect(body.message.speed).toBe('67');
+  });
+
+  it('POST /attest returns 400 for missing speed', async () => {
+    const res = await fetch(`${baseUrl}/attest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toContain('Missing required field');
   });
 });

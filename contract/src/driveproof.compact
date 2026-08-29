@@ -1,0 +1,54 @@
+// DriveProof Phase 1: single private speed value with in-circuit Schnorr verification.
+// Honest claim: proves attested telemetry satisfies a speed policy without revealing
+// the raw value beyond what a successful proof implies. Phase 1 omits subject
+// binding and replay nullifiers (Phases 2–3).
+
+pragma language_version >= 0.22 && <= 0.23;
+import CompactStandardLibrary;
+import "schnorr" prefix Schnorr_;
+
+export { Schnorr_SchnorrSignature };
+
+struct SpeedReading {
+    speed: Uint<16>;
+}
+
+export ledger attestors: Map<Uint<16>, JubjubPoint>;
+export ledger speedLimit: Uint<16>;
+export ledger complianceCount: Uint<32>;
+
+witness getAttestedSpeedWitness(): [SpeedReading, Schnorr_SchnorrSignature, Uint<16>];
+
+constructor(limit: Uint<16>) {
+    speedLimit = disclose(limit);
+}
+
+export circuit registerAttestor(attestorId: Uint<16>, attestorPk: JubjubPoint): [] {
+    attestors.insert(disclose(attestorId), disclose(attestorPk));
+}
+
+export circuit proveCompliance(): [] {
+    const compliant = evaluateSpeed();
+    assert(compliant, "Speed exceeds policy limit");
+    complianceCount = disclose((complianceCount + 1) as Uint<32>);
+}
+
+circuit evaluateSpeed(): Boolean {
+    const [reading, signature, attestorId] = getAttestedSpeedWitness();
+
+    assert(attestors.member(disclose(attestorId)), "Attestor not registered");
+    const attestorPk = attestors.lookup(disclose(attestorId));
+
+    const msg: Vector<1, Field> = [reading.speed as Field];
+    Schnorr_schnorrVerify<1>(msg, signature, attestorPk);
+
+    return reading.speed <= speedLimit;
+}
+
+export pure circuit schnorrChallenge(
+    ann_x: Field, ann_y: Field,
+    pk_x: Field, pk_y: Field,
+    msg: Vector<1, Field>
+): Field {
+    return Schnorr_schnorrChallenge1(ann_x, ann_y, pk_x, pk_y, msg);
+}

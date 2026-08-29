@@ -1,5 +1,20 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { JubjubPoint } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
+import { signSpeed } from './signing.js';
+
+export interface AttestationRequest {
+  speed: number;
+}
+
+export interface AttestationResponse {
+  signature: {
+    announcement: { x: string; y: string };
+    response: string;
+  };
+  message: {
+    speed: string;
+  };
+}
 
 export interface ProviderInfoResponse {
   providerId: number;
@@ -33,7 +48,7 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
-export function createServer(providerId: number, providerPk: JubjubPoint) {
+export function createServer(providerSk: bigint, providerId: number, providerPk: JubjubPoint) {
   return createHttpServer(async (req, res) => {
     if (req.method === 'OPTIONS') {
       res.writeHead(204, {
@@ -62,6 +77,35 @@ export function createServer(providerId: number, providerPk: JubjubPoint) {
         },
       };
       sendJson(res, 200, response);
+      return;
+    }
+
+    if (req.method === 'POST' && url === '/attest') {
+      try {
+        const body = (await readJsonBody(req)) as AttestationRequest;
+        if (body.speed == null) {
+          sendJson(res, 400, { error: 'Missing required field: speed' });
+          return;
+        }
+
+        const signature = signSpeed(providerSk, body.speed);
+        const response: AttestationResponse = {
+          signature: {
+            announcement: {
+              x: signature.announcement.x.toString(),
+              y: signature.announcement.y.toString(),
+            },
+            response: signature.response.toString(),
+          },
+          message: {
+            speed: body.speed.toString(),
+          },
+        };
+        sendJson(res, 200, response);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Attestation failed';
+        sendJson(res, 500, { error: message });
+      }
       return;
     }
 
