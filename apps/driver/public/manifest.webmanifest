@@ -1,0 +1,10 @@
+{
+  "name": "DriveProof Driver",
+  "short_name": "DriveProof",
+  "description": "Private vehicle telemetry proofs.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0f0e",
+  "theme_color": "#0b0f0e",
+  "icons": []
+}
