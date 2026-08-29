@@ -1,0 +1,30 @@
+{
+  "name": "driveproof",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Privacy-preserving vehicle telemetry proofs on Midnight.",
+  "workspaces": [
+    "apps/*",
+    "shared/*"
+  ],
+  "scripts": {
+    "dev:driver": "npm --workspace @driveproof/driver run dev",
+    "dev:insurer": "npm --workspace @driveproof/insurer run dev",
+    "build": "npm run build --workspaces --if-present",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.1.0",
+    "@types/jsdom": "^21.1.7",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8"
+  }
+}
