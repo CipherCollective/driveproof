@@ -1,6 +1,6 @@
 # Midnight Runtime / Provider Handoff
 
-Status: Mission 1.6. This is the reusable provider harness between a real Lace browser session and a future generated `MidnightDriveProofClient`. It stops before any DriveProof contract import, invocation, deployment, or transaction submission.
+Status: historical Mission 1.6 handoff. This is the reusable provider harness between a real Lace browser session and the product `MidnightDriveProofClient`. The later Phase 1 transaction acceptance is documented in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md); this document intentionally describes the provider-only boundary.
 
 ## Implemented boundary
 
@@ -137,7 +137,7 @@ The generated contract integration remains blocked on these exact inputs:
 - confirmation whether the final generated stack uses the local HTTP proof provider or Lace's `getProvingProvider(keyMaterialProvider)` path;
 - final compatible package/version matrix and proof-server version.
 
-No value is invented for any of these items in this repository. In particular, there is no contract address, policy ID, attestor ID, transaction ID, or proof result here.
+This provider-only handoff did not record contract values. The confirmed Phase 1 contract address, transaction IDs, and ledger result are maintained in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md); final product-client fields remain pending.
 
 ## Security boundary
 

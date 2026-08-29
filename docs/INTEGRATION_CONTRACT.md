@@ -1,6 +1,6 @@
 # DriveProof · Cryptographic integration contract
 
-Status: frontend handoff boundary for Mission 01. The product shell is ready, but the genuine Midnight client is not wired until the cryptographic workstream supplies the artifacts below.
+Status: the Phase 1 Compact artifacts and real Preprod checkpoint are complete. This remains the frontend handoff boundary for the product `MidnightDriveProofClient`, the final public-field mapping, and the next cryptographic phases.
 
 ## Non-negotiable trust and secret boundary
 
@@ -26,6 +26,18 @@ Lace browser extension / desktop browser signing
 ```
 
 The Driver remains a mobile-first PWA. Lace Mobile on Android is not assumed to sign Midnight transactions. The first genuine wallet-connected path is Preprod plus the Lace desktop/browser extension. Local UI development continues to use `MockDriveProofClient`.
+
+## Confirmed Phase 1 checkpoint
+
+The local `driveproof-contract` workspace contains the generated Phase 1 contract artifacts used by the real harness. The confirmed Midnight Preprod deployment and safe proof are recorded in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md):
+
+- contract address: `5f9f3d256d9beccbff093793e5cd5d886397a51ed41e6b52d7912cc619276d2e`;
+- constructor speed limit: `80`;
+- constructor attestor ID: `1`;
+- safe signed speed: `67`;
+- observed `complianceCount`: `0 -> 1`.
+
+The product adapter is still intentionally pending. The Phase 1 private state is a single speed, attestation signature, and attestor ID. Subject binding, deterministic nullifiers/replay protection, expanded telemetry, and the final connected Insurer data path are not claimed here.
 
 ## Current frontend boundary
 

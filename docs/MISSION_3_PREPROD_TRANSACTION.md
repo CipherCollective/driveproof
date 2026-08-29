@@ -1,6 +1,6 @@
 # Mission 3 · Real Preprod transaction harness
 
-Status: implementation is prepared; the first real Lace approval has not been performed from this environment. This page is an isolated DEV-only engineering surface. The normal Driver flow still uses its explicit mock client, and no `MidnightDriveProofClient` or fake transaction path has been added.
+Status: the Phase 1 path was confirmed against Midnight Preprod at the `preprod-e2e-success` checkpoint documented in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md). This page remains an isolated DEV-only engineering surface. The normal Driver flow still uses its explicit mock client, and no `MidnightDriveProofClient` or fake transaction path has been added.
 
 ## What is wired
 
@@ -95,7 +95,7 @@ The page never turns a missing approval, proof error, or failed call into a tran
 | Generated circuit | `proveCompliance` |
 | Private-state ID | `driveproofPrivateState` |
 
-No contract address, transaction ID, or ledger result is recorded here until the manual browser run returns it from Lace/Preprod.
+The confirmed contract address, transaction IDs, block heights, and ledger result are recorded in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md), rather than duplicated in this implementation handoff.
 
 ## Failure boundaries after safe success
 
