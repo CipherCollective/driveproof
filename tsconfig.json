@@ -21,7 +21,9 @@
       "@driveproof/types": ["shared/types/src/index.ts"],
       "@driveproof/fixtures": ["shared/fixtures/src/index.ts"],
       "@driveproof/driveproof-client": ["shared/driveproof-client/src/index.ts"],
-      "@driveproof/midnight-wallet": ["shared/midnight-wallet/src/index.ts"]
+      "@driveproof/midnight-wallet": ["shared/midnight-wallet/src/index.ts"],
+      "@driveproof/midnight-runtime": ["shared/midnight-runtime/src/index.ts"],
+      "@driveproof/midnight-runtime/*": ["shared/midnight-runtime/src/*"]
     }
   },
   "include": [

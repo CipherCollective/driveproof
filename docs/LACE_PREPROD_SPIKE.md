@@ -1,6 +1,6 @@
 # Lace Preprod Connectivity Spike
 
-Status: Mission 1.5 wallet-only spike. This document records the current official Midnight browser-wallet path and the boundary implemented in `shared/midnight-wallet`.
+Status: Mission 1.6 wallet and provider-runtime spike. This document records the current official Midnight browser-wallet path and the boundary implemented in `shared/midnight-wallet`. The provider-runtime handoff is documented separately in [`docs/MIDNIGHT_RUNTIME_HANDOFF.md`](./MIDNIGHT_RUNTIME_HANDOFF.md).
 
 This spike stops at:
 
@@ -9,7 +9,8 @@ Driver dev page
   -> Midnight connector discovered in the browser
   -> Lace connects to the requested network
   -> connection status and configuration confirm Preprod
-  -> ConnectedAPI/session is available for a future client
+  -> validated ConnectedAPI/session is available to the runtime builder
+  -> provider-runtime construction is gated on explicit generated-artifact and private-state inputs
 ```
 
 It does not deploy or call a DriveProof contract, generate a DriveProof proof, submit a transaction, or create generated contract bindings.
@@ -50,7 +51,7 @@ Sources:
 
 For this spike, the target is exactly `preprod`. The bridge does not infer a network from a configured proof-server URL or from UI text.
 
-### 3. Provider objects required later
+### 3. Provider objects and the runtime boundary
 
 The current Midnight.js provider architecture expects a `MidnightProviders` bundle containing:
 
@@ -63,7 +64,7 @@ The current Midnight.js provider architecture expects a `MidnightProviders` bund
 
 The official wallet dApp builds service/configuration providers from the connected wallet configuration, then adapts the wallet API to the Midnight.js `WalletProvider` and `MidnightProvider` interfaces. The official ZK Loan UI similarly constructs an indexer public-data provider, a proof provider, and wallet/transaction adapters after connection.
 
-This spike intentionally does not instantiate those contract-facing objects. A generated Compact contract and its compiled ZK configuration assets are required to create `zkConfigProvider` and to build contract calls. The bridge exposes the real `ConnectedAPI`, validated `Configuration`, and connected status in `MidnightWalletSession` so the future `MidnightDriveProofClient` can create the exact providers after Ashiha supplies the generated artifacts.
+`shared/midnight-runtime` now provides `createMidnightRuntime(connectedApi, options)`. It constructs the genuine Midnight.js provider bundle after validating both Lace network fields and the local proof-server version. The builder requires an explicit `zkConfigBaseUrl` for generated Compact assets and an app-owned `privateStoragePasswordProvider`; neither is guessed, read from Vite config, or bundled into the debug page. It makes no contract import, deploy, call, or submit request. See [`docs/MIDNIGHT_RUNTIME_HANDOFF.md`](./MIDNIGHT_RUNTIME_HANDOFF.md) for the exact bundle and its gates.
 
 Sources:
 
@@ -77,7 +78,7 @@ The current connector proof-provider package documents a later path based on `ge
 - [`@midnight-ntwrk/midnight-js-dapp-connector-proof-provider`](https://www.npmjs.com/package/@midnight-ntwrk/midnight-js-dapp-connector-proof-provider)
 - [`dapp-connector-api ProvingProvider`](https://github.com/midnightntwrk/midnight-dapp-connector-api/blob/main/docs/api/type-aliases/ProvingProvider.md)
 
-Whether DriveProof uses that connector proving provider or the HTTP proof provider is a later generated-client integration decision. TODO: confirm against the generated contract artifacts and the exact compatible Midnight.js release before adding these dependencies.
+The runtime harness currently uses the HTTP proof provider against the checked local server. Whether the final DriveProof client should switch to the connector proving provider remains a generated-client integration decision; confirm it against the generated contract artifacts and exact package matrix before changing this boundary.
 
 ### 4. Proof-server configuration
 
@@ -112,7 +113,7 @@ Sources:
 
 The current ZK Loan UI pins the connector API to `4.0.1` and its Midnight.js packages to `4.1.1`. The current official `midnight-wallet-dapp/package.json` also uses connector API `4.0.1` and Midnight.js `4.1.1` for its provider examples. The official compatibility matrix currently lists stable `@midnight-ntwrk/dapp-connector-api` `4.0.1` and stable Midnight.js `4.0.4`.
 
-This workspace adds only `@midnight-ntwrk/dapp-connector-api@4.0.1` to the wallet spike. It does not upgrade or add the whole Midnight.js stack. TODO: align all contract-facing packages to the exact release required by Ashiha's generated artifacts.
+This workspace preserves `@midnight-ntwrk/dapp-connector-api@4.0.1` and adds the official Midnight.js provider packages at `4.1.1`, matching the current ZK Loan and wallet-dapp reference package manifests. TODO: confirm the final contract-facing package matrix against Ashiha's generated artifacts before integrating.
 
 Sources:
 
@@ -122,7 +123,7 @@ Sources:
 
 ## What was added
 
-`shared/midnight-wallet` provides `LaceMidnightWalletBridge` and `MidnightWalletSession`. It performs real injected connector discovery and real `InitialAPI.connect(networkId)` calls when run in a browser with Lace installed. It has no mock implementation or fallback.
+`shared/midnight-wallet` provides `LaceMidnightWalletBridge` and `MidnightWalletSession`. It performs real injected connector discovery and real `InitialAPI.connect(networkId)` calls when run in a browser with Lace installed. `shared/midnight-runtime` provides the typed Midnight.js provider builder and proof-server check. Neither module has a mock implementation or fallback.
 
 The Driver dev server exposes the isolated page at:
 
@@ -134,7 +135,7 @@ The page is only rendered when Vite is in development mode. The normal Driver ro
 
 ## Future client handoff
 
-The future `MidnightDriveProofClient` should accept the session returned by the bridge and construct the contract-facing layer around it. The generated client integration still needs these exact artifacts/information from Ashiha:
+The future `MidnightDriveProofClient` should accept the session returned by the bridge and pass it to `createMidnightRuntime` with the final explicit inputs. The generated client integration still needs these exact artifacts/information from Ashiha:
 
 - generated Compact contract API/client and compiled ZK configuration assets;
 - deployed Preprod contract address or equivalent deployment metadata;
@@ -159,7 +160,7 @@ MidnightWalletSession.wallet + configuration
   -> privateStateProvider (contract-specific, securely designed)
 ```
 
-TODO: do not implement this wiring until the generated contract API, compiled artifacts, deployment metadata, and package matrix are available. No contract address, policy ID, attestor ID, transaction ID, or proof result is stored in this repository by this spike.
+No contract address, policy ID, attestor ID, transaction ID, or proof result is stored in this repository by this spike. The builder's `zkConfigBaseUrl` remains a caller-supplied TODO until the generated Compact artifacts exist.
 
 ## Local proof server
 
@@ -174,7 +175,7 @@ docker run --rm -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-ser
 - Manual health check: `Invoke-WebRequest http://localhost:6300/version` or `curl.exe http://localhost:6300/version`.
 - Stop: press `Ctrl+C` in the foreground terminal. Because `--rm` is used, the stopped container is removed automatically. If it was started in another terminal, identify it with `docker ps` and stop that container with `docker stop <container-id>`.
 
-There is a current-source discrepancy to preserve rather than guess around: the ZK Loan README explicitly targets `midnightntwrk/proof-server:8.1.0`, while the current Midnight SDK compatibility matrix lists `proof-server` `8.0.3` for Preprod and its Docker image table. For this Mission 1.5 spike, do not change dependencies or silently substitute a version: use `8.1.0` when following the ZK Loan reference command, and confirm the final proof-server version with the generated contract/client stack before integration.
+There is a current-source discrepancy to preserve rather than guess around: the ZK Loan README explicitly targets `midnightntwrk/proof-server:8.1.0`, while the current Midnight SDK compatibility matrix lists `proof-server` `8.0.3` for Preprod and its Docker image table. For this Mission 1.6 spike, do not silently substitute a version: use `8.1.0` when following the ZK Loan reference command, and confirm the final proof-server version with the generated contract/client stack before integration. The runtime builder checks `/version` and fails closed if it is unavailable or not `8.1.0`.
 
 Sources:
 

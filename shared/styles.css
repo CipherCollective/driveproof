@@ -399,6 +399,7 @@ a { color: inherit; text-decoration: none; }
 .wallet-debug-status:last-child { border-right: 0; }
 .wallet-debug-status span, .wallet-debug-details span { color: var(--muted); font-size: 11px; }
 .wallet-debug-status strong { color: var(--muted-strong); font-family: var(--mono); font-size: 11px; font-weight: 400; overflow-wrap: anywhere; }
+.wallet-debug-status small { color: var(--muted); font-family: var(--mono); font-size: 9px; line-height: 1.4; }
 .debug-good { color: var(--accent) !important; }
 .debug-bad { color: var(--danger) !important; }
 .debug-neutral { color: var(--muted-strong); font-family: var(--mono); font-size: 10px; letter-spacing: 0.05em; }
@@ -409,6 +410,8 @@ a { color: inherit; text-decoration: none; }
 .wallet-debug-details { display: grid; gap: 1px; grid-template-columns: repeat(2, 1fr); margin-top: 14px; }
 .wallet-debug-details > div { border-top: 1px solid var(--line); display: grid; gap: 6px; min-width: 0; padding: 12px 0; }
 .wallet-debug-details > div:nth-child(odd) { margin-right: 16px; }
+.wallet-debug-proof-details { grid-template-columns: repeat(3, 1fr); }
+.wallet-debug-proof-details > div:nth-child(odd) { margin-right: 0; }
 .wallet-debug-details strong { color: var(--muted-strong); font-family: var(--mono); font-size: 10px; font-weight: 400; overflow-wrap: anywhere; }
 .wallet-debug-note { align-items: center; color: var(--accent) !important; display: flex; gap: 7px; }
 .wallet-debug-actions { display: flex; gap: 9px; margin-top: 22px; }

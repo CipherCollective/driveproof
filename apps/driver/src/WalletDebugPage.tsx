@@ -7,6 +7,7 @@ import {
   type MidnightWalletConfig,
   type WalletConnectionState
 } from "@driveproof/midnight-wallet";
+import { checkProofServer, type ProofServerStatus } from "@driveproof/midnight-runtime/proof-server";
 
 function statusLabel(ready: boolean): string {
   return ready ? "DETECTED" : "NOT DETECTED";
@@ -19,15 +20,17 @@ function formatUri(uri: string | undefined): string {
 
 export function WalletDebugPage({
   bridge,
-  config = readMidnightWalletConfig()
+  config
 }: {
   bridge?: MidnightWalletBridge;
   config?: MidnightWalletConfig;
 }) {
-  const walletBridge = useMemo(() => bridge ?? createLaceMidnightWalletBridge(config), [bridge, config]);
+  const resolvedConfig = useMemo(() => config ?? readMidnightWalletConfig(), [config]);
+  const walletBridge = useMemo(() => bridge ?? createLaceMidnightWalletBridge(resolvedConfig), [bridge, resolvedConfig]);
   const [detected, setDetected] = useState(false);
   const [connection, setConnection] = useState<WalletConnectionState>({ status: "disconnected" });
   const [isChecking, setIsChecking] = useState(true);
+  const [proofServer, setProofServer] = useState<ProofServerStatus | "checking">("checking");
 
   const refreshDetection = useCallback(async () => {
     const isDetected = await walletBridge.detect();
@@ -54,6 +57,20 @@ export function WalletDebugPage({
     };
   }, [walletBridge]);
 
+  useEffect(() => {
+    if (connection.status !== "connected") {
+      setProofServer("checking");
+      return;
+    }
+
+    let cancelled = false;
+    setProofServer("checking");
+    void checkProofServer({ url: resolvedConfig.expectedProofServerUrl }).then((status) => {
+      if (!cancelled) setProofServer(status);
+    });
+    return () => { cancelled = true; };
+  }, [connection, resolvedConfig.expectedProofServerUrl]);
+
   async function connect() {
     setConnection({ status: "connecting" });
     setConnection(await walletBridge.connect());
@@ -66,7 +83,8 @@ export function WalletDebugPage({
 
   const session = connection.status === "connected" ? connection.session : undefined;
   const walletConnected = connection.status === "connected";
-  const networkReady = walletConnected && connection.network === config.networkId;
+  const networkReady = walletConnected && connection.network === resolvedConfig.networkId;
+  const runtimeReady = false;
   const connectionMessage = connection.status === "error"
     ? connection.message
     : connection.status === "unavailable"
@@ -96,13 +114,30 @@ export function WalletDebugPage({
           <div className="wallet-debug-status"><span>Lace extension</span><strong className={detected ? "debug-good" : ""}>{isChecking ? "CHECKING" : statusLabel(detected)}</strong></div>
           <div className="wallet-debug-status"><span>Wallet</span><strong className={walletConnected ? "debug-good" : ""}>{walletConnected ? "CONNECTED" : "DISCONNECTED"}</strong></div>
           <div className="wallet-debug-status"><span>Network</span><strong className={networkReady ? "debug-good" : connection.status === "wrong-network" ? "debug-bad" : ""}>{networkReady ? "PREPROD" : connection.status === "wrong-network" ? "WRONG NETWORK" : "PREPROD TARGET"}</strong></div>
-          <div className="wallet-debug-status"><span>Proof server</span><strong>{config.expectedProofServerUrl.replace(/^https?:\/\//, "")}</strong></div>
+          <div className="wallet-debug-status"><span>Proof server</span><strong className={proofServer !== "checking" && proofServer.status === "reachable" ? "debug-good" : proofServer !== "checking" ? "debug-bad" : ""}>{proofServer === "checking" ? "CHECKING" : proofServer.status === "reachable" ? "REACHABLE" : "ERROR"}</strong></div>
+          <div className="wallet-debug-status"><span>Runtime providers</span><strong className={runtimeReady ? "debug-good" : "debug-bad"}>{runtimeReady ? "READY" : "ERROR"}</strong></div>
+        </section>
+
+        <section className="wallet-debug-panel">
+          <div className="wallet-debug-panel-heading"><span className="eyebrow">PROOF SERVER</span><span className="debug-neutral">EXPECTED {resolvedConfig.expectedProofServerUrl.replace(/^https?:\/\//, "")}</span></div>
+          <div className="wallet-debug-details wallet-debug-proof-details">
+            <div><span>Reachability</span><strong className={proofServer !== "checking" && proofServer.status === "reachable" ? "debug-good" : ""}>{proofServer === "checking" ? "CHECKING" : proofServer.status === "reachable" ? "REACHABLE" : "ERROR"}</strong></div>
+            <div><span>Version</span><strong className={proofServer !== "checking" && proofServer.status === "reachable" ? "debug-good" : ""}>{proofServer === "checking" ? "CHECKING" : proofServer.status === "reachable" ? proofServer.version : proofServer.status === "incompatible" ? proofServer.version ?? "UNKNOWN" : "NOT AVAILABLE"}</strong></div>
+            <div><span>Expected version</span><strong>8.1.0</strong></div>
+          </div>
         </section>
 
         <section className="wallet-debug-panel">
           <div className="wallet-debug-panel-heading"><span className="eyebrow">WALLET SYNC</span><span className="debug-neutral">NOT EXPOSED BY CONNECTOR API</span></div>
           <p>Lace may show its own sync state in the extension. The current DApp Connector API does not expose a trustworthy sync-status field to this page.</p>
         </section>
+
+        {proofServer !== "checking" && proofServer.status !== "reachable" && (
+          <div className="wallet-debug-message" role="alert">
+            <TriangleAlert size={16} />
+            <span>{proofServer.message}</span>
+          </div>
+        )}
 
         {connectionMessage && (
           <div className="wallet-debug-message" role="alert">
@@ -126,6 +161,14 @@ export function WalletDebugPage({
           </section>
         )}
 
+        {walletConnected && (
+          <section className="wallet-debug-panel">
+            <div className="wallet-debug-panel-heading"><span className="eyebrow">RUNTIME PROVIDER GATE</span><span className="debug-bad">ERROR</span></div>
+            <p>Full MidnightProviders are intentionally not constructed in this page: the generated Compact ZK artifact base URL and an app-owned private-state password callback are not present yet. The reusable builder is ready for those explicit Ashiha handoff inputs.</p>
+            {proofServer !== "checking" && proofServer.status === "reachable" && <p className="wallet-debug-note"><Check size={13} /> Preprod configuration and local proof-server reachability are verified.</p>}
+          </section>
+        )}
+
         <div className="wallet-debug-actions">
           {!walletConnected ? (
             <button className="debug-primary-button" disabled={connection.status === "connecting"} onClick={() => void connect()} type="button">
@@ -138,7 +181,7 @@ export function WalletDebugPage({
           <button className="debug-refresh-button" onClick={() => void refreshDetection()} type="button" aria-label="Refresh extension detection"><RefreshCw size={15} /></button>
         </div>
 
-        <footer className="wallet-debug-footer">Target network: {config.networkId} · This page never falls back to the product mock client.</footer>
+        <footer className="wallet-debug-footer">Target network: {resolvedConfig.networkId} · This page never falls back to the product mock client.</footer>
       </main>
     </div>
   );
