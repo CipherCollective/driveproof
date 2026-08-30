@@ -1,14 +1,21 @@
-/** Server-owned demo trip fixtures — speed is never taken from the client. */
+import { getFixtureSamples, maxSpeed, harshBrakingCount } from '@driveproof/fixtures';
+import type { TelemetrySampleInput } from 'driveproof-contract';
+
+/** Server-owned demo trip fixtures — telemetry is never taken from the client. */
 export type DemoTripId = 'safe' | 'unsafe';
 
-export const DEMO_TRIP_SPEEDS: Record<DemoTripId, number> = {
-  safe: 67,
-  unsafe: 112,
-};
-
-export function resolveDemoTripSpeed(tripId: string): number | undefined {
+export function resolveDemoTripSamples(tripId: string): TelemetrySampleInput[] | undefined {
   if (tripId === 'safe' || tripId === 'unsafe') {
-    return DEMO_TRIP_SPEEDS[tripId];
+    return getFixtureSamples(tripId);
   }
   return undefined;
+}
+
+export function describeDemoTrip(tripId: DemoTripId) {
+  const samples = getFixtureSamples(tripId);
+  return {
+    samples,
+    maxSpeed: maxSpeed(samples),
+    harshBrakingCount: harshBrakingCount(samples),
+  };
 }

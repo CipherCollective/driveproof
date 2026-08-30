@@ -1,5 +1,11 @@
 import { ecMulGenerator, type JubjubPoint } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import { DriveProof } from 'driveproof-contract';
+import {
+  DriveProof,
+  computeTripCommitment,
+  generateSalt,
+  toTelemetrySamples,
+  type TelemetrySampleInput,
+} from 'driveproof-contract';
 import * as crypto from 'crypto';
 
 const { pureCircuits } = DriveProof;
@@ -46,16 +52,28 @@ export function sign(sk: bigint, msg: bigint[]): SchnorrSignature {
   return { announcement: R, response: s };
 }
 
-/** Signs [speed, driverBinding, attestationId]. */
+/** Signs [tripCommitment]. */
 export function signTripAttestation(
   sk: bigint,
-  speed: number,
-  driverBinding: bigint,
-  attestationId: bigint,
+  tripCommitment: bigint,
 ): SchnorrSignature {
-  return sign(sk, [BigInt(speed), driverBinding, attestationId]);
+  return sign(sk, [tripCommitment]);
 }
 
-export function computeDriverBinding(driverSecret: Uint8Array): bigint {
-  return pureCircuits.deriveDriverBinding(driverSecret);
+export { computeDriverBinding } from 'driveproof-contract';
+
+export function signTripSamples(
+  sk: bigint,
+  samples: TelemetrySampleInput[],
+  driverBinding: bigint,
+  attestationId: bigint,
+  salt: bigint = generateSalt(),
+): { signature: SchnorrSignature; salt: bigint; tripCommitment: bigint } {
+  const telemetry = toTelemetrySamples(samples);
+  const tripCommitment = computeTripCommitment(attestationId, driverBinding, salt, telemetry);
+  return {
+    signature: signTripAttestation(sk, tripCommitment),
+    salt,
+    tripCommitment,
+  };
 }

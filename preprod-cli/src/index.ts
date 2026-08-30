@@ -16,6 +16,7 @@ import {
 import {
   ATTESTOR_ID,
   ATTESTOR_PUBLIC_KEY,
+  BRAKING_LIMIT,
   PRIVATE_STATE_ID,
   SPEED_LIMIT,
   createCompiledDriveProof,
@@ -29,7 +30,7 @@ import {
   walletAddress,
   walletMaterialFromMnemonic
 } from "./wallet.js";
-import { requestAttestorPrivateState } from "./attestor.js";
+import { requestAttestorPrivateState, maxSampleSpeed } from "./attestor.js";
 
 function readLocalEnvValue(name: string): string | undefined {
   const value = process.env[name]?.trim();
@@ -113,17 +114,17 @@ async function runRealPath(): Promise<void> {
 
     const driverSecretKey = generateDriverSecret();
     const attestation = await requestAttestorPrivateState(config.attestorUrl, "safe", driverSecretKey);
-    if (attestation.speed !== 67n) {
-      throw new Error(`Expected the safe attestor trip to return speed 67, received ${attestation.speed.toString()}.`);
+    if (maxSampleSpeed(attestation.samples) !== 67) {
+      throw new Error(`Expected the safe attestor trip max speed 67, received ${maxSampleSpeed(attestation.samples)}.`);
     }
-    console.log("Safe attestation: speed 67");
+    console.log("Safe attestation: 16 samples, max speed 67");
 
     const compiledContract = createCompiledDriveProof(config);
     const providers = createDriveProofProviders(wallet, config, storagePassword);
     console.log("Deploying DriveProof to Midnight Preprod.");
     const deployed = await deployContract(providers, {
       compiledContract,
-      args: [SPEED_LIMIT, ATTESTOR_ID, ATTESTOR_PUBLIC_KEY],
+      args: [SPEED_LIMIT, BRAKING_LIMIT, ATTESTOR_ID, ATTESTOR_PUBLIC_KEY],
       privateStateId: PRIVATE_STATE_ID,
       initialPrivateState: attestation
     });
@@ -149,7 +150,9 @@ async function runRealPath(): Promise<void> {
     if (safeCount !== 1n) throw new Error(`Expected complianceCount 1 after safe proof, received ${safeCount.toString()}.`);
 
     const unsafe = await requestAttestorPrivateState(config.attestorUrl, "unsafe", driverSecretKey);
-    if (unsafe.speed !== 112n) throw new Error(`Expected the unsafe attestor trip to return speed 112, received ${unsafe.speed.toString()}.`);
+    if (maxSampleSpeed(unsafe.samples) !== 112) {
+      throw new Error(`Expected the unsafe attestor trip max speed 112, received ${maxSampleSpeed(unsafe.samples)}.`);
+    }
     await providers.privateStateProvider.set(PRIVATE_STATE_ID, unsafe);
     try {
       await joined.callTx.proveCompliance();
@@ -163,12 +166,29 @@ async function runRealPath(): Promise<void> {
       throw new Error(`Expected complianceCount 1 after unsafe rejection, received ${countAfterUnsafe?.toString() ?? "undefined"}.`);
     }
 
+<<<<<<< Updated upstream
     await providers.privateStateProvider.set(PRIVATE_STATE_ID, { ...unsafe, speed: 71n });
     try {
       await joined.callTx.proveCompliance();
       console.log("TAMPER RESULT: unexpectedly accepted by the real contract.");
     } catch (error) {
       console.log(`TAMPER RESULT: rejected (${safeError(error)}).`);
+=======
+    await providers.privateStateProvider.set(PRIVATE_STATE_ID, {
+      ...unsafe,
+      samples: unsafe.samples.map((sample, index) =>
+        index === 6 ? { ...sample, speed: 71n } : sample,
+      ),
+    });
+    await expectProofRejection(
+      "TAMPER RESULT",
+      () => joined.callTx.proveCompliance(),
+      "Invalid attestation signature",
+    );
+    const countAfterTamper = await readComplianceCount(providers, deployment.contractAddress, "After tamper rejection");
+    if (countAfterTamper !== 1n) {
+      throw new Error(`Expected complianceCount 1 after tamper rejection, received ${countAfterTamper.toString()}.`);
+>>>>>>> Stashed changes
     }
     const afterTamper = await providers.publicDataProvider.queryContractState(deployment.contractAddress);
     const countAfterTamper = afterTamper ? DriveProof.ledger(afterTamper.data).complianceCount : undefined;
