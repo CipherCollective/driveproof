@@ -20,7 +20,7 @@ Vite values are compiled into the browser bundle at build time. The production D
 VITE_DRIVEPROOF_CLIENT_MODE=midnight
 VITE_INSURER_ORIGIN=https://driveproof-insurer-atharv.vercel.app
 VITE_MIDNIGHT_NETWORK=preprod
-VITE_MIDNIGHT_PROOF_SERVER=https://proof-server.preprod.midnight.network
+VITE_MIDNIGHT_PROOF_SERVER=https://driveproof-driver-atharv.vercel.app/midnight-proof
 VITE_MIDNIGHT_ATTESTOR_URL=https://driveproof-attestor-atharv.vercel.app
 VITE_ENABLE_WALLET_DEBUG=true
 ```
@@ -107,20 +107,28 @@ https://driveproof-insurer-atharv.vercel.app/
 
 ## Remote proof server
 
-The production Driver is configured for:
+The production Driver uses a same-origin Vercel external rewrite for proof requests:
+
+```text
+https://driveproof-driver-atharv.vercel.app/midnight-proof
+```
+
+Vercel forwards that path server-side to Midnight's hosted Preprod proof server:
 
 ```text
 https://proof-server.preprod.midnight.network
 ```
 
-The hosted endpoint currently responds:
+The rewrite is `no-store` and is configured only in `vercel.driver.json`. Local development remains configured for `http://localhost:6300`.
+
+The hosted upstream responds:
 
 ```text
 GET /version -> 200
 body -> 8.1.0
 ```
 
-The response includes `Access-Control-Allow-Origin: https://driveproof-driver-atharv.vercel.app`, so the HTTPS Driver origin is allowed by the remote prover's CORS response. This verifies reachability and version compatibility only; it does not perform a proof or transaction.
+The same-origin proxy also forwards `POST /check` with the provider's binary content type. Connectivity checks return an upstream HTTP response rather than a browser CORS fetch failure. This verifies reachability and version compatibility only; it does not perform a proof or transaction.
 
 ## Hosted Lace and real proof steps
 
