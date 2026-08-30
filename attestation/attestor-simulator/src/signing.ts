@@ -6,6 +6,7 @@ const { pureCircuits } = DriveProof;
 
 const JUBJUB_ORDER = 6554484396890773809930967563523245729705921265872317281365359162392183254199n;
 const TWO_248 = 452312848583266388373324160190187140051835877600158453279131187530910662656n;
+const FIELD_MODULUS = 52435875175126190479447740508185965837690552500527637822603658699938581184513n;
 
 export type SchnorrSignature = {
   announcement: JubjubPoint;
@@ -28,6 +29,12 @@ export function getPublicKey(sk: bigint): JubjubPoint {
   return ecMulGenerator(((sk % JUBJUB_ORDER) + JUBJUB_ORDER) % JUBJUB_ORDER);
 }
 
+export function generateAttestationId(): bigint {
+  const bytes = crypto.randomBytes(32);
+  const val = BigInt('0x' + bytes.toString('hex'));
+  return val % FIELD_MODULUS;
+}
+
 export function sign(sk: bigint, msg: bigint[]): SchnorrSignature {
   sk = ((sk % JUBJUB_ORDER) + JUBJUB_ORDER) % JUBJUB_ORDER;
   const pk = ecMulGenerator(sk);
@@ -39,7 +46,16 @@ export function sign(sk: bigint, msg: bigint[]): SchnorrSignature {
   return { announcement: R, response: s };
 }
 
-/** Phase 1: attestor signs a single private speed field as Vector<1, Field>. */
-export function signSpeed(sk: bigint, speed: number): SchnorrSignature {
-  return sign(sk, [BigInt(speed)]);
+/** Signs [speed, driverBinding, attestationId]. */
+export function signTripAttestation(
+  sk: bigint,
+  speed: number,
+  driverBinding: bigint,
+  attestationId: bigint,
+): SchnorrSignature {
+  return sign(sk, [BigInt(speed), driverBinding, attestationId]);
+}
+
+export function computeDriverBinding(driverSecret: Uint8Array): bigint {
+  return pureCircuits.deriveDriverBinding(driverSecret);
 }

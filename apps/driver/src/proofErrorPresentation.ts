@@ -1,13 +1,14 @@
 export type ExpectedProofRejection = {
-  kind: "policy" | "integrity";
+  kind: "policy" | "integrity" | "replay";
   eyebrow: "REJECTED AS EXPECTED";
-  heading: "Policy violation" | "Integrity violation";
+  heading: "Policy violation" | "Integrity violation" | "Replay detected";
   description: string;
   technicalDetail: string;
 };
 
 const POLICY_ASSERTION = "Speed exceeds policy limit";
 const INTEGRITY_ASSERTION = "Invalid attestation signature";
+const REPLAY_ASSERTION = "Attestation already used";
 
 const policyRejection: ExpectedProofRejection = {
   kind: "policy",
@@ -23,6 +24,14 @@ const integrityRejection: ExpectedProofRejection = {
   heading: "Integrity violation",
   description: "The private witness no longer matches the authorized issuer's signature.",
   technicalDetail: `failed assert: ${INTEGRITY_ASSERTION}`
+};
+
+const replayRejection: ExpectedProofRejection = {
+  kind: "replay",
+  eyebrow: "REJECTED AS EXPECTED",
+  heading: "Replay detected",
+  description: "This attestation has already been used on this contract.",
+  technicalDetail: `failed assert: ${REPLAY_ASSERTION}`
 };
 
 function collectMessages(value: unknown, messages: string[], visited: Set<object>, depth = 0): void {
@@ -60,6 +69,10 @@ export function classifyExpectedProofRejection(error: unknown): ExpectedProofRej
 
   if (messages.some((message) => message.includes(INTEGRITY_ASSERTION))) {
     return integrityRejection;
+  }
+
+  if (messages.some((message) => message.includes(REPLAY_ASSERTION))) {
+    return replayRejection;
   }
 
   return undefined;

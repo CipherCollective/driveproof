@@ -1,3 +1,4 @@
+import { computeDriverBinding, generateDriverSecret } from "driveproof-contract";
 import type { DriveProofPrivateState } from "driveproof-contract";
 
 export type AttestorTripId = "safe" | "unsafe";
@@ -14,12 +15,19 @@ type AttestorResponse = {
   message: {
     tripId: string;
     speed: string;
+    driverBinding: string;
+    attestationId: string;
   };
 };
 
 type ProviderInfoResponse = {
   providerId: number;
   publicKey: { x: string; y: string };
+};
+
+export type RequestAttestorOptions = {
+  driverSecretKey?: Uint8Array;
+  fetchImpl?: typeof fetch;
 };
 
 export class AttestorClientError extends Error {
@@ -60,6 +68,8 @@ function normalizeBaseUrl(baseUrl: string): string {
     throw new AttestorClientError(`Attestor URL is invalid: ${baseUrl}`);
   }
 }
+
+export { generateDriverSecret, computeDriverBinding };
 
 /**
  * Read-only liveness check for the local attestor. It does not request an
@@ -107,14 +117,17 @@ export async function checkAttestorHealth(
 
 /**
  * Requests issuer-owned telemetry and converts it into the generated contract
- * private-state shape. The browser supplies only a demo trip identifier; it
- * never supplies or overrides the signed speed.
+ * private-state shape. The client supplies driverBinding derived from a local
+ * secret; it never sends the raw driver secret to the attestor.
  */
 export async function requestAttestorPrivateState(
   baseUrl: string,
   tripId: AttestorTripId,
-  fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis)
+  options: RequestAttestorOptions = {}
 ): Promise<DriveProofPrivateState> {
+  const fetchImpl = options.fetchImpl ?? globalThis.fetch.bind(globalThis);
+  const driverSecretKey = options.driverSecretKey ?? generateDriverSecret();
+  const driverBinding = computeDriverBinding(driverSecretKey);
   const url = normalizeBaseUrl(baseUrl);
   const providerInfo = await readJson<ProviderInfoResponse>(
     await fetchImpl(`${url}/provider-info`),
@@ -124,7 +137,10 @@ export async function requestAttestorPrivateState(
     await fetchImpl(`${url}/attest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tripId })
+      body: JSON.stringify({
+        tripId,
+        driverBinding: driverBinding.toString()
+      })
     }),
     "/attest"
   );
@@ -135,6 +151,7 @@ export async function requestAttestorPrivateState(
 
   return {
     speed: asBigInt(attestation.message.speed, "speed"),
+    attestationId: asBigInt(attestation.message.attestationId, "attestationId"),
     attestationSignature: {
       announcement: {
         x: asBigInt(attestation.signature.announcement.x, "announcement x"),
@@ -142,6 +159,14 @@ export async function requestAttestorPrivateState(
       },
       response: asBigInt(attestation.signature.response, "signature response")
     },
-    attestorId: BigInt(providerInfo.providerId)
+    attestorId: BigInt(providerInfo.providerId),
+    driverSecretKey
   };
+}
+
+/** Browser helper: generate a stable driver secret for the current session. */
+export function createSessionDriverSecret(): Uint8Array {
+  const secret = new Uint8Array(32);
+  crypto.getRandomValues(secret);
+  return secret;
 }

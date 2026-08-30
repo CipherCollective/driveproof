@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, ExternalLink, RefreshCw, TriangleAlert, WalletCards } from "lucide-react";
-import { checkAttestorHealth, requestAttestorPrivateState, type AttestorHealthStatus, type AttestorTripId } from "@driveproof/attestor-client";
+import { checkAttestorHealth, createSessionDriverSecret, requestAttestorPrivateState, type AttestorHealthStatus, type AttestorTripId } from "@driveproof/attestor-client";
 import {
   createLaceMidnightWalletBridge,
   readMidnightWalletDiagnostics,
@@ -127,6 +127,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
   const [walletDiagnosticsError, setWalletDiagnosticsError] = useState<string>();
   const [walletDiagnosticsBusy, setWalletDiagnosticsBusy] = useState(false);
   const privateStatePassword = useRef<string | undefined>(undefined);
+  const driverSecretKey = useRef<Uint8Array | undefined>(undefined);
   const deploymentStageRef = useRef<DeploymentStage>("IDLE");
   const deploymentInFlight = useRef(false);
   const walletDiagnosticsInFlight = useRef(false);
@@ -237,7 +238,10 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     setExpectedProofRejection(undefined);
     setOperation(`attesting-${tripId}`);
     try {
-      const state = await requestAttestorPrivateState(ATTESTOR_URL, tripId);
+      if (!driverSecretKey.current) driverSecretKey.current = createSessionDriverSecret();
+      const state = await requestAttestorPrivateState(ATTESTOR_URL, tripId, {
+        driverSecretKey: driverSecretKey.current
+      });
       setAttestation(state);
     } catch (attestorError) {
       setError(normalizeErrorMessage(attestorError));
@@ -383,7 +387,9 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     setExpectedProofRejection(undefined);
     setError(undefined);
     try {
-      const unsafeState = await requestAttestorPrivateState(ATTESTOR_URL, "unsafe");
+      const unsafeState = await requestAttestorPrivateState(ATTESTOR_URL, "unsafe", {
+        driverSecretKey: driverSecretKey.current ?? createSessionDriverSecret()
+      });
       await joinAndProve(unsafeState, "proving-unsafe");
     } catch (attestorError) {
       setError(normalizeErrorMessage(attestorError));
@@ -394,7 +400,9 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     setExpectedProofRejection(undefined);
     setError(undefined);
     try {
-      const unsafeState = await requestAttestorPrivateState(ATTESTOR_URL, "unsafe");
+      const unsafeState = await requestAttestorPrivateState(ATTESTOR_URL, "unsafe", {
+        driverSecretKey: driverSecretKey.current ?? createSessionDriverSecret()
+      });
       await joinAndProve({ ...unsafeState, speed: 71n }, "proving-tampered");
     } catch (attestorError) {
       setError(normalizeErrorMessage(attestorError));

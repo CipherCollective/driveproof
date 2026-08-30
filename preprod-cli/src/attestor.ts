@@ -1,3 +1,4 @@
+import { computeDriverBinding, generateDriverSecret } from "driveproof-contract";
 import type { DriveProofPrivateState } from "driveproof-contract";
 
 export type AttestorTripId = "safe" | "unsafe";
@@ -10,6 +11,8 @@ type AttestorResponse = {
   message: {
     tripId: string;
     speed: string;
+    driverBinding: string;
+    attestationId: string;
   };
 };
 
@@ -39,9 +42,11 @@ async function readJson<T>(response: Response, endpoint: string): Promise<T> {
 
 export async function requestAttestorPrivateState(
   baseUrl: string,
-  tripId: AttestorTripId
+  tripId: AttestorTripId,
+  driverSecretKey: Uint8Array = generateDriverSecret()
 ): Promise<DriveProofPrivateState> {
   const url = new URL(baseUrl).toString().replace(/\/$/, "");
+  const driverBinding = computeDriverBinding(driverSecretKey);
   const providerInfo = await readJson<ProviderInfoResponse>(
     await fetch(`${url}/provider-info`),
     "/provider-info"
@@ -50,7 +55,10 @@ export async function requestAttestorPrivateState(
     await fetch(`${url}/attest`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tripId })
+      body: JSON.stringify({
+        tripId,
+        driverBinding: driverBinding.toString()
+      })
     }),
     "/attest"
   );
@@ -60,6 +68,7 @@ export async function requestAttestorPrivateState(
 
   return {
     speed: asBigInt(attestation.message.speed, "speed"),
+    attestationId: asBigInt(attestation.message.attestationId, "attestationId"),
     attestationSignature: {
       announcement: {
         x: asBigInt(attestation.signature.announcement.x, "announcement x"),
@@ -67,6 +76,7 @@ export async function requestAttestorPrivateState(
       },
       response: asBigInt(attestation.signature.response, "signature response")
     },
-    attestorId: BigInt(providerInfo.providerId)
+    attestorId: BigInt(providerInfo.providerId),
+    driverSecretKey
   };
 }

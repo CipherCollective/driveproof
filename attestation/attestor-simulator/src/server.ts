@@ -1,10 +1,12 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { JubjubPoint } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import { signSpeed } from './signing.js';
+import { signTripAttestation, generateAttestationId } from './signing.js';
 import { resolveDemoTripSpeed } from './trips.js';
 
 export interface AttestationRequest {
   tripId: string;
+  /** H("DRIVEPROOF_SUBJECT_V1", driverSecret) — driver sends binding, never the raw secret. */
+  driverBinding: string;
 }
 
 export interface AttestationResponse {
@@ -15,6 +17,8 @@ export interface AttestationResponse {
   message: {
     tripId: string;
     speed: string;
+    driverBinding: string;
+    attestationId: string;
   };
 }
 
@@ -140,6 +144,10 @@ export function createServer(providerSk: bigint, providerId: number, providerPk:
           sendJson(res, 400, { error: 'Missing required field: tripId' }, requestOrigin, allowedOrigin);
           return;
         }
+        if (body.driverBinding == null || body.driverBinding === '') {
+          sendJson(res, 400, { error: 'Missing required field: driverBinding' }, requestOrigin, allowedOrigin);
+          return;
+        }
 
         const speed = resolveDemoTripSpeed(body.tripId);
         if (speed === undefined) {
@@ -147,7 +155,9 @@ export function createServer(providerSk: bigint, providerId: number, providerPk:
           return;
         }
 
-        const signature = signSpeed(providerSk, speed);
+        const driverBinding = BigInt(body.driverBinding);
+        const attestationId = generateAttestationId();
+        const signature = signTripAttestation(providerSk, speed, driverBinding, attestationId);
         const response: AttestationResponse = {
           signature: {
             announcement: {
@@ -159,6 +169,8 @@ export function createServer(providerSk: bigint, providerId: number, providerPk:
           message: {
             tripId: body.tripId,
             speed: speed.toString(),
+            driverBinding: driverBinding.toString(),
+            attestationId: attestationId.toString(),
           },
         };
         sendJson(res, 200, response, requestOrigin, allowedOrigin);

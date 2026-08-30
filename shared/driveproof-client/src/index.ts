@@ -25,7 +25,7 @@ export class MockDriveProofClient implements DriveProofClient {
   }
 
   async proveCompliance(attestation: TripAttestation, policyId: string): Promise<ProofResult> {
-    const replayKey = `${attestation.attestationId}:${policyId}`;
+    const replayKey = attestation.attestationId;
     if (this.usedAttestations.has(replayKey)) {
       return { status: "rejected", reason: "replay" };
     }
