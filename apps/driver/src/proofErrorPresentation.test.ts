@@ -25,6 +25,16 @@ describe("classifyExpectedProofRejection", () => {
     });
   });
 
+  it("classifies the known replay assertion", () => {
+    expect(classifyExpectedProofRejection(new Error("failed assert: Attestation already used"))).toEqual({
+      kind: "replay",
+      eyebrow: "REJECTED AS EXPECTED",
+      heading: "Replay protection",
+      description: "This attestation has already been used.",
+      technicalDetail: "failed assert: Attestation already used"
+    });
+  });
+
   it("leaves unknown errors unclassified", () => {
     expect(classifyExpectedProofRejection(new Error("Indexer unavailable"))).toBeUndefined();
   });

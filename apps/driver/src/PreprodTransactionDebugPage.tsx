@@ -383,6 +383,15 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     await joinAndProve(attestation, "proving-safe");
   }
 
+  async function proveReplay() {
+    setExpectedProofRejection(undefined);
+    if (!attestation) {
+      setError("Load the safe attestation before testing replay protection.");
+      return;
+    }
+    await joinAndProve(attestation, "proving-replay");
+  }
+
   async function proveUnsafe() {
     setExpectedProofRejection(undefined);
     setError(undefined);
@@ -653,6 +662,11 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
             <div className="wallet-debug-panel-heading"><span className="eyebrow">FAILURE BOUNDARIES</span><span className="debug-neutral">NO SUCCESS EXPECTED</span></div>
             <p>These buttons use the real witness path. A rejection is the expected result; no rejection is turned into a fabricated transaction.</p>
             <div className="wallet-debug-actions">
+              {attestation && runtime && contractAddress && (
+                <button className="debug-secondary-button" disabled={busy} onClick={() => void proveReplay()} type="button">
+                  {operation === "proving-replay" ? "TESTING REPLAY" : "REPLAY SAME ATTESTATION"}
+                </button>
+              )}
               <button className="debug-secondary-button" disabled={busy} onClick={() => void proveUnsafe()} type="button">{operation === "proving-unsafe" ? "PROVING UNSAFE" : "TRY UNSAFE · 112"}</button>
               <button className="debug-secondary-button" disabled={busy} onClick={() => void proveTampered()} type="button">{operation === "proving-tampered" ? "PROVING TAMPER" : "TRY TAMPER · 112 → 71"}</button>
             </div>

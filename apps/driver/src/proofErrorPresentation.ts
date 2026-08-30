@@ -1,7 +1,7 @@
 export type ExpectedProofRejection = {
   kind: "policy" | "integrity" | "replay";
   eyebrow: "REJECTED AS EXPECTED";
-  heading: "Policy violation" | "Integrity violation" | "Replay detected";
+  heading: "Policy violation" | "Integrity violation" | "Replay protection";
   description: string;
   technicalDetail: string;
 };
@@ -29,8 +29,8 @@ const integrityRejection: ExpectedProofRejection = {
 const replayRejection: ExpectedProofRejection = {
   kind: "replay",
   eyebrow: "REJECTED AS EXPECTED",
-  heading: "Replay detected",
-  description: "This attestation has already been used on this contract.",
+  heading: "Replay protection",
+  description: "This attestation has already been used.",
   technicalDetail: `failed assert: ${REPLAY_ASSERTION}`
 };
 
@@ -56,8 +56,8 @@ function collectMessages(value: unknown, messages: string[], visited: Set<object
 }
 
 /**
- * Classifies only the two contract assertions intentionally exercised by the
- * demo. Unknown runtime errors remain unclassified and should stay visible.
+ * Classifies only the contract assertions intentionally exercised by the demo.
+ * Unknown runtime errors remain unclassified and should stay visible.
  */
 export function classifyExpectedProofRejection(error: unknown): ExpectedProofRejection | undefined {
   const messages: string[] = [];
