@@ -4,7 +4,19 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build --workspace @driveproof/driver",
   "outputDirectory": "apps/driver/dist",
+  "headers": [
+    {
+      "source": "/midnight-proof/:path*",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
+  ],
   "rewrites": [
+    {
+      "source": "/midnight-proof/:path*",
+      "destination": "https://proof-server.preprod.midnight.network/:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
