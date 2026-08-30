@@ -79,7 +79,7 @@ export function LandingPage({ mode = "mock" }: { mode?: DriveProofClientMode }) 
           <div className="landing-hero-copy">
             <div className="landing-eyebrow">PRIVATE INSURANCE INFRASTRUCTURE</div>
             <h1 id="landing-hero-title">Prove you drove safely.<br /><em>Not where you drove.</em></h1>
-            <p>DriveProof lets drivers prove that privately attested vehicle telemetry satisfies an insurer&apos;s safety policy — without revealing the trip to the insurer or public ledger.</p>
+            <p>DriveProof lets drivers prove that privately attested vehicle telemetry satisfies an insurer&apos;s safety policy  without revealing the trip to the insurer or public ledger.</p>
             <div className="landing-hero-actions">
               <a className="landing-button landing-button--primary" href="/driver">Launch Driver <ArrowRight size={15} /></a>
               <a className="landing-button landing-button--quiet" href="#how-it-works">See how it works <ArrowRight size={15} /></a>

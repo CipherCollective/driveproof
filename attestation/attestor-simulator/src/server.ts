@@ -4,7 +4,7 @@ import { signTripSamples, generateAttestationId } from './signing.js';
 
 export interface AttestationRequest {
   tripId: string;
-  /** H("DRIVEPROOF_SUBJECT_V1", driverSecret) — driver sends binding, never the raw secret. */
+  /** H("DRIVEPROOF_SUBJECT_V1", driverSecret)  driver sends binding, never the raw secret. */
   driverBinding: string;
 }
 
@@ -177,7 +177,7 @@ export function createRequestHandler(
 
         const samples = resolveDemoTripSamples(body.tripId);
         if (samples === undefined) {
-          sendJson(res, 400, { error: 'Unknown tripId — use "safe", "unsafe", or "out-of-geofence"' }, requestOrigin, allowedOrigin);
+          sendJson(res, 400, { error: 'Unknown tripId  use "safe", "unsafe", or "out-of-geofence"' }, requestOrigin, allowedOrigin);
           return;
         }
 

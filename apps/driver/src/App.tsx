@@ -135,12 +135,12 @@ export type PublicProofMetadataField = {
 };
 
 const pendingPublicProofMetadata: PublicProofMetadataField[] = [
-  { label: "Policy", value: "—", note: "exact field pending contract handoff" },
-  { label: "Attestor", value: "—", note: "exact field pending contract handoff" },
-  { label: "Transaction", value: "—", note: "returned by the proof client" },
-  { label: "Block", value: "—", note: "returned by the proof client" },
-  { label: "Contract", value: "—", note: "returned by the proof client" },
-  { label: "Network", value: "—", note: "returned by the proof client" }
+  { label: "Policy", value: "", note: "exact field pending contract handoff" },
+  { label: "Attestor", value: "", note: "exact field pending contract handoff" },
+  { label: "Transaction", value: "", note: "returned by the proof client" },
+  { label: "Block", value: "", note: "returned by the proof client" },
+  { label: "Contract", value: "", note: "returned by the proof client" },
+  { label: "Network", value: "", note: "returned by the proof client" }
 ];
 
 function formatPublicValue(value: string): string {

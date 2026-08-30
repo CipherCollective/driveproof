@@ -1,5 +1,5 @@
 // DriveProof Phase 6: rectangular geofence policy on 16-sample trip commitment.
-// Trusted attestor must issue unique attestationIds — a malicious attestor can still
+// Trusted attestor must issue unique attestationIds  a malicious attestor can still
 // re-issue duplicate records under different IDs (known trust boundary).
 
 pragma language_version >= 0.22 && <= 0.23;

@@ -5,7 +5,7 @@
  * attestor satisfies an insurer's policy without revealing the telemetry.
  * This simulator stands in for a production OEM telematics control unit (TCU),
  * secure vehicle computer, trusted OBD device, or other hardware-backed
- * telemetry provider — it does not prove physical GPS provenance.
+ * telemetry provider  it does not prove physical GPS provenance.
  */
 import 'dotenv/config';
 import { createAttestorRuntimeFromEnv } from './runtime.js';
@@ -18,7 +18,7 @@ try {
   runtime = createAttestorRuntimeFromEnv();
 } catch (error: unknown) {
   const message = error instanceof Error ? error.message : 'Attestor configuration failed';
-  console.error(`FATAL: ${message} Copy .env.example to .env and set a persistent key — never regenerate on restart.`);
+  console.error(`FATAL: ${message} Copy .env.example to .env and set a persistent key  never regenerate on restart.`);
   process.exit(1);
 }
 

@@ -6,7 +6,7 @@ import { createSignedTripState, generateDriverSecret } from './utils/test-data.j
 
 setNetworkId('undeployed');
 
-describe('DriveProof acceptance — 16-sample trip commitment', () => {
+describe('DriveProof acceptance  16-sample trip commitment', () => {
   it('proves compliance for a fresh safe attestation', () => {
     const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT, DEFAULT_BRAKING_LIMIT);
     simulator.setSignedTripState('safe');

@@ -119,7 +119,7 @@ The attestor process owns the persistent `PROVIDER_SECRET_KEY`. The browser rece
 
 ## Official implementation references
 
-- [midnightntwrk/midnight-wallet-dapp `src/lib/providers.ts`](https://github.com/midnightntwrk/midnight-wallet-dapp/blob/main/src/lib/providers.ts) — current browser provider bundle and generated asset base pattern.
-- [midnightntwrk/midnight-wallet-dapp `src/lib/walletAdapter.ts`](https://github.com/midnightntwrk/midnight-wallet-dapp/blob/main/src/lib/walletAdapter.ts) — `ConnectedAPI` balance/submit mapping.
-- [midnightntwrk/example-zkloan `zkloan-credit-scorer-cli/src/api.ts`](https://github.com/midnightntwrk/example-zkloan/blob/main/zkloan-credit-scorer-cli/src/api.ts) — current `CompiledContract`, deploy, join, and call shape.
-- [midnightntwrk/example-zkloan UI manifest](https://github.com/midnightntwrk/example-zkloan/blob/main/zkloan-credit-scorer-ui/package.json) — compatible Midnight.js `4.1.1` and ledger `8.1.0` package set.
+- [midnightntwrk/midnight-wallet-dapp `src/lib/providers.ts`](https://github.com/midnightntwrk/midnight-wallet-dapp/blob/main/src/lib/providers.ts)  current browser provider bundle and generated asset base pattern.
+- [midnightntwrk/midnight-wallet-dapp `src/lib/walletAdapter.ts`](https://github.com/midnightntwrk/midnight-wallet-dapp/blob/main/src/lib/walletAdapter.ts)  `ConnectedAPI` balance/submit mapping.
+- [midnightntwrk/example-zkloan `zkloan-credit-scorer-cli/src/api.ts`](https://github.com/midnightntwrk/example-zkloan/blob/main/zkloan-credit-scorer-cli/src/api.ts)  current `CompiledContract`, deploy, join, and call shape.
+- [midnightntwrk/example-zkloan UI manifest](https://github.com/midnightntwrk/example-zkloan/blob/main/zkloan-credit-scorer-ui/package.json)  compatible Midnight.js `4.1.1` and ledger `8.1.0` package set.
