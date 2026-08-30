@@ -143,10 +143,7 @@ async function runRealPath(): Promise<void> {
     console.log("Proving and submitting safe compliance proof.");
     const proof = await joined.callTx.proveCompliance();
     console.log(`Safe proof tx: ${proof.public.txId}`);
-    const stateAfterSafe = await providers.publicDataProvider.queryContractState(deployment.contractAddress);
-    if (!stateAfterSafe) throw new Error("The indexer did not return the deployed contract state after the safe proof.");
-    const safeCount = DriveProof.ledger(stateAfterSafe.data).complianceCount;
-    console.log(`complianceCount: ${safeCount.toString()}`);
+    const safeCount = await readComplianceCount(providers, deployment.contractAddress, "After safe proof");
     if (safeCount !== 1n) throw new Error(`Expected complianceCount 1 after safe proof, received ${safeCount.toString()}.`);
 
     const unsafe = await requestAttestorPrivateState(config.attestorUrl, "unsafe", driverSecretKey);
@@ -154,26 +151,16 @@ async function runRealPath(): Promise<void> {
       throw new Error(`Expected the unsafe attestor trip max speed 112, received ${maxSampleSpeed(unsafe.samples)}.`);
     }
     await providers.privateStateProvider.set(PRIVATE_STATE_ID, unsafe);
-    try {
-      await joined.callTx.proveCompliance();
-      console.log("UNSAFE RESULT: unexpectedly accepted by the real contract.");
-    } catch (error) {
-      console.log(`UNSAFE RESULT: rejected (${safeError(error)}).`);
-    }
-    const afterUnsafe = await providers.publicDataProvider.queryContractState(deployment.contractAddress);
-    const countAfterUnsafe = afterUnsafe ? DriveProof.ledger(afterUnsafe.data).complianceCount : undefined;
+    await expectProofRejection(
+      "UNSAFE RESULT",
+      () => joined.callTx.proveCompliance(),
+      "Speed exceeds policy limit",
+    );
+    const countAfterUnsafe = await readComplianceCount(providers, deployment.contractAddress, "After unsafe rejection");
     if (countAfterUnsafe !== 1n) {
-      throw new Error(`Expected complianceCount 1 after unsafe rejection, received ${countAfterUnsafe?.toString() ?? "undefined"}.`);
+      throw new Error(`Expected complianceCount 1 after unsafe rejection, received ${countAfterUnsafe.toString()}.`);
     }
 
-<<<<<<< Updated upstream
-    await providers.privateStateProvider.set(PRIVATE_STATE_ID, { ...unsafe, speed: 71n });
-    try {
-      await joined.callTx.proveCompliance();
-      console.log("TAMPER RESULT: unexpectedly accepted by the real contract.");
-    } catch (error) {
-      console.log(`TAMPER RESULT: rejected (${safeError(error)}).`);
-=======
     await providers.privateStateProvider.set(PRIVATE_STATE_ID, {
       ...unsafe,
       samples: unsafe.samples.map((sample, index) =>
@@ -188,21 +175,40 @@ async function runRealPath(): Promise<void> {
     const countAfterTamper = await readComplianceCount(providers, deployment.contractAddress, "After tamper rejection");
     if (countAfterTamper !== 1n) {
       throw new Error(`Expected complianceCount 1 after tamper rejection, received ${countAfterTamper.toString()}.`);
->>>>>>> Stashed changes
     }
-    const afterTamper = await providers.publicDataProvider.queryContractState(deployment.contractAddress);
-    const countAfterTamper = afterTamper ? DriveProof.ledger(afterTamper.data).complianceCount : undefined;
-    if (countAfterTamper !== 1n) {
-      throw new Error(`Expected complianceCount 1 after tamper rejection, received ${countAfterTamper?.toString() ?? "undefined"}.`);
+
+    const wrongDriverSecret = generateDriverSecret();
+    await providers.privateStateProvider.set(PRIVATE_STATE_ID, {
+      ...attestation,
+      driverSecretKey: wrongDriverSecret,
+    });
+    await expectProofRejection(
+      "WRONG BINDING RESULT",
+      () => joined.callTx.proveCompliance(),
+      "Invalid attestation signature",
+    );
+    const countAfterWrongBinding = await readComplianceCount(providers, deployment.contractAddress, "After wrong-binding rejection");
+    if (countAfterWrongBinding !== 1n) {
+      throw new Error(`Expected complianceCount 1 after wrong-binding rejection, received ${countAfterWrongBinding.toString()}.`);
     }
 
     await providers.privateStateProvider.set(PRIVATE_STATE_ID, attestation);
-    try {
-      await joined.callTx.proveCompliance();
-      console.log("REPLAY RESULT: unexpectedly accepted by the real contract.");
-    } catch (error) {
-      console.log(`REPLAY RESULT: rejected (${safeError(error)}).`);
+    await expectProofRejection(
+      "REPLAY RESULT",
+      () => joined.callTx.proveCompliance(),
+      "Attestation already used",
+    );
+    const countAfterReplay = await readComplianceCount(providers, deployment.contractAddress, "After replay rejection");
+    if (countAfterReplay !== 1n) {
+      throw new Error(`Expected complianceCount 1 after replay rejection, received ${countAfterReplay.toString()}.`);
     }
+
+    console.log("PREPROD CRYPTO ACCEPTANCE PASSED");
+    console.log("- safe proof succeeded");
+    console.log("- replay rejected without incrementing complianceCount");
+    console.log("- wrong driver binding rejected");
+    console.log("- unsafe rejected without consuming nullifier");
+    console.log("- tamper rejected without consuming nullifier");
   } finally {
     await wallet.facade.stop();
   }
@@ -220,6 +226,38 @@ function safeError(error: unknown): string {
     if (tag) return tag;
   }
   return "Unknown error";
+}
+
+async function expectProofRejection(
+  label: string,
+  action: () => Promise<unknown>,
+  expectedFragment: string,
+): Promise<void> {
+  try {
+    await action();
+    throw new Error(`${label}: unexpectedly accepted by the real contract.`);
+  } catch (error) {
+    if (error instanceof Error && error.message.includes("unexpectedly accepted")) {
+      throw error;
+    }
+    const message = safeError(error);
+    console.log(`${label}: rejected (${message}).`);
+    if (!message.includes(expectedFragment)) {
+      throw new Error(`${label}: expected rejection containing "${expectedFragment}", received "${message}".`);
+    }
+  }
+}
+
+async function readComplianceCount(
+  providers: Awaited<ReturnType<typeof createDriveProofProviders>>,
+  contractAddress: string,
+  label: string,
+): Promise<bigint> {
+  const state = await providers.publicDataProvider.queryContractState(contractAddress);
+  if (!state) throw new Error(`The indexer did not return contract state for ${label}.`);
+  const count = DriveProof.ledger(state.data).complianceCount;
+  console.log(`${label} complianceCount: ${count.toString()}`);
+  return count;
 }
 
 async function main(): Promise<void> {
