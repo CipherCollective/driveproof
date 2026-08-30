@@ -20,7 +20,7 @@ Vite values are compiled into the browser bundle at build time. The production D
 VITE_DRIVEPROOF_CLIENT_MODE=midnight
 VITE_INSURER_ORIGIN=https://driveproof-insurer-atharv.vercel.app
 VITE_MIDNIGHT_NETWORK=preprod
-VITE_MIDNIGHT_PROOF_SERVER=https://driveproof-driver-atharv.vercel.app/midnight-proof
+VITE_MIDNIGHT_PROOF_SERVER=https://driveproof-proof-server.bluewater-aa5f9cb8.centralindia.azurecontainerapps.io
 VITE_MIDNIGHT_ATTESTOR_URL=https://driveproof-attestor-atharv.vercel.app
 VITE_ENABLE_WALLET_DEBUG=true
 ```
@@ -105,21 +105,21 @@ The Insurer returns HTTP 200 at:
 https://driveproof-insurer-atharv.vercel.app/
 ```
 
-## Remote proof server
+## Azure proof server
 
-The production Driver uses a same-origin Vercel external rewrite for proof requests:
-
-```text
-https://driveproof-driver-atharv.vercel.app/midnight-proof
-```
-
-Vercel forwards that path server-side to Midnight's hosted Preprod proof server:
+The production Driver uses the dedicated Azure Container Apps proof server directly:
 
 ```text
-https://proof-server.preprod.midnight.network
+https://driveproof-proof-server.bluewater-aa5f9cb8.centralindia.azurecontainerapps.io
 ```
 
-The rewrite is `no-store` and is configured only in `vercel.driver.json`. Local development remains configured for `http://localhost:6300`.
+It runs the pinned official image:
+
+```text
+midnightntwrk/proof-server:8.1.0
+```
+
+The endpoint exposes HTTPS on port 6300. Local development remains configured for `http://localhost:6300`.
 
 The hosted upstream responds:
 
@@ -128,7 +128,7 @@ GET /version -> 200
 body -> 8.1.0
 ```
 
-The same-origin proxy also forwards `POST /check` with the provider's binary content type. Connectivity checks return an upstream HTTP response rather than a browser CORS fetch failure. This verifies reachability and version compatibility only; it does not perform a proof or transaction.
+The Azure endpoint allows the exact production Driver origin for `POST /check` with the provider's binary content type. Safe invalid-payload checks return ordinary HTTP responses with CORS headers; this verifies reachability and version compatibility only and does not perform a proof or transaction.
 
 ## Hosted Lace and real proof steps
 
