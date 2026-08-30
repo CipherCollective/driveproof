@@ -1,4 +1,4 @@
-import { POLICY_ID } from "@driveproof/fixtures";
+import { DEFAULT_POLICY_GEOFENCE, POLICY_ID } from "@driveproof/fixtures";
 import type {
   DemoFixture,
   DriveProofClient,
@@ -24,6 +24,11 @@ const ZK_CONFIG_BASE_PATH = "/contract/compiled/driveproof";
 const EXPECTED_PROOF_SERVER_VERSION = "8.1.0";
 const EXPECTED_NETWORK_ID = "preprod";
 const SPEED_LIMIT = 80n;
+const BRAKING_LIMIT = 2n;
+const GEOFENCE_MIN_X = BigInt(DEFAULT_POLICY_GEOFENCE.minGridX);
+const GEOFENCE_MIN_Y = BigInt(DEFAULT_POLICY_GEOFENCE.minGridY);
+const GEOFENCE_MAX_X = BigInt(DEFAULT_POLICY_GEOFENCE.maxGridX);
+const GEOFENCE_MAX_Y = BigInt(DEFAULT_POLICY_GEOFENCE.maxGridY);
 const ATTESTOR_ID = 1n;
 const ATTESTOR_PUBLIC_KEY = {
   x: 24963340820686704563874210959139693074205807300853579178326830224576306549782n,
@@ -92,15 +97,37 @@ function collectErrorMessages(value: unknown, messages: string[], visited: Set<o
   collectErrorMessages(record.error, messages, visited, depth + 1);
 }
 
-/** Classifies only assertions the current v2 contract intentionally exposes. */
+/** Classifies only assertions the current contract intentionally exposes. */
 export function classifyMidnightProofRejection(error: unknown): ProofRejectionReason | undefined {
   const messages: string[] = [];
   collectErrorMessages(error, messages, new Set<object>());
 
   if (messages.some((message) => message.includes("Speed exceeds policy limit"))) return "policy";
+  if (messages.some((message) => message.includes("Harsh braking exceeds policy limit"))) return "policy";
+  if (messages.some((message) => message.includes("Sample outside policy geofence"))) return "policy";
   if (messages.some((message) => message.includes("Invalid attestation signature"))) return "integrity";
   if (messages.some((message) => message.includes("Attestation already used"))) return "replay";
   return undefined;
+}
+
+function maxSampleSpeed(samples: DriveProofPrivateState["samples"]): bigint {
+  return samples.reduce((max, sample) => sample.speed > max ? sample.speed : max, 0n);
+}
+
+function toProductSamples(samples: DriveProofPrivateState["samples"]): TripAttestation["samples"] {
+  return samples.map((sample) => ({
+    gridX: Number(sample.gridX),
+    gridY: Number(sample.gridY),
+    speed: Number(sample.speed),
+    braking: Number(sample.braking),
+    timeBucket: Number(sample.timeBucket)
+  }));
+}
+
+function tamperSpeed(samples: DriveProofPrivateState["samples"]): DriveProofPrivateState["samples"] {
+  const unsafeIndex = samples.findIndex((sample) => sample.speed === 112n);
+  if (unsafeIndex < 0) throw new Error("The unsafe attestation did not contain the expected 112 speed sample.");
+  return samples.map((sample, index) => index === unsafeIndex ? { ...sample, speed: 71n } : sample);
 }
 
 function createRandomBytes(length: number): Uint8Array {
@@ -192,7 +219,7 @@ const createMidnightRuntimeDefault: RuntimeFactory = async (connectedApi, option
 };
 
 /**
- * Real v2 product adapter. It owns no provider secret and never places the
+ * Real product adapter for the current 16-sample contract. It owns no provider secret and never places the
  * driver secret, signature, or generated private state in a public receipt.
  */
 export class MidnightDriveProofClient implements DriveProofClient {
@@ -294,17 +321,18 @@ export class MidnightDriveProofClient implements DriveProofClient {
     });
 
     const expectedSpeed = fixture === "safe" ? 67n : 112n;
-    if (privateState.speed !== expectedSpeed) {
-      throw new Error(`Attestor returned ${privateState.speed.toString()} for the ${fixture} fixture; expected ${expectedSpeed.toString()}.`);
+    const returnedSpeed = maxSampleSpeed(privateState.samples);
+    if (returnedSpeed !== expectedSpeed) {
+      throw new Error(`Attestor returned max speed ${returnedSpeed.toString()} for the ${fixture} fixture; expected ${expectedSpeed.toString()}.`);
     }
     if (privateState.attestorId !== ATTESTOR_ID) {
       throw new Error(`The attestor returned provider ${privateState.attestorId.toString()}; expected provider ${ATTESTOR_ID.toString()}.`);
     }
 
     const displayAttestation: TripAttestation = {
-      // v2 proves a single issuer-signed speed. Do not manufacture the
-      // product fixture's 16-sample visualization for the real adapter.
-      samples: [],
+      // Samples remain in the Driver's local product state for the private
+      // journey view. They are never copied into a public receipt.
+      samples: toProductSamples(privateState.samples),
       attestorId: privateState.attestorId.toString(),
       attestationId: privateState.attestationId.toString(),
       fixture,
@@ -326,9 +354,9 @@ export class MidnightDriveProofClient implements DriveProofClient {
     }
 
     // The tampered fixture deliberately changes only the local witness speed;
-    // its issuer signature and attestation ID remain the original unsafe ones.
+    // its issuer signature, salt, and attestation ID remain the original unsafe ones.
     const privateState = attestation.fixture === "tampered"
-      ? { ...issuedState, speed: 71n }
+      ? { ...issuedState, samples: tamperSpeed(issuedState.samples) }
       : issuedState;
 
     try {
@@ -343,7 +371,16 @@ export class MidnightDriveProofClient implements DriveProofClient {
       if (!this.contractAddress) {
         const deployed = await deployContract(runtime.providers, {
           compiledContract: compiled.compiledContract,
-          args: [SPEED_LIMIT, ATTESTOR_ID, ATTESTOR_PUBLIC_KEY],
+          args: [
+            SPEED_LIMIT,
+            BRAKING_LIMIT,
+            GEOFENCE_MIN_X,
+            GEOFENCE_MIN_Y,
+            GEOFENCE_MAX_X,
+            GEOFENCE_MAX_Y,
+            ATTESTOR_ID,
+            ATTESTOR_PUBLIC_KEY
+          ],
           privateStateId: PRIVATE_STATE_ID,
           initialPrivateState: privateState
         });

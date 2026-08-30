@@ -138,6 +138,11 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
   const walletDiagnosticsInFlight = useRef(false);
   const readinessInFlight = useRef(false);
 
+  function getSessionDriverSecret(): Uint8Array {
+    driverSecretKey.current ??= createSessionDriverSecret();
+    return driverSecretKey.current;
+  }
+
   const walletConnected = connection.status === "connected";
   const networkReady = walletConnected && connection.network === resolvedConfig.networkId;
   const session = connection.status === "connected" ? connection.session : undefined;
@@ -243,9 +248,8 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     setExpectedProofRejection(undefined);
     setOperation(`attesting-${tripId}`);
     try {
-      if (!driverSecretKey.current) driverSecretKey.current = createSessionDriverSecret();
       const state = await requestAttestorPrivateState(ATTESTOR_URL, tripId, {
-        driverSecretKey: driverSecretKey.current
+        driverSecretKey: getSessionDriverSecret()
       });
       setAttestation(state);
     } catch (attestorError) {
@@ -411,7 +415,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     setError(undefined);
     try {
       const unsafeState = await requestAttestorPrivateState(ATTESTOR_URL, "unsafe", {
-        driverSecretKey: driverSecretKey.current ?? createSessionDriverSecret()
+        driverSecretKey: getSessionDriverSecret()
       });
       await joinAndProve(unsafeState, "proving-unsafe");
     } catch (attestorError) {
@@ -424,9 +428,12 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     setError(undefined);
     try {
       const unsafeState = await requestAttestorPrivateState(ATTESTOR_URL, "unsafe", {
-        driverSecretKey: driverSecretKey.current ?? createSessionDriverSecret()
+        driverSecretKey: getSessionDriverSecret()
       });
-      await joinAndProve({ ...unsafeState, speed: 71n }, "proving-tampered");
+      const tamperedSamples = unsafeState.samples.map((sample, index) =>
+        index === 6 ? { ...sample, speed: 71n } : sample
+      );
+      await joinAndProve({ ...unsafeState, samples: tamperedSamples }, "proving-tampered");
     } catch (attestorError) {
       setError(normalizeErrorMessage(attestorError));
     }
@@ -610,6 +617,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
           <div className="wallet-debug-actions">
             <button className="debug-secondary-button" disabled={busy} onClick={() => void requestAttestation("safe")} type="button">{operation === "attesting-safe" ? "REQUESTING SAFE" : "REQUEST SAFE · EXPECT 67"}</button>
             <button className="debug-secondary-button" disabled={busy} onClick={() => void requestAttestation("unsafe")} type="button">{operation === "attesting-unsafe" ? "REQUESTING UNSAFE" : "REQUEST UNSAFE · EXPECT 112"}</button>
+            <button className="debug-secondary-button" disabled={busy} onClick={() => void requestAttestation("out-of-geofence")} type="button">{operation === "attesting-out-of-geofence" ? "REQUESTING GEOFENCE CASE" : "REQUEST OUT-OF-GEOFENCE"}</button>
           </div>
         </section>
 

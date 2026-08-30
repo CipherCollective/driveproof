@@ -35,6 +35,19 @@ describe("classifyExpectedProofRejection", () => {
     });
   });
 
+  it("classifies the final braking and geofence assertions as policy rejections", () => {
+    expect(classifyExpectedProofRejection(new Error("failed assert: Harsh braking exceeds policy limit"))).toMatchObject({
+      kind: "policy",
+      heading: "Policy violation",
+      technicalDetail: "failed assert: Harsh braking exceeds policy limit"
+    });
+    expect(classifyExpectedProofRejection(new Error("failed assert: Sample outside policy geofence"))).toMatchObject({
+      kind: "policy",
+      heading: "Policy violation",
+      technicalDetail: "failed assert: Sample outside policy geofence"
+    });
+  });
+
   it("leaves unknown errors unclassified", () => {
     expect(classifyExpectedProofRejection(new Error("Indexer unavailable"))).toBeUndefined();
   });

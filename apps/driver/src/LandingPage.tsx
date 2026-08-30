@@ -51,7 +51,10 @@ function FlowArrow() {
 
 export function LandingPage({ mode = "mock" }: { mode?: DriveProofClientMode }) {
   const isMock = mode === "mock";
-  const insurerUrl = `${import.meta.env.VITE_INSURER_URL ?? "http://localhost:5174"}/`;
+  const insurerOrigin = (import.meta.env.VITE_INSURER_ORIGIN?.trim()
+    || import.meta.env.VITE_INSURER_URL?.trim()
+    || "http://localhost:5174").replace(/\/$/, "");
+  const insurerUrl = `${insurerOrigin}/`;
 
   return (
     <div className="landing-shell">

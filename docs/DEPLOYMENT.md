@@ -16,7 +16,7 @@ Deploy from the repository root:
 ```powershell
 vercel --scope atharv-mantris-projects --project driveproof-driver-atharv --local-config vercel.driver.json --prod --yes `
   --build-env VITE_DRIVEPROOF_CLIENT_MODE=mock `
-  --build-env VITE_INSURER_URL=https://driveproof-insurer-atharv.vercel.app `
+  --build-env VITE_INSURER_ORIGIN=https://driveproof-insurer-atharv.vercel.app `
   --build-env VITE_MIDNIGHT_NETWORK=preprod `
   --build-env VITE_MIDNIGHT_PROOF_SERVER=http://localhost:6300 `
   --build-env VITE_ENABLE_WALLET_DEBUG=true
@@ -34,7 +34,7 @@ Driver:
 
 ```text
 VITE_DRIVEPROOF_CLIENT_MODE=mock
-VITE_INSURER_URL=<Insurer production URL>
+VITE_INSURER_ORIGIN=<Insurer production URL>
 VITE_MIDNIGHT_NETWORK=preprod
 VITE_MIDNIGHT_PROOF_SERVER=http://localhost:6300
 VITE_ENABLE_WALLET_DEBUG=true   # only on the explicit hosted acceptance deployment
