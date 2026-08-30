@@ -3,7 +3,7 @@ import {
   ArrowDown,
   ArrowUpRight,
   Check,
-  Code2,
+  Copy,
   EyeOff,
   Fingerprint,
   HelpCircle,
@@ -22,13 +22,11 @@ import type { DemoFixture, DriveProofClient, ProofResult, TripAttestation } from
 function InsurerSidebar({
   isOpen,
   driverUrl,
-  technicalUrl,
   mode,
   onNavigate
 }: {
   isOpen: boolean;
   driverUrl: string;
-  technicalUrl: string;
   mode: DriveProofClient["mode"];
   onNavigate: () => void;
 }) {
@@ -43,12 +41,11 @@ function InsurerSidebar({
       <nav className="product-navigation" aria-label="Verifier sections">
         <div className="product-navigation-label">Verifier</div>
         <a className="product-nav-link product-nav-link--active" href="#overview" onClick={onNavigate}><LayoutDashboard size={15} /> Overview</a>
-        <a className="product-nav-link" href="#verification" onClick={onNavigate}><ShieldCheck size={15} /> Verification</a>
+        <a className="product-nav-link" href="#receipt" onClick={onNavigate}><ShieldCheck size={15} /> Receipt</a>
         <a className="product-nav-link" href="#privacy" onClick={onNavigate}><LockKeyhole size={15} /> Privacy boundary</a>
         <div className="product-navigation-divider" />
-        <div className="product-navigation-label">Surfaces</div>
+        <div className="product-navigation-label">Product</div>
         <a className="product-nav-link" href={driverUrl} onClick={onNavigate}><ArrowUpRight size={15} /> Driver view</a>
-        <a className="product-nav-link" href={technicalUrl} onClick={onNavigate}><Code2 size={15} /> Technical evidence <span className="product-nav-note">DEV</span></a>
       </nav>
       <div className="product-sidebar-footer">
         <div className="product-sidebar-status">
@@ -56,7 +53,7 @@ function InsurerSidebar({
           <strong>MIDNIGHT PREPROD</strong>
         </div>
         <div className="product-help-button product-help-button--static"><HelpCircle size={15} /> Public result boundary</div>
-        <div className="product-sidebar-mode">{mode === "mock" ? "MOCK CLIENT · PRODUCT SURFACE" : "REAL CLIENT · PRODUCT SURFACE"}</div>
+        <div className="product-sidebar-mode">{mode === "mock" ? "MOCK · PRODUCT PREVIEW" : "REAL · MIDNIGHT PREPROD"}</div>
       </div>
     </aside>
   );
@@ -70,7 +67,7 @@ function initialFixture(): DemoFixture {
 function DemoControls({ fixture, onFixtureChange }: { fixture: DemoFixture; onFixtureChange: (fixture: DemoFixture) => void }) {
   return (
     <aside className="demo-controls" aria-label="Demo controls">
-      <div className="demo-controls-header"><SlidersHorizontal size={11} /> demo control · mock only</div>
+      <div className="demo-controls-header"><SlidersHorizontal size={11} /> preview controls · mock</div>
       <div className="demo-buttons">
         {(["safe", "unsafe", "tampered"] as DemoFixture[]).map((option) => (
           <button className={`demo-button ${fixture === option ? "demo-button--active" : ""} ${option === "tampered" && fixture === option ? "demo-button--danger" : ""}`} key={option} onClick={() => onFixtureChange(option)} type="button">
@@ -79,6 +76,19 @@ function DemoControls({ fixture, onFixtureChange }: { fixture: DemoFixture; onFi
         ))}
       </div>
     </aside>
+  );
+}
+
+function formatPublicValue(value: string): string {
+  return value.length > 18 ? `${value.slice(0, 8)}…${value.slice(-6)}` : value;
+}
+
+function PublicValue({ label, value, copy = false }: { label: string; value: string; copy?: boolean }) {
+  return (
+    <span className="public-value">
+      <strong title={value}>{formatPublicValue(value)}</strong>
+      {copy && <button className="copy-value-button" type="button" aria-label={`Copy ${label}`} title={`Copy full ${label}`} onClick={() => { void navigator.clipboard?.writeText(value); }}><Copy size={12} /></button>}
+    </span>
   );
 }
 
@@ -93,8 +103,8 @@ function VerifierStatusStrip({ result, isMock }: { result: ProofResult; isMock: 
         <p>The public view is intentionally smaller than the private witness behind it.</p>
       </div>
       <div className="product-status-items">
-        <div className="product-status-item"><span>Result</span><strong className={verified ? "product-status-good" : "product-status-bad"}>{verified ? "VERIFIED" : "REJECTED"}</strong><small>{isMock ? "mock product surface" : "public result"}</small></div>
-        <div className="product-status-item"><span>Network</span><strong>{isMock ? "MOCK MODE" : network ?? "NOT REPORTED"}</strong><small>{isMock ? "no chain request" : "receipt field"}</small></div>
+        <div className="product-status-item"><span>Result</span><strong className={verified ? "product-status-good" : "product-status-bad"}>{verified ? "VERIFIED" : "REJECTED"}</strong><small>{isMock ? "local preview" : "public result"}</small></div>
+        <div className="product-status-item"><span>Network</span><strong>{isMock ? "PREPROD TARGET" : network ?? "NOT REPORTED"}</strong><small>{isMock ? "target environment" : "receipt field"}</small></div>
         <div className="product-status-item"><span>Data received</span><strong>PUBLIC RESULT</strong><small>raw telemetry not included</small></div>
       </div>
     </section>
@@ -119,7 +129,7 @@ function PublicReceiptDetails({ result }: { result: ProofResult }) {
     <section className="public-receipt" aria-labelledby="public-receipt-title">
       <div className="public-receipt-heading"><div><div className="eyebrow" title="The minimal on-chain result the insurer can verify.">PUBLIC RECEIPT</div><h3 id="public-receipt-title">What the verifier can retain</h3></div><span>NO PRIVATE TELEMETRY</span></div>
       <div className="public-receipt-grid">
-        {fields.map(([label, fieldValue]) => <div key={label}><span>{label}</span><strong>{fieldValue}</strong></div>)}
+        {fields.map(([label, fieldValue]) => <div key={label}><span>{label}</span><PublicValue label={label} value={fieldValue} copy={label === "Transaction" || label === "Contract"} /></div>)}
       </div>
     </section>
   );
@@ -157,7 +167,7 @@ function PrivateBoundary() {
           <div className="boundary-arrow"><ArrowDown size={15} /></div>
           <div className="boundary-item"><EyeOff size={17} /><div><h3>INSURER LEARNS THE PROOF</h3><p>A policy result and only the public metadata needed to verify it.</p></div></div>
         </div>
-        <div className="boundary-callout"><div className="eyebrow">NOT SHARED</div><p>Route, origin, destination, exact speed history, and GPS history remain private.</p></div>
+        <div className="boundary-callout"><div className="eyebrow">NOT SHARED</div><p>Route, private grid, exact speed history, braking history, and raw telemetry remain private.</p></div>
       </div>
     </section>
   );
@@ -165,11 +175,10 @@ function PrivateBoundary() {
 
 function PrivateDataStrip() {
   const fields = [
-    ["ROUTE", "PRIVATE"],
-    ["ORIGIN", "PRIVATE"],
-    ["DESTINATION", "PRIVATE"],
+    ["ROUTE / PRIVATE GRID", "PRIVATE"],
     ["EXACT SPEED HISTORY", "PRIVATE"],
-    ["GPS HISTORY", "PRIVATE"]
+    ["BRAKING HISTORY", "PRIVATE"],
+    ["RAW TELEMETRY", "PRIVATE"]
   ];
   return (
     <section className="panel panel-padding" style={{ marginTop: 16 }}>
@@ -264,7 +273,6 @@ export function InsurerExperience({
   }
 
   const driverUrl = `${import.meta.env.VITE_DRIVER_URL ?? "http://localhost:5173"}/driver?fixture=${fixture}`;
-  const technicalUrl = `${import.meta.env.VITE_DRIVER_URL ?? "http://localhost:5173"}/wallet-debug`;
   const verified = result?.status === "verified";
   const replay = result?.status === "rejected" && result.reason === "replay";
 
@@ -279,7 +287,7 @@ export function InsurerExperience({
   return (
     <div className="app-shell insurer-shell product-app-shell">
       <a className="skip-link" href="#main-content">Skip to main content</a>
-      <InsurerSidebar isOpen={isNavOpen} driverUrl={driverUrl} technicalUrl={technicalUrl} mode={clientMode} onNavigate={() => setIsNavOpen(false)} />
+      <InsurerSidebar isOpen={isNavOpen} driverUrl={driverUrl} mode={clientMode} onNavigate={() => setIsNavOpen(false)} />
       {isNavOpen && <button className="product-sidebar-scrim" onClick={() => setIsNavOpen(false)} type="button" aria-label="Close navigation" />}
       <div className="product-main">
         <div className="shell-content">
@@ -303,27 +311,29 @@ export function InsurerExperience({
 
           <VerifierStatusStrip result={result} isMock={isMock} />
 
-          <section className="verifier-grid" id="verification">
+          <section className="verifier-grid" id="receipt">
             <section className="panel verification-result-card">
               <div className="panel-padding">
-                <div className="panel-heading"><div><h2 className="panel-title">Verification result</h2><p className="panel-subtitle">What the insurer can trust from this submission.</p></div><div className="status-label">{isMock ? "Demo" : "Preprod"}</div></div>
+                <div className="panel-heading"><div><div className="eyebrow">{isMock ? "MOCK · PRODUCT PREVIEW" : "REAL · MIDNIGHT PREPROD"}</div><h2 className="panel-title">Public compliance receipt</h2><p className="panel-subtitle">The result available to the insurer from this submission.</p></div><div className="status-label">{isMock ? "Preview" : "Preprod"}</div></div>
                 <div className="result-hero">
                   <div className={`result-icon ${!verified ? "result-icon--rejected" : ""}`}>{verified ? <Check size={22} /> : replay ? <RotateCcw size={22} /> : <X size={22} />}</div>
                   <div>
-                    <div className={`result-kicker ${!verified ? "result-kicker--rejected" : ""}`}>{replay ? "REPLAY REJECTED" : verified ? "DRIVEPROOF" : "PROOF GENERATION REJECTED"}</div>
+                    <div className={`result-kicker ${!verified ? "result-kicker--rejected" : ""}`}>{replay ? "REPLAY REJECTED" : verified ? "✓ DRIVEPROOF VERIFIED" : "PROOF GENERATION REJECTED"}</div>
                     <h2>{replay ? "This proof was already used." : verified ? "VERIFIED" : "No valid proof."}</h2>
-                    <p>{replay ? `This attestation has already been used against ${POLICY_ID}.` : verified ? "The submitted private witness satisfies the authorized safety policy." : `This attested trip cannot produce a valid proof for policy ${POLICY_ID}. Underlying telemetry remains private.`}</p>
+                    <p>{replay ? `This attestation has already been used against ${POLICY_ID}.` : verified ? isMock ? "The local product preview satisfies the demo policy." : "The public receipt records a compliant result on Midnight Preprod." : `This attested trip cannot produce a valid proof for policy ${POLICY_ID}. Underlying telemetry remains private.`}</p>
                   </div>
                 </div>
                 <ProofChecks verified={verified} />
                 <PublicReceiptDetails result={result} />
-                {verified && <div className="result-transaction"><div className="eyebrow">{isMock ? "TRANSACTION REFERENCE · MOCK ONLY" : "TRANSACTION REFERENCE · MIDNIGHT PREPROD"}</div><div className="transaction-value">{result.receipt.transactionId}</div></div>}
                 <div className="mock-callout"><Code2Icon /><p>{isMock
-                  ? <><strong>{displayName}.</strong> This verifier view is a product-development simulation. It did not contact Midnight.</>
+                  ? <><strong>{displayName}.</strong> This is a local product preview. It did not contact Midnight.</>
                   : <><strong>{displayName}.</strong> The verifier receives the compliance result without raw driving telemetry.</>}</p></div>
-                {(onResubmit || (client && attestation)) && <button className="secondary-button" disabled={isResubmitting} onClick={() => void resubmit()} style={{ marginTop: 13, width: "100%" }} type="button">
-                  {isResubmitting ? "RESUBMITTING" : "RESUBMIT SAME ATTESTATION"} <RotateCcw size={13} />
-                </button>}
+                {(onResubmit || (client && attestation)) && <details className="advanced-proof-evidence insurer-advanced-evidence">
+                  <summary>Technical evidence <Code2Icon /></summary>
+                  <button className="secondary-button" disabled={isResubmitting} onClick={() => void resubmit()} type="button">
+                    {isResubmitting ? "RESUBMITTING" : "RESUBMIT SAME ATTESTATION"} <RotateCcw size={13} />
+                  </button>
+                </details>}
               </div>
             </section>
 

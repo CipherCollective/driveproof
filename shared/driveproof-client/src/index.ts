@@ -17,7 +17,7 @@ export type { MidnightDriveProofClientAdapters, MidnightDriveProofClientOptions 
  */
 export class MockDriveProofClient implements DriveProofClient {
   readonly mode = "mock" as const;
-  readonly displayName = "MOCK ONLY · NO MIDNIGHT CALL";
+  readonly displayName = "MOCK · PRODUCT PREVIEW";
 
   private sequence = 0;
   private readonly usedAttestations = new Set<string>();

@@ -3,6 +3,7 @@ import {
   ArrowUpRight,
   Check,
   ChevronRight,
+  Copy,
   HelpCircle,
   Code2,
   Fingerprint,
@@ -134,11 +135,26 @@ export type PublicProofMetadataField = {
 };
 
 const pendingPublicProofMetadata: PublicProofMetadataField[] = [
-  { label: "Policy identifier", value: "—", note: "awaiting Midnight field" },
-  { label: "Attestor identifier", value: "—", note: "awaiting Midnight field" },
-  { label: "Nullifier", value: "—", note: "awaiting Midnight field" },
-  { label: "Transaction / proof reference", value: "—", note: "awaiting Midnight field" }
+  { label: "Policy", value: "—", note: "exact field pending contract handoff" },
+  { label: "Attestor", value: "—", note: "exact field pending contract handoff" },
+  { label: "Transaction", value: "—", note: "returned by the proof client" },
+  { label: "Block", value: "—", note: "returned by the proof client" },
+  { label: "Contract", value: "—", note: "returned by the proof client" },
+  { label: "Network", value: "—", note: "returned by the proof client" }
 ];
+
+function formatPublicValue(value: string): string {
+  return value.length > 18 ? `${value.slice(0, 8)}…${value.slice(-6)}` : value;
+}
+
+function PublicValue({ label, value, copy = false }: { label: string; value: string; copy?: boolean }) {
+  return (
+    <span className="public-value">
+      <strong title={value}>{formatPublicValue(value)}</strong>
+      {copy && <button className="copy-value-button" type="button" aria-label={`Copy ${label}`} title={`Copy full ${label}`} onClick={() => { void navigator.clipboard?.writeText(value); }}><Copy size={12} /></button>}
+    </span>
+  );
+}
 
 export function PublicProofMetadata({
   fields = pendingPublicProofMetadata,
@@ -172,14 +188,16 @@ function PrivacyPanel({ attestation, receipt }: { attestation?: TripAttestation;
   const privateTelemetryLabel = !attestation
     ? "not loaded"
     : attestation.samples.length > 0
-      ? `${attestation.samples.length} samples`
-      : "attested measurement";
+      ? `${attestation.samples.length} telemetry samples`
+      : "Attested measurement";
   const publicFields: PublicProofMetadataField[] | undefined = receipt
     ? [
-        { label: "Policy identifier", value: receipt.policyId ?? "NOT RETURNED", note: receipt.policyId ? "product metadata" : "not returned by client" },
-        { label: "Attestor identifier", value: receipt.attestorId ?? "NOT RETURNED", note: receipt.attestorId ? "public metadata" : "not returned by client" },
-        { label: "Nullifier", value: receipt.nullifier ?? "NOT RETURNED", note: receipt.nullifier ? "public protocol metadata" : "not returned by client" },
-        { label: "Transaction / proof reference", value: receipt.transactionId, note: "public receipt" }
+        { label: "Policy", value: receipt.policyId ?? "NOT RETURNED", note: receipt.policyId ? "product metadata" : "not returned by client" },
+        { label: "Attestor", value: receipt.attestorId ?? "NOT RETURNED", note: receipt.attestorId ? "public metadata" : "not returned by client" },
+        { label: "Transaction", value: receipt.transactionId, note: "public receipt" },
+        { label: "Block", value: receipt.blockHeight === undefined ? "NOT RETURNED" : String(receipt.blockHeight), note: receipt.blockHeight === undefined ? "not returned by client" : "public receipt" },
+        { label: "Contract", value: receipt.contractAddress ?? "NOT RETURNED", note: receipt.contractAddress ? "public receipt" : "not returned by client" },
+        { label: "Network", value: receipt.network ?? "NOT RETURNED", note: receipt.network ? "public receipt" : "not returned by client" }
       ]
     : undefined;
   return (
@@ -188,14 +206,15 @@ function PrivacyPanel({ attestation, receipt }: { attestation?: TripAttestation;
         <div className="panel-padding">
           <div className="privacy-header">
             <LockKeyhole size={15} strokeWidth={1.8} />
-            <h2 className="privacy-heading">LOCAL PRIVATE STATE</h2>
+            <div><h2 className="privacy-heading">PRIVATE WITNESS</h2><p className="privacy-panel-intro">The signed trip stays on the private side of the proof.</p></div>
+            <span className="privacy-boundary-badge">STAYS PRIVATE</span>
           </div>
           <div className="privacy-items">
-            <div className="privacy-item"><span>Private telemetry</span><span>{privateTelemetryLabel}</span></div>
-            <div className="privacy-item"><span>Route / grid positions</span><span>private</span></div>
+            <div className="privacy-item"><span>{privateTelemetryLabel}</span><span>private</span></div>
+            <div className="privacy-item"><span>Private grid positions</span><span>private</span></div>
             <div className="privacy-item"><span>Speed history</span><span>private</span></div>
             <div className="privacy-item"><span>Braking history</span><span>private</span></div>
-            <div className="privacy-item"><span>Attestation</span><span>{attestation ? "issuer-signed" : "not loaded"}</span></div>
+            <div className="privacy-item"><span>Attestor-signed commitment</span><span>{attestation ? "private" : "not loaded"}</span></div>
           </div>
           <div className="lock-line"><Fingerprint size={12} /> the authorized attestor signs the private measurement</div>
         </div>
@@ -204,14 +223,16 @@ function PrivacyPanel({ attestation, receipt }: { attestation?: TripAttestation;
         <div className="panel-padding">
           <div className="privacy-header">
             <MapPinOff size={15} strokeWidth={1.8} />
-            <h2 className="privacy-heading">RAW TELEMETRY DISCLOSED</h2>
+            <div><h2 className="privacy-heading">PUBLIC RESULT</h2><p className="privacy-panel-intro">Only the compliance result and safe receipt metadata can leave this surface.</p></div>
+            <span className="privacy-boundary-badge">ONLY THIS IS SHARED</span>
           </div>
+          <div className="privacy-disclosure-label">RAW TELEMETRY DISCLOSED</div>
           <div className="privacy-items">
             <div className="privacy-item"><span>GPS coordinates</span><span>0</span></div>
             <div className="privacy-item"><span>Speed samples</span><span>0</span></div>
             <div className="privacy-item"><span>Braking samples</span><span>0</span></div>
           </div>
-          <div className="lock-line"><ShieldCheck size={12} /> raw driving telemetry is not revealed to the insurer or public ledger</div>
+          <div className="privacy-boundary-statement"><ShieldCheck size={13} /> No raw route, speed history, or braking history is written to the public receipt.</div>
         </div>
       </section>
       <PublicProofMetadata fields={publicFields} connected={Boolean(receipt)} />
@@ -238,14 +259,14 @@ function VerificationFlow({ stage, result, mode }: { stage: number; result?: Pro
   const progress = result ? 100 : Math.round(((stage + 1) / pendingStages.length) * 100);
   return (
     <section className="verification-panel" aria-live="polite">
-      <div className="eyebrow">{isMock ? (result ? "MOCK RESULT" : "MOCK UX SIMULATION") : result ? "MIDNIGHT PREPROD RESULT" : "MIDNIGHT PREPROD FLOW"}</div>
+      <div className="eyebrow">{isMock ? (result ? "PREVIEW RESULT" : "PRODUCT PREVIEW") : result ? "MIDNIGHT PREPROD RESULT" : "MIDNIGHT PREPROD FLOW"}</div>
       <h2>{result ? (result.status === "verified" ? "Verification confirmed" : result.reason === "replay" ? "Replay rejected" : "Proof generation rejected") : "Building your DriveProof"}</h2>
       <p>{result
         ? isMock
-          ? "This product shell is ready for the generated Midnight client. No real proof or chain transaction was created in this run."
+        ? "This is a local product preview. No real proof or chain transaction was created in this run."
           : "The private witness was evaluated through the configured Midnight Preprod client."
         : isMock
-          ? "A calm, staged view of the private proving flow. The current client is development-only."
+          ? "A calm, staged view of the private proving flow. The current client is a local preview."
           : "A staged view of the private proving flow, from attestation to Midnight verification."}</p>
       <div className="verification-stages">
         {displayStages.map((label, index) => {
@@ -265,24 +286,28 @@ function VerificationFlow({ stage, result, mode }: { stage: number; result?: Pro
   );
 }
 
-function ResultBanner({ result, mode }: { result: ProofResult; mode: DriveProofClient["mode"] }) {
+function ResultBanner({ result, mode, attestation, insurerUrl }: { result: ProofResult; mode: DriveProofClient["mode"]; attestation?: TripAttestation; insurerUrl: string }) {
   const verified = result.status === "verified";
   const replay = result.status === "rejected" && result.reason === "replay";
   const isMock = mode === "mock";
   return (
-    <section className={`state-banner ${verified ? "state-banner--verified" : "state-banner--rejected"}`} role="status" aria-live="polite">
-      {verified ? <Check size={16} /> : replay ? <RotateCcw size={16} /> : <X size={16} />}
-      <div>
-        <h3>{verified ? isMock ? "DRIVEPROOF VERIFIED IN MOCK MODE" : "DRIVEPROOF VERIFIED ON MIDNIGHT PREPROD" : replay ? "REPLAY REJECTED" : "PROOF GENERATION REJECTED"}</h3>
-        <p>{verified
-          ? isMock
-            ? "The safe fixture satisfied the demo policy. The insurer view receives only this proof-shaped result."
-            : "The submitted private witness satisfied the authorized safety policy on Midnight Preprod. Only the compliance result was recorded; raw driving telemetry was not revealed."
-          : replay
-            ? `This attestation has already been used against ${POLICY_ID}.`
-            : `This private witness cannot produce a valid proof for policy ${POLICY_ID}. Underlying telemetry remains private.`}</p>
-        {verified && <div className="state-mono">{result.receipt.transactionId}</div>}
-        {verified && !isMock && <PublicReceiptSummary receipt={result.receipt} />}
+    <section className={`state-banner result-banner ${verified ? "state-banner--verified" : "state-banner--rejected"}`} role="status" aria-live="polite">
+      <div className="result-banner-icon">{verified ? <Check size={21} /> : replay ? <RotateCcw size={18} /> : <X size={18} />}</div>
+      <div className="result-banner-content">
+        <div className="eyebrow">{isMock ? "MOCK · PRODUCT PREVIEW" : "REAL · MIDNIGHT PREPROD"}</div>
+        <h2>{verified ? isMock ? "✓ VERIFIED · MOCK PRODUCT PREVIEW" : "✓ VERIFIED ON MIDNIGHT PREPROD" : replay ? "REPLAY REJECTED" : "PROOF GENERATION REJECTED"}</h2>
+        {verified ? <>
+          <p className="result-banner-lede">Policy satisfied</p>
+          <ul className="result-success-points">
+            <li>{attestation?.samples.length ?? 0} private telemetry samples evaluated</li>
+            <li>Raw telemetry not disclosed</li>
+          </ul>
+          {isMock && <p className="result-preview-note">Local preview only. No Midnight transaction was created.</p>}
+          {!isMock && <PublicReceiptSummary receipt={result.receipt} />}
+          <a className="result-receipt-link" href={insurerUrl}>VIEW INSURER RECEIPT <ArrowUpRight size={14} /></a>
+        </> : <p>{replay
+          ? `This attestation has already been used against ${POLICY_ID}.`
+          : `This private witness cannot produce a valid proof for policy ${POLICY_ID}. Underlying telemetry remains private.`}</p>}
       </div>
     </section>
   );
@@ -290,15 +315,18 @@ function ResultBanner({ result, mode }: { result: ProofResult; mode: DriveProofC
 
 function PublicReceiptSummary({ receipt }: { receipt: PublicProofReceipt }) {
   const fields = [
+    ["Policy", receipt.policyId],
+    ["Attestor", receipt.attestorId],
     ["Network", receipt.network],
+    ["Transaction", receipt.transactionId],
     ["Block", receipt.blockHeight === undefined ? undefined : String(receipt.blockHeight)],
     ["Contract", receipt.contractAddress],
-    ["Compliance", receipt.complianceStatus]
+    ["Result", receipt.complianceStatus === "satisfied" ? "COMPLIANT" : undefined]
   ].filter((field): field is [string, string] => field[1] !== undefined);
 
   return (
     <div className="state-receipt" aria-label="Public proof receipt">
-      {fields.map(([label, value]) => <span key={label}><small>{label}</small><strong>{value}</strong></span>)}
+      {fields.map(([label, value]) => <span key={label}><small>{label}</small><PublicValue label={label} value={value} copy={label === "Transaction" || label === "Contract"} /></span>)}
     </div>
   );
 }
@@ -332,7 +360,7 @@ function TamperedNotice() {
 function DemoControls({ fixture, onFixtureChange }: { fixture: DemoFixture; onFixtureChange: (fixture: DemoFixture) => void }) {
   return (
     <aside className="demo-controls" aria-label="Demo controls">
-      <div className="demo-controls-header"><SlidersHorizontal size={11} /> demo control · mock only</div>
+      <div className="demo-controls-header"><SlidersHorizontal size={11} /> preview controls · mock</div>
       <div className="demo-buttons">
         {(["safe", "unsafe", "tampered"] as DemoFixture[]).map((option) => (
           <button className={`demo-button ${fixture === option ? "demo-button--active" : ""} ${option === "tampered" && fixture === option ? "demo-button--danger" : ""}`} key={option} onClick={() => onFixtureChange(option)} type="button">
@@ -347,13 +375,11 @@ function DemoControls({ fixture, onFixtureChange }: { fixture: DemoFixture; onFi
 function ProductSidebar({
   mode,
   isOpen,
-  insurerUrl,
   onNavigate,
   onResume
 }: {
   mode: DriveProofClient["mode"];
   isOpen: boolean;
-  insurerUrl: string;
   onNavigate: () => void;
   onResume: () => void;
 }) {
@@ -371,8 +397,7 @@ function ProductSidebar({
         <a className="product-nav-link" href="#create-proof" onClick={onNavigate}><ShieldCheck size={15} /> Create proof</a>
         <a className="product-nav-link" href="#privacy" onClick={onNavigate}><LockKeyhole size={15} /> Privacy</a>
         <div className="product-navigation-divider" />
-        <div className="product-navigation-label">Surfaces</div>
-        <a className="product-nav-link" href={insurerUrl} onClick={onNavigate}><ArrowUpRight size={15} /> Insurer view</a>
+        <div className="product-navigation-label">Engineering</div>
         <a className="product-nav-link" href="/wallet-debug" onClick={onNavigate}><Code2 size={15} /> Technical evidence <span className="product-nav-note">DEV</span></a>
       </nav>
       <div className="product-sidebar-footer">
@@ -381,7 +406,7 @@ function ProductSidebar({
           <strong>MIDNIGHT PREPROD</strong>
         </div>
         <button className="product-help-button" onClick={onResume} type="button"><HelpCircle size={15} /> Help &amp; walkthrough</button>
-        <div className="product-sidebar-mode">{mode === "mock" ? "MOCK CLIENT · PRODUCT SURFACE" : "REAL CLIENT · PRODUCT SURFACE"}</div>
+        <div className="product-sidebar-mode">{mode === "mock" ? "MOCK · PRODUCT PREVIEW" : "REAL · MIDNIGHT PREPROD"}</div>
       </div>
     </aside>
   );
@@ -398,14 +423,14 @@ function ProductStatusStrip({
 }) {
   const isMock = client.mode === "mock";
   const walletLabel = isMock
-    ? "MOCK MODE"
+    ? "PREVIEW"
     : connection.status === "connected"
       ? "CONNECTED"
       : connection.status === "connecting"
         ? "CONNECTING"
         : "ACTION NEEDED";
   const networkLabel = isMock
-    ? "MOCK MODE"
+    ? "PREPROD TARGET"
     : connection.status === "connected"
       ? connection.network.toUpperCase()
       : "PREPROD TARGET";
@@ -426,6 +451,11 @@ function ProductStatusStrip({
           <span>Network</span>
           <strong>{networkLabel}</strong>
           <small>{isMock ? "target environment" : connection.status === "connected" ? "validated by client" : "validated after connection"}</small>
+        </div>
+        <div className="product-status-item">
+          <span>Attestor</span>
+          <strong>AUTHORIZED</strong>
+          <small>{isMock ? "preview issuer" : "configured issuer"}</small>
         </div>
         <div className="product-status-item">
           <span>Proof readiness</span>
@@ -452,10 +482,10 @@ function ProductProofStepper({
 }) {
   const steps = getDriverProofSteps({ mode: client.mode, hasAttestation, walletConnected, flowState, result });
   const stateLabel: Record<ReturnType<typeof getDriverProofSteps>[number]["state"], string> = {
-    complete: "complete",
-    current: "next",
-    upcoming: "up next",
-    unavailable: "mock path"
+    complete: "done",
+    current: "active",
+    upcoming: "next",
+    unavailable: "preview"
   };
 
   return (
@@ -588,7 +618,7 @@ function PrivateMeasurementCard() {
     <section className="panel route-card private-trip-placeholder">
       <div className="panel-heading">
         <div><h2 className="panel-title">Private Trip</h2><p className="panel-subtitle">An issuer-signed measurement is ready for the private proof flow.</p></div>
-        <div className="status-label">Local only</div>
+        <div className="status-label">Local private preview</div>
       </div>
       <div className="private-trip-placeholder-body">
         <LockKeyhole size={22} strokeWidth={1.5} />
@@ -621,6 +651,21 @@ function OnboardingChecklist({
 
   if (state.dismissed) {
     return <button className="onboarding-resume" onClick={() => onStateChange({ ...state, dismissed: false })} type="button"><RotateCcw size={14} /> Resume onboarding</button>;
+  }
+
+  if (proofVerified) {
+    return (
+      <details className="onboarding-collapsed">
+        <summary>
+          <span><span className="eyebrow">GETTING STARTED</span><strong>Getting started</strong></span>
+          <span className="onboarding-collapsed-status">4 / 4 complete <Check size={14} strokeWidth={2.8} /></span>
+        </summary>
+        <div className="onboarding-collapsed-body">
+          <p>{clientMode === "mock" ? "The local product preview is complete." : "Your private proof is complete."} Walkthrough completion is saved in this browser only.</p>
+          <button className="onboarding-text-button" onClick={() => onStateChange(resetOnboardingState())} type="button">Restart walkthrough</button>
+        </div>
+      </details>
+    );
   }
 
   return (
@@ -756,6 +801,26 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
     });
   }, [client.mode, result, storage]);
 
+  useEffect(() => {
+    if (result?.status !== "verified") return;
+
+    setOnboardingState((current) => {
+      if (Object.values(current.completed).every(Boolean)) return current;
+      const next = {
+        ...current,
+        completed: {
+          ...current.completed,
+          "connect-wallet": true,
+          "privacy-boundary": true,
+          "create-proof": true,
+          "insurer-result": true
+        }
+      };
+      saveOnboardingState(storage, next);
+      return next;
+    });
+  }, [result, storage]);
+
   async function connectWallet() {
     if (isMock || isConnecting || isVerifying) return;
     if (!client.connect) {
@@ -839,10 +904,8 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
         ? "GENERATING PROOF"
         : !walletConnected
           ? "CONNECT LACE"
-          : !attestation
-            ? "PREPARE ATTESTED DRIVE"
-            : result?.status === "verified"
-              ? "RESUBMIT SAME ATTESTATION"
+            : !attestation
+              ? "PREPARE ATTESTED DRIVE"
               : "CREATE PRIVATE PROOF";
   const insurerUrl = insurerUrlForResult(fixture, result);
   const connectionError = connectionErrorMessage(connection);
@@ -854,7 +917,7 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
   return (
     <div className="app-shell driver-shell product-app-shell">
       <a className="skip-link" href="#main-content">Skip to main content</a>
-      <ProductSidebar isOpen={isNavOpen} mode={client.mode} insurerUrl={insurerUrl} onNavigate={() => setIsNavOpen(false)} onResume={() => { setIsNavOpen(false); updateOnboardingState({ ...onboardingState, dismissed: false }); }} />
+      <ProductSidebar isOpen={isNavOpen} mode={client.mode} onNavigate={() => setIsNavOpen(false)} onResume={() => { setIsNavOpen(false); updateOnboardingState({ ...onboardingState, dismissed: false }); }} />
       {isNavOpen && <button className="product-sidebar-scrim" onClick={() => setIsNavOpen(false)} type="button" aria-label="Close navigation" />}
       <div className="product-main">
         <div className="shell-content">
@@ -879,17 +942,18 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
 
           <ProductStatusStrip client={client} hasAttestation={Boolean(attestation)} connection={connection} />
 
+          {result && !isVerifying && <ResultBanner mode={client.mode} result={result} attestation={attestation} insurerUrl={insurerUrl} />}
+
           <section className="dashboard-grid">
             <div>
               {attestation && attestation.samples.length > 0
                 ? <section className="panel route-card">
                     <div className="panel-heading">
                       <div><h2 className="panel-title">Private Trip</h2><p className="panel-subtitle">A local view of the telemetry your proof uses.</p></div>
-                      <div className="status-label">Local only</div>
+                      <div className="status-label">Local private preview</div>
                     </div>
                     <RouteVisualization attestation={attestation} />
                     <dl className="route-metric-grid">
-                      <Metric label="Distance" value="18.7" unit="km" />
                       <Metric label="Samples" value={attestation.samples.length} />
                       <Metric label="Max speed" value={maxSpeed(attestation.samples)} unit="km/h" />
                       <Metric label="Harsh braking" value={harshBrakingCount(attestation.samples)} />
@@ -916,10 +980,12 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
                   <div className="proof-row"><span className="proof-row-label">Replay protection</span><span className="proof-row-value">active</span></div>
                 </div>
                 <div style={{ marginTop: "auto", paddingTop: 23 }}>
-                  <button className="primary-button" disabled={isBusy} onClick={() => void primaryAction()} type="button">
-                    {primaryLabel}
-                    {isBusy ? <Zap size={14} /> : <ChevronRight size={15} />}
-                  </button>
+                  {result?.status === "verified" && !isVerifying
+                    ? <a className="primary-button" href={insurerUrl}>VIEW INSURER RECEIPT <ArrowUpRight size={15} /></a>
+                    : <button className="primary-button" disabled={isBusy} onClick={() => void primaryAction()} type="button">
+                        {primaryLabel}
+                        {isBusy ? <Zap size={14} /> : <ChevronRight size={15} />}
+                      </button>}
                   <p className="proof-footnote"><Code2 size={11} style={{ verticalAlign: "-2px", marginRight: 4 }} /> {client.displayName} {isMock ? "· no chain transaction" : "· Lace approval required"}</p>
                 </div>
               </div>
@@ -932,7 +998,10 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
           {flowState === "error" && errorMessage && <ClientErrorBanner message={errorMessage} />}
           {flowState !== "error" && connectionError && <ClientErrorBanner message={connectionError} />}
           {isVerifying && <VerificationFlow mode={client.mode} stage={stage} />}
-          {result && !isVerifying && <><ResultBanner mode={client.mode} result={result} /><VerificationFlow mode={client.mode} stage={pendingStages.length - 1} result={result} /></>}
+          {result?.status === "verified" && isMock && <details className="advanced-proof-evidence">
+            <summary>Technical evidence <Code2 size={13} /></summary>
+            <button className="secondary-button" onClick={() => void generateProof()} type="button">RESUBMIT SAME ATTESTATION <RotateCcw size={13} /></button>
+          </details>}
         </main>
         </div>
       </div>

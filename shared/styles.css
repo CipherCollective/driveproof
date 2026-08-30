@@ -436,6 +436,243 @@ a { color: inherit; text-decoration: none; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
 
+/* Final judge polish: quieter chrome, stronger receipt hierarchy, and a wider product canvas. */
+.product-app-shell .product-main { margin-left: 196px; }
+.product-app-shell .product-main .shell-content { max-width: 1320px; padding: 0 40px 96px; }
+.product-app-shell .product-sidebar { padding: 27px 14px 20px; width: 196px; }
+.product-app-shell .product-navigation { margin-top: 40px; }
+.product-app-shell .product-nav-link { font-size: 13px; min-height: 40px; }
+.product-app-shell .product-navigation-label { font-size: 10px; }
+.product-app-shell .product-sidebar-mode { font-size: 10px; line-height: 1.45; }
+.product-app-shell .product-sidebar-status span { font-size: 11px; }
+.product-app-shell .product-sidebar-status strong { font-size: 10px; }
+.product-app-shell .product-help-button { font-size: 12px; }
+.product-app-shell .product-topbar .environment-chip { font-size: 12px; }
+.product-app-shell .eyebrow { font-size: 11px; }
+.product-app-shell .panel { border-color: rgba(221, 239, 229, 0.085); border-radius: 14px; }
+.product-app-shell .panel-title { font-size: 17px; }
+.product-app-shell .panel-subtitle { font-size: 14px; line-height: 1.45; }
+
+.product-app-shell .product-hero { margin-bottom: 34px; }
+.product-app-shell .product-hero h1 { font-size: clamp(52px, 5.2vw, 78px); }
+.product-app-shell .product-hero .hero-copy { font-size: 17px; line-height: 1.55; }
+.product-app-shell .vehicle-card { min-width: 214px; padding: 19px 20px; }
+.product-app-shell .vehicle-name { font-size: 21px; }
+.product-app-shell .vehicle-detail { font-size: 12px; }
+
+.product-app-shell .product-status-strip { gap: 30px; grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.28fr); margin-bottom: 28px; padding: 23px 0; }
+.product-app-shell .product-status-intro h2 { font-size: 21px; }
+.product-app-shell .product-status-intro p { font-size: 14px; line-height: 1.5; max-width: 360px; }
+.product-app-shell .product-status-items { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.product-app-shell .product-status-item { padding-left: 22px; padding-right: 16px; }
+.product-app-shell .product-status-item span { font-size: 13px; }
+.product-app-shell .product-status-item strong { font-size: 11px; }
+.product-app-shell .product-status-item small { font-size: 11px; line-height: 1.4; }
+
+.product-app-shell .dashboard-grid { gap: 24px; grid-template-columns: minmax(0, 1.42fr) minmax(360px, 0.86fr); }
+.product-app-shell .route-card,
+.product-app-shell .proof-panel { min-height: 0; }
+.product-app-shell .route-card .panel-heading { padding: 28px 28px 0; }
+.product-app-shell .route-stage,
+.product-app-shell .route-svg { min-height: 316px; }
+.product-app-shell .route-line { stroke-width: 2.8; }
+.product-app-shell .route-tag { font-size: 10px; padding: 7px 9px; }
+.product-app-shell .route-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 24px 28px 28px; }
+.product-app-shell .metric { padding-left: 22px; }
+.product-app-shell .metric dt { font-size: 13px; margin-bottom: 10px; }
+.product-app-shell .metric dd { font-size: 27px; }
+.product-app-shell .metric dd span { font-size: 13px; }
+
+.product-app-shell .proof-panel > .panel-padding { padding: 28px; }
+.product-app-shell .proof-panel .panel-heading { margin-bottom: 12px; }
+.product-app-shell .product-proof-step { padding: 12px 0; }
+.product-app-shell .product-proof-step-heading strong { font-size: 13px; }
+.product-app-shell .product-proof-step-heading span { font-size: 10px; }
+.product-app-shell .product-proof-step-copy p { font-size: 12px; line-height: 1.45; }
+.product-app-shell .product-proof-step-copy small { font-size: 10px; }
+.product-app-shell .proof-orbit { height: 96px; margin: 15px auto 24px; width: 96px; }
+.product-app-shell .proof-orbit-label { font-size: 10px; }
+.product-app-shell .proof-pipeline { margin-bottom: 18px; padding: 13px 0; }
+.product-app-shell .pipeline-node { font-size: 10px; }
+.product-app-shell .proof-list { margin-top: 0; }
+.product-app-shell .proof-row { padding: 14px 0; }
+.product-app-shell .proof-row-label { font-size: 13px; }
+.product-app-shell .proof-row-value { font-size: 11px; }
+.product-app-shell .proof-footnote { font-size: 12px; }
+
+.product-app-shell .privacy-grid { gap: 24px; margin-top: 24px; }
+.product-app-shell .privacy-panel { min-height: 0; }
+.product-app-shell .privacy-panel .panel-padding { padding: 26px; }
+.product-app-shell .privacy-header { align-items: flex-start; margin-bottom: 20px; }
+.product-app-shell .privacy-header > div { min-width: 0; }
+.product-app-shell .privacy-heading { font-size: 14px; }
+.product-app-shell .privacy-panel-intro { color: var(--dp-color-text-muted); font-size: 13px; line-height: 1.45; margin: 5px 0 0; }
+.product-app-shell .privacy-boundary-badge { border: 1px solid rgba(200, 243, 109, 0.24); border-radius: 999px; color: var(--dp-color-success); font-family: var(--dp-font-mono); font-size: 10px; letter-spacing: 0.05em; margin-left: auto; padding: 6px 8px; white-space: nowrap; }
+.product-app-shell .privacy-item span:first-child { font-size: 13px; }
+.product-app-shell .privacy-item span:last-child { font-size: 11px; }
+.product-app-shell .privacy-disclosure-label { color: var(--dp-color-text-muted); font-family: var(--dp-font-mono); font-size: 10px; letter-spacing: 0.1em; margin-bottom: 13px; }
+.product-app-shell .privacy-boundary-statement { align-items: flex-start; background: rgba(200, 243, 109, 0.07); border: 1px solid rgba(200, 243, 109, 0.15); border-radius: 8px; color: var(--dp-color-text-secondary); display: flex; font-size: 12px; gap: 8px; line-height: 1.45; margin-top: 20px; padding: 11px; }
+.product-app-shell .privacy-boundary-statement svg { color: var(--dp-color-success); flex: 0 0 auto; margin-top: 1px; }
+.product-app-shell .lock-line { font-size: 11px; line-height: 1.45; }
+
+.product-app-shell .public-metadata-panel { margin-top: 0; }
+.product-app-shell .public-metadata-heading p { font-size: 13px; }
+.product-app-shell .public-metadata-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.product-app-shell .public-metadata-item { border-color: rgba(221, 239, 229, 0.075); min-height: 82px; padding: 13px 14px; }
+.product-app-shell .public-metadata-item > span { font-size: 12px; }
+.product-app-shell .public-metadata-item strong { font-size: 13px; }
+.product-app-shell .public-metadata-item small { font-size: 11px; line-height: 1.35; }
+
+.product-app-shell .result-banner { gap: 17px; margin: 0 0 24px; padding: 25px 27px; }
+.product-app-shell .result-banner-icon { align-items: center; background: rgba(200, 243, 109, 0.16); border: 1px solid rgba(200, 243, 109, 0.32); border-radius: 50%; color: var(--dp-color-success); display: flex; flex: 0 0 auto; height: 44px; justify-content: center; width: 44px; }
+.product-app-shell .result-banner--rejected .result-banner-icon { background: rgba(255, 158, 140, 0.11); border-color: rgba(255, 158, 140, 0.25); color: var(--dp-color-error); }
+.product-app-shell .result-banner-content { min-width: 0; }
+.product-app-shell .result-banner-content h2 { font-size: clamp(24px, 2.4vw, 34px); letter-spacing: -0.06em; line-height: 1; margin: 8px 0 0; }
+.product-app-shell .result-banner-lede { color: var(--dp-color-text); font-size: 16px; font-weight: 600; margin: 11px 0 0; }
+.product-app-shell .result-success-points { color: var(--dp-color-text-secondary); display: flex; flex-wrap: wrap; font-size: 13px; gap: 8px 28px; list-style: none; margin: 12px 0 0; padding: 0; }
+.product-app-shell .result-success-points li::before { color: var(--dp-color-success); content: "✓"; margin-right: 7px; }
+.product-app-shell .result-preview-note { color: var(--dp-color-text-muted); font-size: 12px; margin: 12px 0 0; }
+.product-app-shell .result-receipt-link { align-items: center; color: var(--dp-color-success); display: inline-flex; font-family: var(--dp-font-mono); font-size: 11px; gap: 7px; letter-spacing: 0.06em; margin-top: 18px; }
+.product-app-shell .result-receipt-link:hover { color: var(--dp-color-text); }
+.product-app-shell .state-receipt { display: grid; gap: 12px 20px; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 20px; }
+.product-app-shell .state-receipt > span { border-top: 1px solid rgba(221, 239, 229, 0.12); display: grid; gap: 5px; min-width: 0; padding-top: 10px; }
+.product-app-shell .state-receipt small { color: var(--dp-color-text-muted); font-size: 11px; }
+.product-app-shell .state-receipt .public-value { min-width: 0; }
+.product-app-shell .state-receipt strong { color: var(--dp-color-text-secondary); font-family: var(--dp-font-mono); font-size: 12px; font-weight: 400; overflow-wrap: anywhere; }
+.product-app-shell .public-value { align-items: center; display: flex; gap: 7px; min-width: 0; }
+.product-app-shell .copy-value-button { align-items: center; background: transparent; border: 1px solid rgba(221, 239, 229, 0.16); border-radius: 5px; color: var(--dp-color-text-muted); display: inline-flex; flex: 0 0 auto; height: 26px; justify-content: center; padding: 0; width: 26px; }
+.product-app-shell .copy-value-button:hover { border-color: rgba(200, 243, 109, 0.36); color: var(--dp-color-success); }
+.product-app-shell .advanced-proof-evidence { border-top: 1px solid rgba(221, 239, 229, 0.1); margin-top: 24px; padding-top: 14px; }
+.product-app-shell .advanced-proof-evidence summary { align-items: center; color: var(--dp-color-text-muted); cursor: pointer; display: inline-flex; font-family: var(--dp-font-mono); font-size: 10px; gap: 7px; letter-spacing: 0.06em; list-style: none; text-transform: uppercase; }
+.product-app-shell .advanced-proof-evidence summary::-webkit-details-marker { display: none; }
+.product-app-shell .advanced-proof-evidence summary::before { color: var(--dp-color-text-muted); content: "+"; font-size: 14px; line-height: 1; }
+.product-app-shell .advanced-proof-evidence[open] summary::before { content: "−"; }
+.product-app-shell .advanced-proof-evidence .secondary-button { margin-top: 13px; width: 100%; }
+
+.product-app-shell .onboarding-panel { margin-top: 24px; }
+.product-app-shell .onboarding-task-title { font-size: 13px; }
+.product-app-shell .onboarding-task-duration { font-size: 10px; }
+.product-app-shell .onboarding-task-body p { font-size: 13px; }
+.product-app-shell .onboarding-task-body small { font-size: 12px; }
+.product-app-shell .onboarding-collapsed { background: rgba(17, 23, 22, 0.72); border: 1px solid rgba(221, 239, 229, 0.085); border-radius: 12px; margin: 24px 0 0; padding: 0 20px; }
+.product-app-shell .onboarding-collapsed summary { align-items: center; cursor: pointer; display: flex; gap: 20px; justify-content: space-between; list-style: none; min-height: 62px; }
+.product-app-shell .onboarding-collapsed summary::-webkit-details-marker { display: none; }
+.product-app-shell .onboarding-collapsed summary > span:first-child { display: grid; gap: 5px; }
+.product-app-shell .onboarding-collapsed summary strong { color: var(--dp-color-text); font-size: 14px; }
+.product-app-shell .onboarding-collapsed-status { align-items: center; color: var(--dp-color-success); display: inline-flex; font-family: var(--dp-font-mono); font-size: 11px; gap: 7px; letter-spacing: 0.04em; }
+.product-app-shell .onboarding-collapsed-body { border-top: 1px solid rgba(221, 239, 229, 0.08); display: flex; gap: 18px; justify-content: space-between; padding: 15px 0 17px; }
+.product-app-shell .onboarding-collapsed-body p { color: var(--dp-color-text-muted); font-size: 13px; margin: 0; }
+
+.insurer-shell .verification-result-card,
+.insurer-shell .boundary-card { min-height: 0; }
+.insurer-shell .result-hero h2 { font-size: 34px; }
+.insurer-shell .result-hero p { font-size: 14px; }
+.insurer-shell .result-check { padding: 17px 0; }
+.insurer-shell .result-check span:first-child { font-size: 13px; }
+.insurer-shell .check-value { font-size: 11px; }
+.insurer-shell .public-receipt { border-color: rgba(200, 243, 109, 0.2); padding: 18px; }
+.insurer-shell .public-receipt-heading h3 { font-size: 17px; }
+.insurer-shell .public-receipt-heading > span { font-size: 10px; }
+.insurer-shell .public-receipt-grid { gap: 1px 24px; margin-top: 16px; }
+.insurer-shell .public-receipt-grid > div { padding: 12px 0 5px; }
+.insurer-shell .public-receipt-grid span { font-size: 12px; }
+.insurer-shell .public-receipt-grid strong { font-size: 12px; }
+.insurer-shell .mock-callout p { font-size: 13px; line-height: 1.5; }
+.insurer-shell .private-data-grid { gap: 24px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.insurer-shell .private-stat .eyebrow { font-size: 11px; }
+.insurer-shell .private-stat strong { font-size: 14px; }
+.insurer-shell .private-stat span { font-size: 11px; }
+.insurer-shell .insurer-advanced-evidence { margin-top: 20px; }
+
+@media (max-width: 1100px) {
+  .product-app-shell .product-main { margin-left: 0; }
+  .product-app-shell .product-sidebar { width: 248px; }
+  .product-app-shell .product-main .shell-content { max-width: 1000px; padding-left: 32px; padding-right: 32px; }
+}
+
+@media (max-width: 820px) {
+  .product-app-shell .product-status-strip { gap: 20px; grid-template-columns: 1fr; }
+  .product-app-shell .product-status-items { border-left: 0; border-top: 1px solid var(--dp-color-border); padding-top: 16px; }
+  .product-app-shell .dashboard-grid,
+  .product-app-shell .verifier-grid { grid-template-columns: 1fr; }
+  .product-app-shell .route-stage,
+  .product-app-shell .route-svg { min-height: 280px; }
+  .insurer-shell .private-data-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .product-app-shell .product-main .shell-content { padding: 0 18px 124px; }
+  .product-app-shell .product-topbar { padding-bottom: 27px; }
+  .product-app-shell .product-hero { gap: 18px; margin-bottom: 25px; }
+  .product-app-shell .product-hero h1 { font-size: 46px; }
+  .product-app-shell .product-hero .hero-copy { font-size: 15px; }
+  .product-app-shell .vehicle-card { min-width: 0; width: 100%; }
+  .product-app-shell .product-status-strip { display: block; padding: 18px 0 0; }
+  .product-app-shell .product-status-intro { padding-bottom: 18px; }
+  .product-app-shell .product-status-intro h2 { font-size: 20px; }
+  .product-app-shell .product-status-intro p { font-size: 13px; }
+  .product-app-shell .product-status-items { grid-template-columns: repeat(2, minmax(0, 1fr)); padding-top: 6px; }
+  .product-app-shell .product-status-item { min-height: 74px; padding: 12px 10px 10px 0; }
+  .product-app-shell .product-status-item:nth-child(even) { border-left: 1px solid var(--dp-color-border); padding-left: 12px; }
+  .product-app-shell .product-status-item:nth-child(n+3) { border-top: 1px solid var(--dp-color-border); }
+  .product-app-shell .product-status-item span { font-size: 12px; }
+  .product-app-shell .product-status-item strong { font-size: 10px; }
+  .product-app-shell .product-status-item small { font-size: 10px; }
+  .product-app-shell.driver-shell .dashboard-grid { display: flex; flex-direction: column; }
+  .product-app-shell.driver-shell .proof-panel { order: initial; }
+  .product-app-shell .route-card .panel-heading,
+  .product-app-shell .proof-panel > .panel-padding { padding: 20px; }
+  .product-app-shell .route-stage,
+  .product-app-shell .route-svg { min-height: 236px; }
+  .product-app-shell .route-metric-grid { gap: 0; padding: 20px; }
+  .product-app-shell .metric { border-left: 1px solid var(--dp-color-border); padding-left: 13px; }
+  .product-app-shell .metric:first-child { border-left: 0; padding-left: 0; }
+  .product-app-shell .metric dt { font-size: 11px; margin-bottom: 8px; }
+  .product-app-shell .metric dd { font-size: 23px; }
+  .product-app-shell .metric dd span { font-size: 11px; }
+  .product-app-shell .privacy-grid { gap: 14px; margin-top: 14px; }
+  .product-app-shell .privacy-panel .panel-padding { padding: 20px; }
+  .product-app-shell .privacy-header { flex-wrap: wrap; gap: 8px; }
+  .product-app-shell .privacy-header > div { flex: 1; }
+  .product-app-shell .privacy-boundary-badge { font-size: 9px; padding: 5px 6px; }
+  .product-app-shell .privacy-panel-intro { font-size: 12px; }
+  .product-app-shell .privacy-item span:first-child { font-size: 12px; }
+  .product-app-shell .privacy-item span:last-child { font-size: 10px; }
+  .product-app-shell .privacy-boundary-statement { font-size: 11px; }
+  .product-app-shell .public-metadata-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .product-app-shell .public-metadata-heading { gap: 9px; }
+  .product-app-shell .public-metadata-heading p { font-size: 11px; }
+  .product-app-shell .public-metadata-item { min-height: 76px; padding: 11px; }
+  .product-app-shell .public-metadata-item > span { font-size: 10px; }
+  .product-app-shell .public-metadata-item strong { font-size: 11px; }
+  .product-app-shell .public-metadata-item small { font-size: 9px; }
+  .product-app-shell .proof-pipeline { gap: 2px; }
+  .product-app-shell .pipeline-node { font-size: 8px; gap: 4px; letter-spacing: 0.02em; }
+  .product-app-shell .pipeline-node svg { height: 12px; width: 12px; }
+  .product-app-shell .result-banner { gap: 12px; padding: 20px; }
+  .product-app-shell .result-banner-icon { height: 36px; width: 36px; }
+  .product-app-shell .result-banner-content h2 { font-size: 27px; }
+  .product-app-shell .result-success-points { display: grid; font-size: 12px; gap: 8px; }
+  .product-app-shell .state-receipt { gap: 10px 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .product-app-shell .state-receipt small { font-size: 10px; }
+  .product-app-shell .state-receipt strong { font-size: 10px; }
+  .product-app-shell .onboarding-collapsed { padding: 0 16px; }
+  .product-app-shell .onboarding-collapsed summary { align-items: flex-start; flex-direction: column; gap: 7px; justify-content: center; padding: 13px 0; }
+  .product-app-shell .onboarding-collapsed-body { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .insurer-shell .result-hero h2 { font-size: 29px; }
+  .insurer-shell .public-receipt { padding: 15px; }
+  .insurer-shell .public-receipt-grid { gap: 1px 16px; }
+  .insurer-shell .public-receipt-grid span { font-size: 11px; }
+  .insurer-shell .public-receipt-grid strong { font-size: 11px; }
+  .insurer-shell .private-data-grid { gap: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-app-shell .state-banner,
+  .product-app-shell .state-banner--verified,
+  .product-app-shell .state-banner--rejected { animation: none; }
+}
+
 /* Mission 4F product system: shared shell, guided flow, and landing surface. */
 .product-app-shell { background: var(--dp-color-bg); }
 .product-main { margin-left: 244px; min-width: 0; }

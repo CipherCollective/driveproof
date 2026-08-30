@@ -7,7 +7,7 @@ describe("LandingPage", () => {
     render(<LandingPage />);
 
     expect(screen.getByRole("heading", { name: /Prove you drove safely/i })).toBeInTheDocument();
-    expect(screen.getByText("PRODUCT PREVIEW · MOCK MODE")).toBeInTheDocument();
+    expect(screen.getByText("MOCK · PRODUCT PREVIEW")).toBeInTheDocument();
     const launchLinks = screen.getAllByRole("link", { name: /Launch Driver/i });
     expect(launchLinks).toHaveLength(2);
     launchLinks.forEach((link) => expect(link).toHaveAttribute("href", "/driver"));
@@ -28,6 +28,6 @@ describe("LandingPage", () => {
     render(<LandingPage mode="midnight" />);
 
     expect(screen.getAllByText("REAL · MIDNIGHT PREPROD")).toHaveLength(2);
-    expect(screen.queryByText("PRODUCT PREVIEW · MOCK MODE")).not.toBeInTheDocument();
+    expect(screen.queryByText("MOCK · PRODUCT PREVIEW")).not.toBeInTheDocument();
   });
 });

@@ -9,7 +9,7 @@ describe("InsurerExperience", () => {
     render(<InsurerExperience client={new MockDriveProofClient()} initialFixtureOverride="safe" />);
 
     expect(await screen.findByRole("heading", { name: "VERIFIED" })).toBeInTheDocument();
-    expect(screen.getByText("ROUTE")).toBeInTheDocument();
+    expect(screen.getByText("ROUTE / PRIVATE GRID")).toBeInTheDocument();
     expect(screen.queryByText("112 km/h")).not.toBeInTheDocument();
     expect(screen.queryByText("67")).not.toBeInTheDocument();
   });
@@ -56,7 +56,7 @@ describe("InsurerExperience", () => {
     expect(await screen.findByRole("heading", { name: "VERIFIED" })).toBeInTheDocument();
     expect(screen.getByText("PUBLIC RECEIPT")).toBeInTheDocument();
     expect(screen.queryByText("attestorId")).not.toBeInTheDocument();
-    expect(screen.getAllByText("real_public_tx_001")).toHaveLength(2);
+    expect(screen.getAllByText("real_public_tx_001")).toHaveLength(1);
     expect(screen.queryByText("67")).not.toBeInTheDocument();
     expect(screen.queryByText("112")).not.toBeInTheDocument();
   });

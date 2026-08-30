@@ -190,7 +190,7 @@ export function LandingPage({ mode = "mock" }: { mode?: DriveProofClientMode }) 
         </section>
       </main>
 
-      <footer className="landing-footer landing-section-width"><Brand /><span>{isMock ? "PRODUCT PREVIEW · MOCK MODE" : "REAL · MIDNIGHT PREPROD"}</span><small>Zero knowledge protects privacy · attestation protects integrity.</small></footer>
+      <footer className="landing-footer landing-section-width"><Brand /><span>{isMock ? "MOCK · PRODUCT PREVIEW" : "REAL · MIDNIGHT PREPROD"}</span><small>Zero knowledge protects privacy · attestation protects integrity.</small></footer>
     </div>
   );
 }
