@@ -449,9 +449,10 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
 
   return (
     <div className={`wallet-debug-shell${recordingMode ? " wallet-debug-shell--recording" : ""}`}>
-      <main className="wallet-debug-card">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
+      <main className="wallet-debug-card" id="main-content">
         <header className="wallet-debug-header">
-          <a className="wallet-debug-back" href="/wallet-debug"><ArrowLeft size={15} /> Wallet debug</a>
+          <nav aria-label="Debug navigation"><a className="wallet-debug-back" href="/wallet-debug"><ArrowLeft size={15} /> Wallet debug</a></nav>
           <div className="wallet-debug-header-meta">
             <div className="eyebrow">ENGINEERING INSTRUMENTATION · DEV ONLY</div>
             {recordingMode && <span className="recording-mode-chip">RECORDING MODE · PRESENTATION ONLY</span>}
@@ -501,7 +502,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
             <button className="debug-secondary-button" disabled={busy || !session || walletDiagnosticsBusy} onClick={() => void readWalletDiagnostics()} type="button">
               {walletDiagnosticsBusy ? "READING LACE STATE" : "READ WALLET DIAGNOSTICS"}
             </button>
-            {walletDiagnosticsError && <div className="wallet-debug-message" role="alert"><TriangleAlert size={16} /><span>{walletDiagnosticsError}</span></div>}
+            {walletDiagnosticsError && <div className="wallet-debug-message" role="alert" aria-live="assertive"><TriangleAlert size={16} /><span>{walletDiagnosticsError}</span></div>}
             {walletDiagnostics && (
               <>
                 <div className="wallet-debug-details" aria-live="polite">
@@ -624,11 +625,11 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
           <p>Stores the attestor response through the encrypted private-state provider, joins the deployed contract, and invokes generated <code>proveCompliance()</code>.</p>
           <button className="debug-primary-button" disabled={busy || !contractAddress || !runtime || !attestation || complianceCount === "1"} onClick={() => void proveSafe()} type="button">{operation === "proving-safe" ? "PROVING · APPROVE LACE" : "PROVE SAFE 67"} {operation === "proving-safe" && <RefreshCw className="debug-spin" size={15} />}</button>
           {expectedProofRejection && (
-            <div className={`proof-rejection proof-rejection--${expectedProofRejection.kind}`} role="status">
+            <div className={`proof-rejection proof-rejection--${expectedProofRejection.kind}`} role="status" aria-live="polite">
               <div className="proof-rejection-icon"><TriangleAlert size={17} /></div>
               <div>
                 <div className="eyebrow">{expectedProofRejection.eyebrow}</div>
-                <h3>{expectedProofRejection.heading}</h3>
+                <h2>{expectedProofRejection.heading}</h2>
                 <p>{expectedProofRejection.description}</p>
                 <p className="proof-rejection-note">No compliant proof was recorded. No successful transaction recorded.</p>
                 <div className="proof-rejection-detail">Technical detail: {expectedProofRejection.technicalDetail}</div>
@@ -650,8 +651,8 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
           </section>
         )}
 
-        {connectionMessage && <div className="wallet-debug-message" role="alert"><TriangleAlert size={16} /><span>{connectionMessage}</span></div>}
-        {error && !deploymentFailure && <div className="wallet-debug-message" role="alert"><TriangleAlert size={16} /><span>ERROR: {error}</span></div>}
+        {connectionMessage && <div className="wallet-debug-message" role="alert" aria-live="assertive"><TriangleAlert size={16} /><span>{connectionMessage}</span></div>}
+        {error && !deploymentFailure && <div className="wallet-debug-message" role="alert" aria-live="assertive"><TriangleAlert size={16} /><span>ERROR: {error}</span></div>}
         {complianceCount === "1" && <p className="wallet-debug-note"><Check size={13} /> The observed ledger state is the only success signal shown by this page.</p>}
 
         <footer className="wallet-debug-footer">Artifacts: {ZK_CONFIG_BASE_PATH} · Attestor: {ATTESTOR_URL} · This page never falls back to the product mock client.</footer>

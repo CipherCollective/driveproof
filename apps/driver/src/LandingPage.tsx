@@ -39,7 +39,7 @@ function LandingProofVisual() {
           <div className="landing-public-caption">no route disclosed</div>
         </div>
       </div>
-      <div className="landing-proof-visual-footer"><LockKeyhole size={13} /> Raw telemetry stays behind the privacy boundary.</div>
+      <div className="landing-proof-visual-footer"><LockKeyhole size={13} /> Raw telemetry is not revealed to the insurer or public ledger.</div>
     </div>
   );
 }
@@ -53,6 +53,7 @@ export function LandingPage() {
 
   return (
     <div className="landing-shell">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <header className="landing-nav">
         <Brand />
         <nav className="landing-nav-links" aria-label="Landing page sections">
@@ -68,7 +69,7 @@ export function LandingPage() {
         </div>
       </header>
 
-      <main>
+      <main id="main-content">
         <section className="landing-hero landing-section-width" aria-labelledby="landing-hero-title">
           <div className="landing-hero-copy">
             <div className="landing-eyebrow">PRIVATE INSURANCE INFRASTRUCTURE</div>
@@ -128,7 +129,7 @@ export function LandingPage() {
           </div>
           <div className="landing-privacy-table">
             <div className="landing-privacy-column landing-privacy-column--private">
-              <div className="landing-privacy-column-heading"><LockKeyhole size={16} /><span>PRIVATE WITNESS</span><b>STAYS WITH THE DRIVER</b></div>
+              <div className="landing-privacy-column-heading"><LockKeyhole size={16} /><span>PRIVATE WITNESS</span><b>NOT SHARED WITH INSURER</b></div>
               <ul><li>Raw speed</li><li>Location and route</li><li>Braking behavior</li><li>Private witness</li><li>Attestation material as appropriate</li></ul>
             </div>
             <div className="landing-privacy-divider" aria-hidden="true"><span>BOUNDARY</span></div>

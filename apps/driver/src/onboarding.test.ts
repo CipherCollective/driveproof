@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canCompleteOnboardingTask,
   completeOnboardingTask,
   defaultOnboardingState,
   loadOnboardingState,
@@ -17,6 +18,12 @@ function memoryStorage() {
 }
 
 describe("onboarding state", () => {
+  it("does not mark a real proof complete before verification", () => {
+    expect(canCompleteOnboardingTask("create-proof", "midnight", false)).toBe(false);
+    expect(canCompleteOnboardingTask("create-proof", "midnight", true)).toBe(true);
+    expect(canCompleteOnboardingTask("create-proof", "mock", false)).toBe(true);
+  });
+
   it("starts empty and persists local completion", () => {
     const storage = memoryStorage();
     const initial = defaultOnboardingState();

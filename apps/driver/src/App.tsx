@@ -28,6 +28,7 @@ import { WalletDebugPage } from "./WalletDebugPage";
 import { PreprodTransactionDebugPage } from "./PreprodTransactionDebugPage";
 import {
   completeOnboardingTask,
+  canCompleteOnboardingTask,
   loadOnboardingState,
   onboardingProgress,
   resetOnboardingState,
@@ -121,10 +122,10 @@ const pendingPublicProofMetadata: PublicProofMetadataField[] = [
 
 export function PublicProofMetadata({ fields = pendingPublicProofMetadata }: { fields?: PublicProofMetadataField[] }) {
   return (
-    <section className="panel public-metadata-panel">
+    <section className="panel public-metadata-panel" aria-labelledby="public-metadata-title">
       <div className="panel-padding">
         <div className="public-metadata-heading">
-          <div><div className="eyebrow">PUBLIC PROOF METADATA</div><p>Reserved for the exact public fields returned by Midnight.</p></div>
+          <div><h2 className="eyebrow" id="public-metadata-title">PUBLIC PROOF METADATA</h2><p>Reserved for the exact public fields returned by Midnight.</p></div>
           <span className="metadata-pending">NOT WIRED</span>
         </div>
         <div className="public-metadata-grid">
@@ -230,7 +231,7 @@ function ResultBanner({ result, mode }: { result: ProofResult; mode: DriveProofC
   const replay = result.status === "rejected" && result.reason === "replay";
   const isMock = mode === "mock";
   return (
-    <section className={`state-banner ${verified ? "state-banner--verified" : "state-banner--rejected"}`}>
+    <section className={`state-banner ${verified ? "state-banner--verified" : "state-banner--rejected"}`} role="status" aria-live="polite">
       {verified ? <Check size={16} /> : replay ? <RotateCcw size={16} /> : <X size={16} />}
       <div>
         <h3>{verified ? isMock ? "DRIVEPROOF VERIFIED IN MOCK MODE" : "DRIVEPROOF VERIFIED ON MIDNIGHT PREPROD" : replay ? "REPLAY REJECTED" : "PROOF GENERATION REJECTED"}</h3>
@@ -249,7 +250,7 @@ function ResultBanner({ result, mode }: { result: ProofResult; mode: DriveProofC
 
 function ClientErrorBanner({ message }: { message: string }) {
   return (
-    <section className="state-banner state-banner--rejected">
+    <section className="state-banner state-banner--rejected" role="alert" aria-live="assertive">
       <X size={16} />
       <div>
         <h3>DRIVEPROOF CLIENT ERROR</h3>
@@ -262,7 +263,7 @@ function ClientErrorBanner({ message }: { message: string }) {
 
 function TamperedNotice() {
   return (
-    <section className="state-banner state-banner--rejected">
+    <section className="state-banner state-banner--rejected" role="status" aria-live="polite">
       <X size={16} />
       <div>
         <h3>DEMO TAMPERING ATTEMPT</h3>
@@ -337,7 +338,7 @@ function ProductStatusStrip({ client, hasAttestation }: { client: DriveProofClie
     <section className="product-status-strip" aria-label="Driver readiness">
       <div className="product-status-intro">
         <div className="eyebrow">DRIVER OVERVIEW</div>
-        <h2>Your driving data stays private.</h2>
+        <h2>Your driving data is not shared with the insurer.</h2>
         <p>The insurer receives only whether your signed trip satisfies the policy.</p>
       </div>
       <div className="product-status-items">
@@ -462,11 +463,15 @@ function browserStorage(): Storage | undefined {
 function OnboardingChecklist({
   insurerUrl,
   state,
-  onStateChange
+  onStateChange,
+  clientMode,
+  proofVerified
 }: {
   insurerUrl: string;
   state: OnboardingState;
   onStateChange: (nextState: OnboardingState) => void;
+  clientMode: DriveProofClient["mode"];
+  proofVerified: boolean;
 }) {
   const progress = onboardingProgress(state);
 
@@ -492,6 +497,10 @@ function OnboardingChecklist({
         {onboardingTasks.map((task) => {
           const completed = state.completed[task.id];
           const href = task.id === "insurer-result" ? insurerUrl : task.href;
+          const canComplete = canCompleteOnboardingTask(task.id, clientMode, proofVerified);
+          const completeFromGuide = () => {
+            if (canComplete) onStateChange(completeOnboardingTask(state, task.id));
+          };
           return (
             <details className={`onboarding-task ${completed ? "onboarding-task--complete" : ""}`} key={task.id}>
               <summary>
@@ -503,10 +512,10 @@ function OnboardingChecklist({
                 <p>{task.description}</p>
                 <small><strong>Why it matters</strong> {task.why}</small>
                 <div className="onboarding-task-actions">
-                  <a className="secondary-button" href={href} onClick={() => task.id !== "connect-wallet" && onStateChange(completeOnboardingTask(state, task.id))}>{task.action} <ArrowUpRight size={13} /></a>
-                  <button className="onboarding-complete-button" onClick={() => onStateChange(completeOnboardingTask(state, task.id))} type="button">
-                    {completed ? "Completed locally" : "Mark complete"}
-                  </button>
+                  <a className="secondary-button" href={href} onClick={() => task.id !== "connect-wallet" && completeFromGuide()}>{task.action} <ArrowUpRight size={13} /></a>
+                  {canComplete
+                    ? <button className="onboarding-complete-button" onClick={completeFromGuide} type="button">{completed ? "Completed locally" : "Mark complete"}</button>
+                    : <span className="onboarding-complete-note">Completes after a verified result</span>}
                 </div>
               </div>
             </details>
@@ -566,6 +575,17 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
     return () => { cancelled = true; };
   }, [client, fixture]);
 
+  useEffect(() => {
+    if (client.mode !== "midnight" || result?.status !== "verified") return;
+
+    setOnboardingState((current) => {
+      if (current.completed["create-proof"]) return current;
+      const next = completeOnboardingTask(current, "create-proof");
+      saveOnboardingState(storage, next);
+      return next;
+    });
+  }, [client.mode, result, storage]);
+
   async function generateProof() {
     if (!attestation || isVerifying) return;
     setResult(undefined);
@@ -592,11 +612,12 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
   const insurerUrl = `${import.meta.env.VITE_INSURER_URL ?? "http://localhost:5174"}/?fixture=${fixture}`;
 
   if (isLoading || !attestation) {
-    return <div className="app-shell"><div className="shell-content"><div className="empty-state"><div><div className="eyebrow">DRIVEPROOF · DRIVER</div><h1>Preparing private trip</h1><p>Loading the deterministic demo fixture.</p></div></div></div></div>;
+    return <div className="app-shell"><a className="skip-link" href="#main-content">Skip to main content</a><main className="shell-content" id="main-content"><div className="empty-state"><div><div className="eyebrow">DRIVEPROOF · DRIVER</div><h1>Preparing private trip</h1><p>Loading the deterministic demo fixture.</p></div></div></main></div>;
   }
 
   return (
     <div className="app-shell driver-shell product-app-shell">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <ProductSidebar isOpen={isNavOpen} mode={client.mode} insurerUrl={insurerUrl} onNavigate={() => setIsNavOpen(false)} onResume={() => { setIsNavOpen(false); updateOnboardingState({ ...onboardingState, dismissed: false }); }} />
       {isNavOpen && <button className="product-sidebar-scrim" onClick={() => setIsNavOpen(false)} type="button" aria-label="Close navigation" />}
       <div className="product-main">
@@ -610,7 +631,7 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
           </div>
         </header>
 
-        <main>
+        <main id="main-content">
           <section className="hero product-hero" id="overview">
             <div>
               <div className="eyebrow">DRIVER CONSOLE · {fixtureLabel(fixture)}</div>
@@ -662,7 +683,7 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
             </section>
           </section>
 
-          <OnboardingChecklist insurerUrl={insurerUrl} state={onboardingState} onStateChange={updateOnboardingState} />
+          <OnboardingChecklist insurerUrl={insurerUrl} state={onboardingState} onStateChange={updateOnboardingState} clientMode={client.mode} proofVerified={result?.status === "verified"} />
 
           {fixture === "tampered" && <TamperedNotice />}
           {flowState === "error" && errorMessage && <ClientErrorBanner message={errorMessage} />}

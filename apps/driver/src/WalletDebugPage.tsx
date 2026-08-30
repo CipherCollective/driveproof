@@ -84,7 +84,6 @@ export function WalletDebugPage({
   const session = connection.status === "connected" ? connection.session : undefined;
   const walletConnected = connection.status === "connected";
   const networkReady = walletConnected && connection.network === resolvedConfig.networkId;
-  const runtimeReady = false;
   const connectionMessage = connection.status === "error"
     ? connection.message
     : connection.status === "unavailable"
@@ -95,9 +94,10 @@ export function WalletDebugPage({
 
   return (
     <div className="wallet-debug-shell">
-      <main className="wallet-debug-card">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
+      <main className="wallet-debug-card" id="main-content">
         <header className="wallet-debug-header">
-          <a className="wallet-debug-back" href="/driver" aria-label="Back to Driver"><ArrowLeft size={15} /> Driver</a>
+          <nav aria-label="Debug navigation"><a className="wallet-debug-back" href="/driver" aria-label="Back to Driver"><ArrowLeft size={15} /> Driver</a></nav>
           <div className="eyebrow">ENGINEERING INSTRUMENTATION · DEV ONLY</div>
         </header>
 
@@ -115,7 +115,7 @@ export function WalletDebugPage({
           <div className="wallet-debug-status"><span>Wallet</span><strong className={walletConnected ? "debug-good" : ""}>{walletConnected ? "CONNECTED" : "DISCONNECTED"}</strong></div>
           <div className="wallet-debug-status"><span>Network</span><strong className={networkReady ? "debug-good" : connection.status === "wrong-network" ? "debug-bad" : ""}>{networkReady ? "PREPROD" : connection.status === "wrong-network" ? "WRONG NETWORK" : "PREPROD TARGET"}</strong></div>
           <div className="wallet-debug-status"><span>Proof server</span><strong className={proofServer !== "checking" && proofServer.status === "reachable" ? "debug-good" : proofServer !== "checking" ? "debug-bad" : ""}>{proofServer === "checking" ? "CHECKING" : proofServer.status === "reachable" ? "REACHABLE" : "ERROR"}</strong></div>
-          <div className="wallet-debug-status"><span>Runtime providers</span><strong className={runtimeReady ? "debug-good" : "debug-bad"}>{runtimeReady ? "READY" : "ERROR"}</strong></div>
+          <div className="wallet-debug-status"><span>Runtime providers</span><strong className="debug-neutral">{walletConnected ? "NOT USED" : "NOT CONNECTED"}</strong></div>
         </section>
 
         <section className="wallet-debug-panel">
@@ -133,14 +133,14 @@ export function WalletDebugPage({
         </section>
 
         {proofServer !== "checking" && proofServer.status !== "reachable" && (
-          <div className="wallet-debug-message" role="alert">
+          <div className="wallet-debug-message" role="alert" aria-live="assertive">
             <TriangleAlert size={16} />
             <span>{proofServer.message}</span>
           </div>
         )}
 
         {connectionMessage && (
-          <div className="wallet-debug-message" role="alert">
+          <div className="wallet-debug-message" role="alert" aria-live="assertive">
             <TriangleAlert size={16} />
             <span>{connectionMessage}</span>
           </div>
@@ -163,8 +163,8 @@ export function WalletDebugPage({
 
         {walletConnected && (
           <section className="wallet-debug-panel">
-            <div className="wallet-debug-panel-heading"><span className="eyebrow">RUNTIME PROVIDER GATE</span><span className="debug-bad">ERROR</span></div>
-            <p>Full MidnightProviders are intentionally not constructed in this page: the generated Compact ZK artifact base URL and an app-owned private-state password callback are not present yet. The reusable builder is ready for those explicit Ashiha handoff inputs.</p>
+            <div className="wallet-debug-panel-heading"><span className="eyebrow">RUNTIME PROVIDER GATE</span><span className="debug-neutral">CONNECTION-ONLY PAGE</span></div>
+            <p>This connection spike stops after Lace authorization. Use the Preprod transaction harness for the real provider, proof, and contract path.</p>
             {proofServer !== "checking" && proofServer.status === "reachable" && <p className="wallet-debug-note"><Check size={13} /> Preprod configuration and local proof-server reachability are verified.</p>}
           </section>
         )}

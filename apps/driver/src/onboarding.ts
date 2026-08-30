@@ -9,6 +9,20 @@ export const onboardingTaskIds = [
 
 export type OnboardingTaskId = (typeof onboardingTaskIds)[number];
 
+export type OnboardingClientMode = "mock" | "midnight";
+
+/**
+ * A real proof task is complete only after the injected client returns a
+ * verified result. Mock mode may still use the local checklist affordance.
+ */
+export function canCompleteOnboardingTask(
+  taskId: OnboardingTaskId,
+  mode: OnboardingClientMode,
+  proofVerified: boolean
+): boolean {
+  return taskId !== "create-proof" || mode === "mock" || proofVerified;
+}
+
 export type OnboardingState = {
   completed: Record<OnboardingTaskId, boolean>;
   dismissed: boolean;

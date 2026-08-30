@@ -254,11 +254,12 @@ export function InsurerExperience({
   const replay = result?.status === "rejected" && result.reason === "replay";
 
   if (isLoading || !result) {
-    return <div className="app-shell"><div className="shell-content"><div className="empty-state"><div><div className="eyebrow">DRIVEPROOF · INSURER</div><h1>Waiting for proof</h1><p>Loading the verifier boundary.</p></div></div></div></div>;
+    return <div className="app-shell"><a className="skip-link" href="#main-content">Skip to main content</a><main className="shell-content" id="main-content"><div className="empty-state"><div><div className="eyebrow">DRIVEPROOF · INSURER</div><h1>Waiting for proof</h1><p>Loading the verifier boundary.</p></div></div></main></div>;
   }
 
   return (
     <div className="app-shell insurer-shell product-app-shell">
+      <a className="skip-link" href="#main-content">Skip to main content</a>
       <InsurerSidebar isOpen={isNavOpen} driverUrl={driverUrl} technicalUrl={technicalUrl} mode={clientMode} onNavigate={() => setIsNavOpen(false)} />
       {isNavOpen && <button className="product-sidebar-scrim" onClick={() => setIsNavOpen(false)} type="button" aria-label="Close navigation" />}
       <div className="product-main">
@@ -272,7 +273,7 @@ export function InsurerExperience({
           </div>
         </header>
 
-        <main>
+        <main id="main-content">
           <section className="hero insurer-hero-title product-hero" id="overview">
             <div>
               <div className="eyebrow">INSURER VERIFIER · {POLICY_ID}</div>

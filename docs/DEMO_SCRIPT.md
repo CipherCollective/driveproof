@@ -6,8 +6,8 @@ The real transaction evidence is from the confirmed Phase 1 run in [`PREPROD_EVI
 
 | Time | Shot and action | Honest narration |
 | --- | --- | --- |
-| 0:00-0:10 | Open on DriveProof and the mobile Driver view. | **"Built for the Midnight Hackathon — August 2026."** Usage-based insurance should not require surrendering a complete driving and location history just to prove one safe trip. |
-| 0:10-0:25 | Show the private route/grid, local private state, and raw telemetry disclosure counts. | DriveProof separates the safety result from the journey behind it. The polished Driver surface uses deterministic product fixtures for the demo; the raw route and telemetry are not shown to the insurer or public ledger. |
+| 0:00-0:10 | Open landing `/`, then move to the mobile Driver view at `/driver`. | **"Built for the Midnight Hackathon — August 2026."** Usage-based insurance should not require surrendering a complete driving and location history just to prove one safe trip. |
+| 0:10-0:25 | Driver `/driver`: show the private route/grid, local private state, and raw telemetry disclosure counts. | DriveProof separates the safety result from the journey behind it. The polished Driver surface uses deterministic product fixtures for the demo; the raw route and telemetry are not shown to the insurer or public ledger. |
 | 0:25-0:38 | Open the real `/wallet-debug/transaction` harness and request the safe attestation. | The real Phase 1 path starts with the Vehicle Attestor Simulator issuing a signed private speed of `67`. The browser never chooses that speed. |
 | 0:38-0:52 | Show providers ready, generated proof flow, and the Lace approval boundary. | The witness is held in private state, the generated Compact circuit checks it against the `80 km/h` policy, and Lace authorizes the Preprod transaction. Never show the signature or any secret. |
 | 0:52-1:05 | Show the confirmed Preprod transaction evidence: contract, tx, block, and `complianceCount = 1`. | This is a real Midnight Preprod result: the safe proof finalized successfully and the indexed compliance count moved from `0` to `1`. |
