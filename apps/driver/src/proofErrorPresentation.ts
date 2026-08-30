@@ -8,7 +8,7 @@ export type ExpectedProofRejection = {
 
 const POLICY_ASSERTION = "Speed exceeds policy limit";
 const INTEGRITY_ASSERTION = "Invalid attestation signature";
-const REPLAY_ASSERTION = "Attestation already used for this policy";
+const REPLAY_ASSERTION = "Attestation already used";
 
 const policyRejection: ExpectedProofRejection = {
   kind: "policy",
@@ -30,7 +30,7 @@ const replayRejection: ExpectedProofRejection = {
   kind: "replay",
   eyebrow: "REJECTED AS EXPECTED",
   heading: "Replay detected",
-  description: "This attestation has already been used against the selected policy.",
+  description: "This attestation has already been used on this contract.",
   technicalDetail: `failed assert: ${REPLAY_ASSERTION}`
 };
 

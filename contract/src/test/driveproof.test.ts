@@ -1,6 +1,6 @@
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { describe, it, expect } from 'vitest';
-import { DriveProofSimulator, DEFAULT_SPEED_LIMIT, DEFAULT_POLICY_ID } from './driveproof.simulator.js';
+import { DriveProofSimulator, DEFAULT_SPEED_LIMIT } from './driveproof.simulator.js';
 import { createSignedSpeedState, generateDriverSecret } from './utils/test-data.js';
 
 setNetworkId('undeployed');
@@ -10,27 +10,27 @@ describe('DriveProof acceptance — subject binding + replay nullifier', () => {
     const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT);
     simulator.setSignedSpeedState(67n);
 
-    simulator.proveCompliance(DEFAULT_POLICY_ID);
+    simulator.proveCompliance();
 
     expect(simulator.getLedger().complianceCount).toEqual(1n);
   });
 
-  it('rejects replay of the same attestation against the same policy', () => {
+  it('rejects replay of the same attestation on this contract', () => {
     const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT);
     const attestationId = 42424242n;
     simulator.setSignedSpeedState(67n, simulator.driverSecretKey, attestationId);
 
-    simulator.proveCompliance(DEFAULT_POLICY_ID);
+    simulator.proveCompliance();
 
     let thrown: Error | undefined;
     try {
-      simulator.proveCompliance(DEFAULT_POLICY_ID);
+      simulator.proveCompliance();
     } catch (err) {
       thrown = err as Error;
     }
 
     expect(thrown).toBeDefined();
-    expect(thrown!.message).toContain('Attestation already used for this policy');
+    expect(thrown!.message).toContain('Attestation already used');
     expect(simulator.getLedger().complianceCount).toEqual(1n);
   });
 
@@ -53,7 +53,7 @@ describe('DriveProof acceptance — subject binding + replay nullifier', () => {
 
     let thrown: Error | undefined;
     try {
-      simulator.proveCompliance(DEFAULT_POLICY_ID);
+      simulator.proveCompliance();
     } catch (err) {
       thrown = err as Error;
     }
@@ -71,7 +71,7 @@ describe('DriveProof acceptance — subject binding + replay nullifier', () => {
 
     let thrown: Error | undefined;
     try {
-      simulator.proveCompliance(DEFAULT_POLICY_ID);
+      simulator.proveCompliance();
     } catch (err) {
       thrown = err as Error;
     }
@@ -102,7 +102,7 @@ describe('DriveProof acceptance — subject binding + replay nullifier', () => {
 
     let thrown: Error | undefined;
     try {
-      simulator.proveCompliance(DEFAULT_POLICY_ID);
+      simulator.proveCompliance();
     } catch (err) {
       thrown = err as Error;
     }
@@ -129,7 +129,7 @@ describe('DriveProof acceptance — subject binding + replay nullifier', () => {
     );
     simulator.setPrivateState(unsafe);
     try {
-      simulator.proveCompliance(DEFAULT_POLICY_ID);
+      simulator.proveCompliance();
     } catch {
       // expected policy rejection
     }
@@ -143,13 +143,13 @@ describe('DriveProof acceptance — subject binding + replay nullifier', () => {
     );
     simulator.setPrivateState({ ...tampered, speed: 71n });
     try {
-      simulator.proveCompliance(DEFAULT_POLICY_ID);
+      simulator.proveCompliance();
     } catch {
       // expected integrity rejection
     }
 
     simulator.setSignedSpeedState(67n, simulator.driverSecretKey, attestationId);
-    simulator.proveCompliance(DEFAULT_POLICY_ID);
+    simulator.proveCompliance();
 
     expect(simulator.getLedger().complianceCount).toEqual(1n);
     expect(simulator.nullifierUsed(attestationId)).toBe(true);

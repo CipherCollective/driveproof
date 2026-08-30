@@ -1,5 +1,4 @@
 export {
-  DEFAULT_POLICY_ID,
   DEFAULT_SPEED_LIMIT,
   generateAttestorKeyPair,
   generateDriverSecret,

@@ -131,17 +131,16 @@ const _descriptor_16 = new __compactRuntime.CompactTypeBytes(23);
 
 class _tuple_3 {
   alignment() {
-    return _descriptor_16.alignment().concat(_descriptor_3.alignment().concat(_descriptor_3.alignment()));
+    return _descriptor_16.alignment().concat(_descriptor_3.alignment());
   }
   fromValue(value_0) {
     return [
       _descriptor_16.fromValue(value_0),
-      _descriptor_3.fromValue(value_0),
       _descriptor_3.fromValue(value_0)
     ]
   }
   toValue(value_0) {
-    return _descriptor_16.toValue(value_0[0]).concat(_descriptor_3.toValue(value_0[1]).concat(_descriptor_3.toValue(value_0[2])));
+    return _descriptor_16.toValue(value_0[0]).concat(_descriptor_3.toValue(value_0[1]));
   }
 }
 
@@ -215,38 +214,25 @@ export class Contract {
         return { result: pureCircuits.deriveNullifier(...args_1), context };
       },
       proveCompliance: (...args_1) => {
-        if (args_1.length !== 2) {
-          throw new __compactRuntime.CompactError(`proveCompliance: expected 2 arguments (as invoked from Typescript), received ${args_1.length}`);
+        if (args_1.length !== 1) {
+          throw new __compactRuntime.CompactError(`proveCompliance: expected 1 argument (as invoked from Typescript), received ${args_1.length}`);
         }
         const contextOrig_0 = args_1[0];
-        const policyId_0 = args_1[1];
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('proveCompliance',
                                      'argument 1 (as invoked from Typescript)',
-                                     'driveproof.compact line 47 char 1',
+                                     'driveproof.compact line 46 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
-        if (!(typeof(policyId_0) === 'bigint' && policyId_0 >= 0n && policyId_0 <= 65535n)) {
-          __compactRuntime.typeError('proveCompliance',
-                                     'argument 1 (argument 2 as invoked from Typescript)',
-                                     'driveproof.compact line 47 char 1',
-                                     'Uint<0..65536>',
-                                     policyId_0)
-        }
         const context = { ...contextOrig_0, gasCost: __compactRuntime.emptyRunningCost() };
         const partialProofData = {
-          input: {
-            value: _descriptor_0.toValue(policyId_0),
-            alignment: _descriptor_0.alignment()
-          },
+          input: { value: [], alignment: [] },
           output: undefined,
           publicTranscript: [],
           privateTranscriptOutputs: []
         };
-        const result_0 = this._proveCompliance_0(context,
-                                                 partialProofData,
-                                                 policyId_0);
+        const result_0 = this._proveCompliance_0(context, partialProofData);
         partialProofData.output = { value: [], alignment: [] };
         return { result: result_0, context: context, proofData: partialProofData, gasCost: context.gasCost };
       },
@@ -521,12 +507,11 @@ export class Contract {
                                                    secret_0]);
     return this._transientHash_0(bindingBytes_0);
   }
-  _deriveNullifier_0(attestationId_0, policyId_0) {
+  _deriveNullifier_0(attestationId_0) {
     return this._transientHash_1([new Uint8Array([68, 82, 73, 86, 69, 80, 82, 79, 79, 70, 95, 78, 85, 76, 76, 73, 70, 73, 69, 82, 95, 86, 49]),
-                                  attestationId_0,
-                                  policyId_0]);
+                                  attestationId_0]);
   }
-  _proveCompliance_0(context, partialProofData, policyId_0) {
+  _proveCompliance_0(context, partialProofData) {
     const __compact_pattern_tmp1_0 = this._getAttestedSpeedWitness_0(context,
                                                                      partialProofData);
     const reading_0 = __compact_pattern_tmp1_0[0];
@@ -592,8 +577,7 @@ export class Contract {
                                                                                         { popeq: { cached: false,
                                                                                                    result: undefined } }]).value)),
                             'Speed exceeds policy limit');
-    const nullifier_0 = this._deriveNullifier_0(reading_0.attestationId,
-                                                policyId_0);
+    const nullifier_0 = this._deriveNullifier_0(reading_0.attestationId);
     __compactRuntime.assert(!_descriptor_2.fromValue(__compactRuntime.queryLedgerState(context,
                                                                                        partialProofData,
                                                                                        [
@@ -610,7 +594,7 @@ export class Contract {
                                                                                         'member',
                                                                                         { popeq: { cached: true,
                                                                                                    result: undefined } }]).value),
-                            'Attestation already used for this policy');
+                            'Attestation already used');
     __compactRuntime.queryLedgerState(context,
                                       partialProofData,
                                       [
@@ -629,7 +613,7 @@ export class Contract {
                                        { ins: { cached: true, n: 1 } }]);
     const tmp_0 = ((t1) => {
                     if (t1 > 4294967295n) {
-                      throw new __compactRuntime.CompactError('driveproof.compact line 67 char 32: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 4294967295');
+                      throw new __compactRuntime.CompactError('driveproof.compact line 66 char 32: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 4294967295');
                     }
                     return t1;
                   })(_descriptor_4.fromValue(__compactRuntime.queryLedgerState(context,
@@ -917,11 +901,10 @@ export const pureCircuits = {
     return _dummyContract._deriveDriverBinding_0(secret_0);
   },
   deriveNullifier: (...args_0) => {
-    if (args_0.length !== 2) {
-      throw new __compactRuntime.CompactError(`deriveNullifier: expected 2 arguments (as invoked from Typescript), received ${args_0.length}`);
+    if (args_0.length !== 1) {
+      throw new __compactRuntime.CompactError(`deriveNullifier: expected 1 argument (as invoked from Typescript), received ${args_0.length}`);
     }
     const attestationId_0 = args_0[0];
-    const policyId_0 = args_0[1];
     if (!(typeof(attestationId_0) === 'bigint' && attestationId_0 >= 0 && attestationId_0 <= __compactRuntime.MAX_FIELD)) {
       __compactRuntime.typeError('deriveNullifier',
                                  'argument 1',
@@ -929,14 +912,7 @@ export const pureCircuits = {
                                  'Field',
                                  attestationId_0)
     }
-    if (!(typeof(policyId_0) === 'bigint' && policyId_0 >= 0 && policyId_0 <= __compactRuntime.MAX_FIELD)) {
-      __compactRuntime.typeError('deriveNullifier',
-                                 'argument 2',
-                                 'driveproof.compact line 39 char 1',
-                                 'Field',
-                                 policyId_0)
-    }
-    return _dummyContract._deriveNullifier_0(attestationId_0, policyId_0);
+    return _dummyContract._deriveNullifier_0(attestationId_0);
   },
   schnorrChallenge: (...args_0) => {
     if (args_0.length !== 5) {
@@ -950,35 +926,35 @@ export const pureCircuits = {
     if (!(typeof(ann_x_0) === 'bigint' && ann_x_0 >= 0 && ann_x_0 <= __compactRuntime.MAX_FIELD)) {
       __compactRuntime.typeError('schnorrChallenge',
                                  'argument 1',
-                                 'driveproof.compact line 70 char 1',
+                                 'driveproof.compact line 69 char 1',
                                  'Field',
                                  ann_x_0)
     }
     if (!(typeof(ann_y_0) === 'bigint' && ann_y_0 >= 0 && ann_y_0 <= __compactRuntime.MAX_FIELD)) {
       __compactRuntime.typeError('schnorrChallenge',
                                  'argument 2',
-                                 'driveproof.compact line 70 char 1',
+                                 'driveproof.compact line 69 char 1',
                                  'Field',
                                  ann_y_0)
     }
     if (!(typeof(pk_x_0) === 'bigint' && pk_x_0 >= 0 && pk_x_0 <= __compactRuntime.MAX_FIELD)) {
       __compactRuntime.typeError('schnorrChallenge',
                                  'argument 3',
-                                 'driveproof.compact line 70 char 1',
+                                 'driveproof.compact line 69 char 1',
                                  'Field',
                                  pk_x_0)
     }
     if (!(typeof(pk_y_0) === 'bigint' && pk_y_0 >= 0 && pk_y_0 <= __compactRuntime.MAX_FIELD)) {
       __compactRuntime.typeError('schnorrChallenge',
                                  'argument 4',
-                                 'driveproof.compact line 70 char 1',
+                                 'driveproof.compact line 69 char 1',
                                  'Field',
                                  pk_y_0)
     }
     if (!(Array.isArray(msg_0) && msg_0.length === 3 && msg_0.every((t) => typeof(t) === 'bigint' && t >= 0 && t <= __compactRuntime.MAX_FIELD))) {
       __compactRuntime.typeError('schnorrChallenge',
                                  'argument 5',
-                                 'driveproof.compact line 70 char 1',
+                                 'driveproof.compact line 69 char 1',
                                  'Vector<3, Field>',
                                  msg_0)
     }

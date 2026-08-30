@@ -1,4 +1,4 @@
-// DriveProof Phase 3: subject binding + deterministic replay nullifier.
+// DriveProof Phase 3: subject binding + contract-local replay nullifier.
 // Trusted attestor must issue unique attestationIds — a malicious attestor can still
 // re-issue duplicate records under different IDs (known trust boundary).
 
@@ -36,15 +36,14 @@ export pure circuit deriveDriverBinding(secret: DriverSecret): Field {
     return transientHash<Bytes<32>>(bindingBytes);
 }
 
-export pure circuit deriveNullifier(attestationId: Field, policyId: Field): Field {
-    return transientHash<[Bytes<23>, Field, Field]>([
+export pure circuit deriveNullifier(attestationId: Field): Field {
+    return transientHash<[Bytes<23>, Field]>([
         "DRIVEPROOF_NULLIFIER_V1",
-        attestationId,
-        policyId
+        attestationId
     ]);
 }
 
-export circuit proveCompliance(policyId: Uint<16>): [] {
+export circuit proveCompliance(): [] {
     const [reading, signature, attestorId] = getAttestedSpeedWitness();
 
     assert(attestors.member(disclose(attestorId)), "Attestor not registered");
@@ -60,8 +59,8 @@ export circuit proveCompliance(policyId: Uint<16>): [] {
 
     assert(reading.speed <= speedLimit, "Speed exceeds policy limit");
 
-    const nullifier = deriveNullifier(reading.attestationId, policyId as Field);
-    assert(!usedNullifiers.member(disclose(nullifier)), "Attestation already used for this policy");
+    const nullifier = deriveNullifier(reading.attestationId);
+    assert(!usedNullifiers.member(disclose(nullifier)), "Attestation already used");
     usedNullifiers.insert(disclose(nullifier));
 
     complianceCount = disclose((complianceCount + 1) as Uint<32>);

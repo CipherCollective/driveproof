@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, ExternalLink, RefreshCw, TriangleAlert, WalletCards } from "lucide-react";
 import { checkAttestorHealth, createSessionDriverSecret, requestAttestorPrivateState, type AttestorHealthStatus, type AttestorTripId } from "@driveproof/attestor-client";
-import { ON_CHAIN_POLICY_ID } from "@driveproof/fixtures";
 import {
   createLaceMidnightWalletBridge,
   readMidnightWalletDiagnostics,
@@ -357,7 +356,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
       // findDeployedContract scopes the provider to this contract address
       // before the next witness state is written.
       await runtime.providers.privateStateProvider.set(PRIVATE_STATE_ID, nextState);
-      const result = await joined.callTx.proveCompliance(ON_CHAIN_POLICY_ID);
+      const result = await joined.callTx.proveCompliance();
       setProof(publicTransaction(result.public));
       const currentState = await runtime.providers.publicDataProvider.queryContractState(contractAddress);
       if (!currentState) throw new Error("The deployed contract state was not returned by the indexer.");

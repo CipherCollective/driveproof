@@ -7,7 +7,6 @@ const JUBJUB_ORDER = 65544843968907738099309675635232457297059212658723172813653
 const TWO_248 = 452312848583266388373324160190187140051835877600158453279131187530910662656n;
 const FIELD_MODULUS = 52435875175126190479447740508185965837690552500527637822603658699938581184513n;
 
-export const DEFAULT_POLICY_ID = 1n;
 export const DEFAULT_SPEED_LIMIT = 80n;
 
 function randomScalar(): bigint {
@@ -36,8 +35,8 @@ export function computeDriverBinding(driverSecret: Uint8Array): bigint {
   return pureCircuits.deriveDriverBinding(driverSecret);
 }
 
-export function computeNullifier(attestationId: bigint, policyId: bigint = DEFAULT_POLICY_ID): bigint {
-  return pureCircuits.deriveNullifier(attestationId, policyId);
+export function computeNullifier(attestationId: bigint): bigint {
+  return pureCircuits.deriveNullifier(attestationId);
 }
 
 export function schnorrSign(sk: bigint, msg: bigint[]): Schnorr_SchnorrSignature {

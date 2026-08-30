@@ -34,12 +34,6 @@
           "type": {
             "type-name": "Field"
           }
-        },
-        {
-          "name": "policyId",
-          "type": {
-            "type-name": "Field"
-          }
         }
       ],
       "result-type": {
@@ -51,13 +45,6 @@
       "pure": false,
       "proof": true,
       "arguments": [
-        {
-          "name": "policyId",
-          "type": {
-            "type-name": "Uint",
-            "maxval": 65535
-          }
-        }
       ],
       "result-type": {
         "type-name": "Tuple",

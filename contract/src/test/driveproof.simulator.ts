@@ -11,7 +11,6 @@ import {
   createSignedSpeedState,
   generateAttestorKeyPair,
   generateDriverSecret,
-  DEFAULT_POLICY_ID,
   DEFAULT_SPEED_LIMIT,
 } from './utils/test-data.js';
 
@@ -88,18 +87,15 @@ export class DriveProofSimulator {
     );
   }
 
-  proveCompliance(policyId: bigint = DEFAULT_POLICY_ID): Ledger {
-    this.circuitContext = this.contract.impureCircuits.proveCompliance(
-      this.circuitContext,
-      policyId,
-    ).context;
+  proveCompliance(): Ledger {
+    this.circuitContext = this.contract.impureCircuits.proveCompliance(this.circuitContext).context;
     return ledger(this.circuitContext.currentQueryContext.state);
   }
 
-  nullifierUsed(attestationId: bigint, policyId: bigint = DEFAULT_POLICY_ID): boolean {
-    const nullifier = pureCircuits.deriveNullifier(attestationId, policyId);
+  nullifierUsed(attestationId: bigint): boolean {
+    const nullifier = pureCircuits.deriveNullifier(attestationId);
     return this.getLedger().usedNullifiers.member(nullifier);
   }
 }
 
-export { DEFAULT_POLICY_ID, DEFAULT_SPEED_LIMIT };
+export { DEFAULT_SPEED_LIMIT };

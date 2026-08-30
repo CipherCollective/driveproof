@@ -16,7 +16,6 @@ import {
 import {
   ATTESTOR_ID,
   ATTESTOR_PUBLIC_KEY,
-  ON_CHAIN_POLICY_ID,
   PRIVATE_STATE_ID,
   SPEED_LIMIT,
   createCompiledDriveProof,
@@ -141,7 +140,7 @@ async function runRealPath(): Promise<void> {
     });
     await providers.privateStateProvider.set(PRIVATE_STATE_ID, attestation);
     console.log("Proving and submitting safe compliance proof.");
-    const proof = await joined.callTx.proveCompliance(ON_CHAIN_POLICY_ID);
+    const proof = await joined.callTx.proveCompliance();
     console.log(`Safe proof tx: ${proof.public.txId}`);
     const stateAfterSafe = await providers.publicDataProvider.queryContractState(deployment.contractAddress);
     if (!stateAfterSafe) throw new Error("The indexer did not return the deployed contract state after the safe proof.");
@@ -153,7 +152,7 @@ async function runRealPath(): Promise<void> {
     if (unsafe.speed !== 112n) throw new Error(`Expected the unsafe attestor trip to return speed 112, received ${unsafe.speed.toString()}.`);
     await providers.privateStateProvider.set(PRIVATE_STATE_ID, unsafe);
     try {
-      await joined.callTx.proveCompliance(ON_CHAIN_POLICY_ID);
+      await joined.callTx.proveCompliance();
       console.log("UNSAFE RESULT: unexpectedly accepted by the real contract.");
     } catch (error) {
       console.log(`UNSAFE RESULT: rejected (${safeError(error)}).`);
@@ -166,7 +165,7 @@ async function runRealPath(): Promise<void> {
 
     await providers.privateStateProvider.set(PRIVATE_STATE_ID, { ...unsafe, speed: 71n });
     try {
-      await joined.callTx.proveCompliance(ON_CHAIN_POLICY_ID);
+      await joined.callTx.proveCompliance();
       console.log("TAMPER RESULT: unexpectedly accepted by the real contract.");
     } catch (error) {
       console.log(`TAMPER RESULT: rejected (${safeError(error)}).`);
@@ -179,7 +178,7 @@ async function runRealPath(): Promise<void> {
 
     await providers.privateStateProvider.set(PRIVATE_STATE_ID, attestation);
     try {
-      await joined.callTx.proveCompliance(ON_CHAIN_POLICY_ID);
+      await joined.callTx.proveCompliance();
       console.log("REPLAY RESULT: unexpectedly accepted by the real contract.");
     } catch (error) {
       console.log(`REPLAY RESULT: rejected (${safeError(error)}).`);
