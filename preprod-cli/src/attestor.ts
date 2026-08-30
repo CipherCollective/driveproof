@@ -1,7 +1,15 @@
-import { computeDriverBinding, generateDriverSecret } from "driveproof-contract";
+import { computeDriverBinding, generateDriverSecret, toTelemetrySamples, maxSampleSpeed } from "driveproof-contract";
 import type { DriveProofPrivateState } from "driveproof-contract";
 
-export type AttestorTripId = "safe" | "unsafe";
+export type AttestorTripId = "safe" | "unsafe" | "out-of-geofence";
+
+type AttestationSample = {
+  gridX: string;
+  gridY: string;
+  speed: string;
+  braking: string;
+  timeBucket: string;
+};
 
 type AttestorResponse = {
   signature: {
@@ -10,9 +18,11 @@ type AttestorResponse = {
   };
   message: {
     tripId: string;
-    speed: string;
     driverBinding: string;
     attestationId: string;
+    salt: string;
+    tripCommitment: string;
+    samples: AttestationSample[];
   };
 };
 
@@ -29,6 +39,21 @@ function asBigInt(value: unknown, label: string): bigint {
   } catch {
     throw new Error(`Attestor returned an invalid ${label}.`);
   }
+}
+
+function parseSamples(samples: AttestationSample[]) {
+  if (!Array.isArray(samples) || samples.length !== 16) {
+    throw new Error("Attestor returned an invalid telemetry sample set.");
+  }
+  return toTelemetrySamples(
+    samples.map((sample) => ({
+      gridX: Number(sample.gridX),
+      gridY: Number(sample.gridY),
+      speed: Number(sample.speed),
+      braking: Number(sample.braking),
+      timeBucket: Number(sample.timeBucket)
+    }))
+  );
 }
 
 async function readJson<T>(response: Response, endpoint: string): Promise<T> {
@@ -66,9 +91,11 @@ export async function requestAttestorPrivateState(
     throw new Error("Attestor returned a different trip identifier.");
   }
 
+  const samples = parseSamples(attestation.message.samples);
   return {
-    speed: asBigInt(attestation.message.speed, "speed"),
     attestationId: asBigInt(attestation.message.attestationId, "attestationId"),
+    salt: asBigInt(attestation.message.salt, "salt"),
+    samples,
     attestationSignature: {
       announcement: {
         x: asBigInt(attestation.signature.announcement.x, "announcement x"),
@@ -80,3 +107,5 @@ export async function requestAttestorPrivateState(
     driverSecretKey
   };
 }
+
+export { maxSampleSpeed };

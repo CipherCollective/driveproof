@@ -7,6 +7,8 @@ export type ExpectedProofRejection = {
 };
 
 const POLICY_ASSERTION = "Speed exceeds policy limit";
+const BRAKING_ASSERTION = "Harsh braking exceeds policy limit";
+const GEOFENCE_ASSERTION = "Sample outside policy geofence";
 const INTEGRITY_ASSERTION = "Invalid attestation signature";
 const REPLAY_ASSERTION = "Attestation already used";
 
@@ -32,6 +34,22 @@ const replayRejection: ExpectedProofRejection = {
   heading: "Replay protection",
   description: "This attestation has already been used.",
   technicalDetail: `failed assert: ${REPLAY_ASSERTION}`
+};
+
+const brakingRejection: ExpectedProofRejection = {
+  kind: "policy",
+  eyebrow: "REJECTED AS EXPECTED",
+  heading: "Policy violation",
+  description: "The attested trip contains more harsh-braking events than the policy allows.",
+  technicalDetail: `failed assert: ${BRAKING_ASSERTION}`
+};
+
+const geofenceRejection: ExpectedProofRejection = {
+  kind: "policy",
+  eyebrow: "REJECTED AS EXPECTED",
+  heading: "Policy violation",
+  description: "The attested trip leaves the policy's allowed operating area.",
+  technicalDetail: `failed assert: ${GEOFENCE_ASSERTION}`
 };
 
 function collectMessages(value: unknown, messages: string[], visited: Set<object>, depth = 0): void {
@@ -65,6 +83,14 @@ export function classifyExpectedProofRejection(error: unknown): ExpectedProofRej
 
   if (messages.some((message) => message.includes(POLICY_ASSERTION))) {
     return policyRejection;
+  }
+
+  if (messages.some((message) => message.includes(BRAKING_ASSERTION))) {
+    return brakingRejection;
+  }
+
+  if (messages.some((message) => message.includes(GEOFENCE_ASSERTION))) {
+    return geofenceRejection;
   }
 
   if (messages.some((message) => message.includes(INTEGRITY_ASSERTION))) {

@@ -7,184 +7,235 @@ const _descriptor_1 = __compactRuntime.CompactTypeJubjubPoint;
 
 const _descriptor_2 = __compactRuntime.CompactTypeBoolean;
 
-const _descriptor_3 = __compactRuntime.CompactTypeField;
+const _descriptor_3 = new __compactRuntime.CompactTypeUnsignedInteger(255n, 1);
 
-const _descriptor_4 = new __compactRuntime.CompactTypeUnsignedInteger(4294967295n, 4);
+const _descriptor_4 = __compactRuntime.CompactTypeField;
 
-const _descriptor_5 = new __compactRuntime.CompactTypeVector(3, _descriptor_3);
+const _descriptor_5 = new __compactRuntime.CompactTypeUnsignedInteger(4294967295n, 4);
 
-const _descriptor_6 = new __compactRuntime.CompactTypeBytes(32);
+const _descriptor_6 = new __compactRuntime.CompactTypeVector(1, _descriptor_4);
 
-class _SpeedReading_0 {
+const _descriptor_7 = new __compactRuntime.CompactTypeVector(16, _descriptor_3);
+
+const _descriptor_8 = new __compactRuntime.CompactTypeVector(16, _descriptor_0);
+
+const _descriptor_9 = new __compactRuntime.CompactTypeBytes(32);
+
+class _TripReading_0 {
   alignment() {
-    return _descriptor_0.alignment().concat(_descriptor_3.alignment());
+    return _descriptor_4.alignment().concat(_descriptor_4.alignment().concat(_descriptor_8.alignment().concat(_descriptor_8.alignment().concat(_descriptor_8.alignment().concat(_descriptor_7.alignment().concat(_descriptor_7.alignment()))))));
   }
   fromValue(value_0) {
     return {
-      speed: _descriptor_0.fromValue(value_0),
-      attestationId: _descriptor_3.fromValue(value_0)
+      attestationId: _descriptor_4.fromValue(value_0),
+      salt: _descriptor_4.fromValue(value_0),
+      gridX: _descriptor_8.fromValue(value_0),
+      gridY: _descriptor_8.fromValue(value_0),
+      speed: _descriptor_8.fromValue(value_0),
+      braking: _descriptor_7.fromValue(value_0),
+      timeBucket: _descriptor_7.fromValue(value_0)
     }
   }
   toValue(value_0) {
-    return _descriptor_0.toValue(value_0.speed).concat(_descriptor_3.toValue(value_0.attestationId));
+    return _descriptor_4.toValue(value_0.attestationId).concat(_descriptor_4.toValue(value_0.salt).concat(_descriptor_8.toValue(value_0.gridX).concat(_descriptor_8.toValue(value_0.gridY).concat(_descriptor_8.toValue(value_0.speed).concat(_descriptor_7.toValue(value_0.braking).concat(_descriptor_7.toValue(value_0.timeBucket)))))));
   }
 }
 
-const _descriptor_7 = new _SpeedReading_0();
+const _descriptor_10 = new _TripReading_0();
 
 class _SchnorrSignature_0 {
   alignment() {
-    return _descriptor_1.alignment().concat(_descriptor_3.alignment());
+    return _descriptor_1.alignment().concat(_descriptor_4.alignment());
   }
   fromValue(value_0) {
     return {
       announcement: _descriptor_1.fromValue(value_0),
-      response: _descriptor_3.fromValue(value_0)
+      response: _descriptor_4.fromValue(value_0)
     }
   }
   toValue(value_0) {
-    return _descriptor_1.toValue(value_0.announcement).concat(_descriptor_3.toValue(value_0.response));
+    return _descriptor_1.toValue(value_0.announcement).concat(_descriptor_4.toValue(value_0.response));
   }
 }
 
-const _descriptor_8 = new _SchnorrSignature_0();
+const _descriptor_11 = new _SchnorrSignature_0();
 
 class _tuple_0 {
   alignment() {
-    return _descriptor_7.alignment().concat(_descriptor_8.alignment().concat(_descriptor_0.alignment()));
-  }
-  fromValue(value_0) {
-    return [
-      _descriptor_7.fromValue(value_0),
-      _descriptor_8.fromValue(value_0),
-      _descriptor_0.fromValue(value_0)
-    ]
-  }
-  toValue(value_0) {
-    return _descriptor_7.toValue(value_0[0]).concat(_descriptor_8.toValue(value_0[1]).concat(_descriptor_0.toValue(value_0[2])));
-  }
-}
-
-const _descriptor_9 = new _tuple_0();
-
-const _descriptor_10 = new __compactRuntime.CompactTypeUnsignedInteger(127n, 1);
-
-const _descriptor_11 = new __compactRuntime.CompactTypeUnsignedInteger(452312848583266388373324160190187140051835877600158453279131187530910662655n, 31);
-
-class _tuple_1 {
-  alignment() {
-    return _descriptor_10.alignment().concat(_descriptor_11.alignment());
+    return _descriptor_10.alignment().concat(_descriptor_11.alignment().concat(_descriptor_0.alignment()));
   }
   fromValue(value_0) {
     return [
       _descriptor_10.fromValue(value_0),
-      _descriptor_11.fromValue(value_0)
+      _descriptor_11.fromValue(value_0),
+      _descriptor_0.fromValue(value_0)
     ]
   }
   toValue(value_0) {
-    return _descriptor_10.toValue(value_0[0]).concat(_descriptor_11.toValue(value_0[1]));
+    return _descriptor_10.toValue(value_0[0]).concat(_descriptor_11.toValue(value_0[1]).concat(_descriptor_0.toValue(value_0[2])));
   }
 }
 
-const _descriptor_12 = new _tuple_1();
+const _descriptor_12 = new _tuple_0();
+
+const _descriptor_13 = new __compactRuntime.CompactTypeUnsignedInteger(127n, 1);
+
+const _descriptor_14 = new __compactRuntime.CompactTypeUnsignedInteger(452312848583266388373324160190187140051835877600158453279131187530910662655n, 31);
+
+class _tuple_1 {
+  alignment() {
+    return _descriptor_13.alignment().concat(_descriptor_14.alignment());
+  }
+  fromValue(value_0) {
+    return [
+      _descriptor_13.fromValue(value_0),
+      _descriptor_14.fromValue(value_0)
+    ]
+  }
+  toValue(value_0) {
+    return _descriptor_13.toValue(value_0[0]).concat(_descriptor_14.toValue(value_0[1]));
+  }
+}
+
+const _descriptor_15 = new _tuple_1();
 
 class _SchnorrHashInput_0 {
   alignment() {
-    return _descriptor_3.alignment().concat(_descriptor_3.alignment().concat(_descriptor_3.alignment().concat(_descriptor_3.alignment().concat(_descriptor_5.alignment()))));
+    return _descriptor_4.alignment().concat(_descriptor_4.alignment().concat(_descriptor_4.alignment().concat(_descriptor_4.alignment().concat(_descriptor_6.alignment()))));
   }
   fromValue(value_0) {
     return {
-      ann_x: _descriptor_3.fromValue(value_0),
-      ann_y: _descriptor_3.fromValue(value_0),
-      pk_x: _descriptor_3.fromValue(value_0),
-      pk_y: _descriptor_3.fromValue(value_0),
-      msg: _descriptor_5.fromValue(value_0)
+      ann_x: _descriptor_4.fromValue(value_0),
+      ann_y: _descriptor_4.fromValue(value_0),
+      pk_x: _descriptor_4.fromValue(value_0),
+      pk_y: _descriptor_4.fromValue(value_0),
+      msg: _descriptor_6.fromValue(value_0)
     }
   }
   toValue(value_0) {
-    return _descriptor_3.toValue(value_0.ann_x).concat(_descriptor_3.toValue(value_0.ann_y).concat(_descriptor_3.toValue(value_0.pk_x).concat(_descriptor_3.toValue(value_0.pk_y).concat(_descriptor_5.toValue(value_0.msg)))));
+    return _descriptor_4.toValue(value_0.ann_x).concat(_descriptor_4.toValue(value_0.ann_y).concat(_descriptor_4.toValue(value_0.pk_x).concat(_descriptor_4.toValue(value_0.pk_y).concat(_descriptor_6.toValue(value_0.msg)))));
   }
 }
 
-const _descriptor_13 = new _SchnorrHashInput_0();
+const _descriptor_16 = new _SchnorrHashInput_0();
 
-const _descriptor_14 = new __compactRuntime.CompactTypeBytes(21);
+const _descriptor_17 = new __compactRuntime.CompactTypeBytes(21);
 
 class _tuple_2 {
   alignment() {
-    return _descriptor_14.alignment().concat(_descriptor_6.alignment());
+    return _descriptor_17.alignment().concat(_descriptor_9.alignment());
   }
   fromValue(value_0) {
     return [
-      _descriptor_14.fromValue(value_0),
-      _descriptor_6.fromValue(value_0)
+      _descriptor_17.fromValue(value_0),
+      _descriptor_9.fromValue(value_0)
     ]
   }
   toValue(value_0) {
-    return _descriptor_14.toValue(value_0[0]).concat(_descriptor_6.toValue(value_0[1]));
+    return _descriptor_17.toValue(value_0[0]).concat(_descriptor_9.toValue(value_0[1]));
   }
 }
 
-const _descriptor_15 = new _tuple_2();
+const _descriptor_18 = new _tuple_2();
 
-const _descriptor_16 = new __compactRuntime.CompactTypeBytes(23);
+class _TripSampleHash_0 {
+  alignment() {
+    return _descriptor_4.alignment().concat(_descriptor_0.alignment().concat(_descriptor_0.alignment().concat(_descriptor_0.alignment().concat(_descriptor_3.alignment().concat(_descriptor_3.alignment())))));
+  }
+  fromValue(value_0) {
+    return {
+      prev: _descriptor_4.fromValue(value_0),
+      gridX: _descriptor_0.fromValue(value_0),
+      gridY: _descriptor_0.fromValue(value_0),
+      speed: _descriptor_0.fromValue(value_0),
+      braking: _descriptor_3.fromValue(value_0),
+      timeBucket: _descriptor_3.fromValue(value_0)
+    }
+  }
+  toValue(value_0) {
+    return _descriptor_4.toValue(value_0.prev).concat(_descriptor_0.toValue(value_0.gridX).concat(_descriptor_0.toValue(value_0.gridY).concat(_descriptor_0.toValue(value_0.speed).concat(_descriptor_3.toValue(value_0.braking).concat(_descriptor_3.toValue(value_0.timeBucket))))));
+  }
+}
+
+const _descriptor_19 = new _TripSampleHash_0();
+
+const _descriptor_20 = new __compactRuntime.CompactTypeBytes(25);
 
 class _tuple_3 {
   alignment() {
-    return _descriptor_16.alignment().concat(_descriptor_3.alignment());
+    return _descriptor_20.alignment().concat(_descriptor_4.alignment().concat(_descriptor_4.alignment().concat(_descriptor_4.alignment())));
   }
   fromValue(value_0) {
     return [
-      _descriptor_16.fromValue(value_0),
-      _descriptor_3.fromValue(value_0)
+      _descriptor_20.fromValue(value_0),
+      _descriptor_4.fromValue(value_0),
+      _descriptor_4.fromValue(value_0),
+      _descriptor_4.fromValue(value_0)
     ]
   }
   toValue(value_0) {
-    return _descriptor_16.toValue(value_0[0]).concat(_descriptor_3.toValue(value_0[1]));
+    return _descriptor_20.toValue(value_0[0]).concat(_descriptor_4.toValue(value_0[1]).concat(_descriptor_4.toValue(value_0[2]).concat(_descriptor_4.toValue(value_0[3]))));
   }
 }
 
-const _descriptor_17 = new _tuple_3();
+const _descriptor_21 = new _tuple_3();
 
-const _descriptor_18 = new __compactRuntime.CompactTypeUnsignedInteger(18446744073709551615n, 8);
+const _descriptor_22 = new __compactRuntime.CompactTypeBytes(23);
+
+class _tuple_4 {
+  alignment() {
+    return _descriptor_22.alignment().concat(_descriptor_4.alignment());
+  }
+  fromValue(value_0) {
+    return [
+      _descriptor_22.fromValue(value_0),
+      _descriptor_4.fromValue(value_0)
+    ]
+  }
+  toValue(value_0) {
+    return _descriptor_22.toValue(value_0[0]).concat(_descriptor_4.toValue(value_0[1]));
+  }
+}
+
+const _descriptor_23 = new _tuple_4();
+
+const _descriptor_24 = new __compactRuntime.CompactTypeUnsignedInteger(18446744073709551615n, 8);
 
 class _Either_0 {
   alignment() {
-    return _descriptor_2.alignment().concat(_descriptor_6.alignment().concat(_descriptor_6.alignment()));
+    return _descriptor_2.alignment().concat(_descriptor_9.alignment().concat(_descriptor_9.alignment()));
   }
   fromValue(value_0) {
     return {
       is_left: _descriptor_2.fromValue(value_0),
-      left: _descriptor_6.fromValue(value_0),
-      right: _descriptor_6.fromValue(value_0)
+      left: _descriptor_9.fromValue(value_0),
+      right: _descriptor_9.fromValue(value_0)
     }
   }
   toValue(value_0) {
-    return _descriptor_2.toValue(value_0.is_left).concat(_descriptor_6.toValue(value_0.left).concat(_descriptor_6.toValue(value_0.right)));
+    return _descriptor_2.toValue(value_0.is_left).concat(_descriptor_9.toValue(value_0.left).concat(_descriptor_9.toValue(value_0.right)));
   }
 }
 
-const _descriptor_19 = new _Either_0();
+const _descriptor_25 = new _Either_0();
 
-const _descriptor_20 = new __compactRuntime.CompactTypeUnsignedInteger(340282366920938463463374607431768211455n, 16);
+const _descriptor_26 = new __compactRuntime.CompactTypeUnsignedInteger(340282366920938463463374607431768211455n, 16);
 
 class _ContractAddress_0 {
   alignment() {
-    return _descriptor_6.alignment();
+    return _descriptor_9.alignment();
   }
   fromValue(value_0) {
     return {
-      bytes: _descriptor_6.fromValue(value_0)
+      bytes: _descriptor_9.fromValue(value_0)
     }
   }
   toValue(value_0) {
-    return _descriptor_6.toValue(value_0.bytes);
+    return _descriptor_9.toValue(value_0.bytes);
   }
 }
 
-const _descriptor_21 = new _ContractAddress_0();
-
-const _descriptor_22 = new __compactRuntime.CompactTypeUnsignedInteger(255n, 1);
+const _descriptor_27 = new _ContractAddress_0();
 
 export class Contract {
   witnesses;
@@ -199,8 +250,8 @@ export class Contract {
     if (typeof(witnesses_0.getSchnorrReduction) !== 'function') {
       throw new __compactRuntime.CompactError('first (witnesses) argument to Contract constructor does not contain a function-valued field named getSchnorrReduction');
     }
-    if (typeof(witnesses_0.getAttestedSpeedWitness) !== 'function') {
-      throw new __compactRuntime.CompactError('first (witnesses) argument to Contract constructor does not contain a function-valued field named getAttestedSpeedWitness');
+    if (typeof(witnesses_0.getAttestedTripWitness) !== 'function') {
+      throw new __compactRuntime.CompactError('first (witnesses) argument to Contract constructor does not contain a function-valued field named getAttestedTripWitness');
     }
     if (typeof(witnesses_0.getDriverSecret) !== 'function') {
       throw new __compactRuntime.CompactError('first (witnesses) argument to Contract constructor does not contain a function-valued field named getDriverSecret');
@@ -213,6 +264,18 @@ export class Contract {
       deriveNullifier(context, ...args_1) {
         return { result: pureCircuits.deriveNullifier(...args_1), context };
       },
+      foldTripSample(context, ...args_1) {
+        return { result: pureCircuits.foldTripSample(...args_1), context };
+      },
+      deriveTripCommitment(context, ...args_1) {
+        return { result: pureCircuits.deriveTripCommitment(...args_1), context };
+      },
+      harshBrakingFlag(context, ...args_1) {
+        return { result: pureCircuits.harshBrakingFlag(...args_1), context };
+      },
+      countHarshBraking(context, ...args_1) {
+        return { result: pureCircuits.countHarshBraking(...args_1), context };
+      },
       proveCompliance: (...args_1) => {
         if (args_1.length !== 1) {
           throw new __compactRuntime.CompactError(`proveCompliance: expected 1 argument (as invoked from Typescript), received ${args_1.length}`);
@@ -221,7 +284,7 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('proveCompliance',
                                      'argument 1 (as invoked from Typescript)',
-                                     'driveproof.compact line 46 char 1',
+                                     'driveproof.compact line 154 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
@@ -244,13 +307,18 @@ export class Contract {
     this.provableCircuits = { proveCompliance: this.circuits.proveCompliance };
   }
   initialState(...args_0) {
-    if (args_0.length !== 4) {
-      throw new __compactRuntime.CompactError(`Contract state constructor: expected 4 arguments (as invoked from Typescript), received ${args_0.length}`);
+    if (args_0.length !== 9) {
+      throw new __compactRuntime.CompactError(`Contract state constructor: expected 9 arguments (as invoked from Typescript), received ${args_0.length}`);
     }
     const constructorContext_0 = args_0[0];
     const limit_0 = args_0[1];
-    const attestorId_0 = args_0[2];
-    const attestorPk_0 = args_0[3];
+    const brakeLimit_0 = args_0[2];
+    const minX_0 = args_0[3];
+    const minY_0 = args_0[4];
+    const maxX_0 = args_0[5];
+    const maxY_0 = args_0[6];
+    const attestorId_0 = args_0[7];
+    const attestorPk_0 = args_0[8];
     if (typeof(constructorContext_0) !== 'object') {
       throw new __compactRuntime.CompactError(`Contract state constructor: expected 'constructorContext' in argument 1 (as invoked from Typescript) to be an object`);
     }
@@ -266,19 +334,59 @@ export class Contract {
     if (!(typeof(limit_0) === 'bigint' && limit_0 >= 0n && limit_0 <= 65535n)) {
       __compactRuntime.typeError('Contract state constructor',
                                  'argument 1 (argument 2 as invoked from Typescript)',
-                                 'driveproof.compact line 26 char 1',
+                                 'driveproof.compact line 45 char 1',
                                  'Uint<0..65536>',
                                  limit_0)
     }
-    if (!(typeof(attestorId_0) === 'bigint' && attestorId_0 >= 0n && attestorId_0 <= 65535n)) {
+    if (!(typeof(brakeLimit_0) === 'bigint' && brakeLimit_0 >= 0n && brakeLimit_0 <= 255n)) {
       __compactRuntime.typeError('Contract state constructor',
                                  'argument 2 (argument 3 as invoked from Typescript)',
-                                 'driveproof.compact line 26 char 1',
+                                 'driveproof.compact line 45 char 1',
+                                 'Uint<0..256>',
+                                 brakeLimit_0)
+    }
+    if (!(typeof(minX_0) === 'bigint' && minX_0 >= 0n && minX_0 <= 65535n)) {
+      __compactRuntime.typeError('Contract state constructor',
+                                 'argument 3 (argument 4 as invoked from Typescript)',
+                                 'driveproof.compact line 45 char 1',
+                                 'Uint<0..65536>',
+                                 minX_0)
+    }
+    if (!(typeof(minY_0) === 'bigint' && minY_0 >= 0n && minY_0 <= 65535n)) {
+      __compactRuntime.typeError('Contract state constructor',
+                                 'argument 4 (argument 5 as invoked from Typescript)',
+                                 'driveproof.compact line 45 char 1',
+                                 'Uint<0..65536>',
+                                 minY_0)
+    }
+    if (!(typeof(maxX_0) === 'bigint' && maxX_0 >= 0n && maxX_0 <= 65535n)) {
+      __compactRuntime.typeError('Contract state constructor',
+                                 'argument 5 (argument 6 as invoked from Typescript)',
+                                 'driveproof.compact line 45 char 1',
+                                 'Uint<0..65536>',
+                                 maxX_0)
+    }
+    if (!(typeof(maxY_0) === 'bigint' && maxY_0 >= 0n && maxY_0 <= 65535n)) {
+      __compactRuntime.typeError('Contract state constructor',
+                                 'argument 6 (argument 7 as invoked from Typescript)',
+                                 'driveproof.compact line 45 char 1',
+                                 'Uint<0..65536>',
+                                 maxY_0)
+    }
+    if (!(typeof(attestorId_0) === 'bigint' && attestorId_0 >= 0n && attestorId_0 <= 65535n)) {
+      __compactRuntime.typeError('Contract state constructor',
+                                 'argument 7 (argument 8 as invoked from Typescript)',
+                                 'driveproof.compact line 45 char 1',
                                  'Uint<0..65536>',
                                  attestorId_0)
     }
     const state_0 = new __compactRuntime.ContractState();
     let stateValue_0 = __compactRuntime.StateValue.newArray();
+    stateValue_0 = stateValue_0.arrayPush(__compactRuntime.StateValue.newNull());
+    stateValue_0 = stateValue_0.arrayPush(__compactRuntime.StateValue.newNull());
+    stateValue_0 = stateValue_0.arrayPush(__compactRuntime.StateValue.newNull());
+    stateValue_0 = stateValue_0.arrayPush(__compactRuntime.StateValue.newNull());
+    stateValue_0 = stateValue_0.arrayPush(__compactRuntime.StateValue.newNull());
     stateValue_0 = stateValue_0.arrayPush(__compactRuntime.StateValue.newNull());
     stateValue_0 = stateValue_0.arrayPush(__compactRuntime.StateValue.newNull());
     stateValue_0 = stateValue_0.arrayPush(__compactRuntime.StateValue.newNull());
@@ -296,8 +404,8 @@ export class Contract {
                                       partialProofData,
                                       [
                                        { push: { storage: false,
-                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_22.toValue(0n),
-                                                                                              alignment: _descriptor_22.alignment() }).encode() } },
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(0n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
                                        { push: { storage: true,
                                                  value: __compactRuntime.StateValue.newMap(
                                                           new __compactRuntime.StateMap()
@@ -307,8 +415,8 @@ export class Contract {
                                       partialProofData,
                                       [
                                        { push: { storage: false,
-                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_22.toValue(1n),
-                                                                                              alignment: _descriptor_22.alignment() }).encode() } },
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(1n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
                                        { push: { storage: true,
                                                  value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(0n),
                                                                                               alignment: _descriptor_0.alignment() }).encode() } },
@@ -317,18 +425,68 @@ export class Contract {
                                       partialProofData,
                                       [
                                        { push: { storage: false,
-                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_22.toValue(2n),
-                                                                                              alignment: _descriptor_22.alignment() }).encode() } },
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(2n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
                                        { push: { storage: true,
-                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_4.toValue(0n),
-                                                                                              alignment: _descriptor_4.alignment() }).encode() } },
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(0n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
                                        { ins: { cached: false, n: 1 } }]);
     __compactRuntime.queryLedgerState(context,
                                       partialProofData,
                                       [
                                        { push: { storage: false,
-                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_22.toValue(3n),
-                                                                                              alignment: _descriptor_22.alignment() }).encode() } },
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(3n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                       { push: { storage: true,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(0n),
+                                                                                              alignment: _descriptor_0.alignment() }).encode() } },
+                                       { ins: { cached: false, n: 1 } }]);
+    __compactRuntime.queryLedgerState(context,
+                                      partialProofData,
+                                      [
+                                       { push: { storage: false,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(4n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                       { push: { storage: true,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(0n),
+                                                                                              alignment: _descriptor_0.alignment() }).encode() } },
+                                       { ins: { cached: false, n: 1 } }]);
+    __compactRuntime.queryLedgerState(context,
+                                      partialProofData,
+                                      [
+                                       { push: { storage: false,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(5n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                       { push: { storage: true,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(0n),
+                                                                                              alignment: _descriptor_0.alignment() }).encode() } },
+                                       { ins: { cached: false, n: 1 } }]);
+    __compactRuntime.queryLedgerState(context,
+                                      partialProofData,
+                                      [
+                                       { push: { storage: false,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(6n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                       { push: { storage: true,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(0n),
+                                                                                              alignment: _descriptor_0.alignment() }).encode() } },
+                                       { ins: { cached: false, n: 1 } }]);
+    __compactRuntime.queryLedgerState(context,
+                                      partialProofData,
+                                      [
+                                       { push: { storage: false,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(7n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                       { push: { storage: true,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_5.toValue(0n),
+                                                                                              alignment: _descriptor_5.alignment() }).encode() } },
+                                       { ins: { cached: false, n: 1 } }]);
+    __compactRuntime.queryLedgerState(context,
+                                      partialProofData,
+                                      [
+                                       { push: { storage: false,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(8n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
                                        { push: { storage: true,
                                                  value: __compactRuntime.StateValue.newMap(
                                                           new __compactRuntime.StateMap()
@@ -338,10 +496,60 @@ export class Contract {
                                       partialProofData,
                                       [
                                        { push: { storage: false,
-                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_22.toValue(1n),
-                                                                                              alignment: _descriptor_22.alignment() }).encode() } },
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(1n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
                                        { push: { storage: true,
                                                  value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(limit_0),
+                                                                                              alignment: _descriptor_0.alignment() }).encode() } },
+                                       { ins: { cached: false, n: 1 } }]);
+    __compactRuntime.queryLedgerState(context,
+                                      partialProofData,
+                                      [
+                                       { push: { storage: false,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(2n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                       { push: { storage: true,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(brakeLimit_0),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                       { ins: { cached: false, n: 1 } }]);
+    __compactRuntime.queryLedgerState(context,
+                                      partialProofData,
+                                      [
+                                       { push: { storage: false,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(3n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                       { push: { storage: true,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(minX_0),
+                                                                                              alignment: _descriptor_0.alignment() }).encode() } },
+                                       { ins: { cached: false, n: 1 } }]);
+    __compactRuntime.queryLedgerState(context,
+                                      partialProofData,
+                                      [
+                                       { push: { storage: false,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(4n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                       { push: { storage: true,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(minY_0),
+                                                                                              alignment: _descriptor_0.alignment() }).encode() } },
+                                       { ins: { cached: false, n: 1 } }]);
+    __compactRuntime.queryLedgerState(context,
+                                      partialProofData,
+                                      [
+                                       { push: { storage: false,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(5n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                       { push: { storage: true,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(maxX_0),
+                                                                                              alignment: _descriptor_0.alignment() }).encode() } },
+                                       { ins: { cached: false, n: 1 } }]);
+    __compactRuntime.queryLedgerState(context,
+                                      partialProofData,
+                                      [
+                                       { push: { storage: false,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(6n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                       { push: { storage: true,
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(maxY_0),
                                                                                               alignment: _descriptor_0.alignment() }).encode() } },
                                        { ins: { cached: false, n: 1 } }]);
     __compactRuntime.queryLedgerState(context,
@@ -351,8 +559,8 @@ export class Contract {
                                                 pushPath: true,
                                                 path: [
                                                        { tag: 'value',
-                                                         value: { value: _descriptor_22.toValue(0n),
-                                                                  alignment: _descriptor_22.alignment() } }] } },
+                                                         value: { value: _descriptor_3.toValue(0n),
+                                                                  alignment: _descriptor_3.alignment() } }] } },
                                        { push: { storage: false,
                                                  value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(attestorId_0),
                                                                                               alignment: _descriptor_0.alignment() }).encode() } },
@@ -369,19 +577,27 @@ export class Contract {
     }
   }
   _transientHash_0(value_0) {
-    const result_0 = __compactRuntime.transientHash(_descriptor_6, value_0);
+    const result_0 = __compactRuntime.transientHash(_descriptor_9, value_0);
     return result_0;
   }
   _transientHash_1(value_0) {
-    const result_0 = __compactRuntime.transientHash(_descriptor_17, value_0);
+    const result_0 = __compactRuntime.transientHash(_descriptor_23, value_0);
     return result_0;
   }
   _transientHash_2(value_0) {
-    const result_0 = __compactRuntime.transientHash(_descriptor_13, value_0);
+    const result_0 = __compactRuntime.transientHash(_descriptor_19, value_0);
+    return result_0;
+  }
+  _transientHash_3(value_0) {
+    const result_0 = __compactRuntime.transientHash(_descriptor_21, value_0);
+    return result_0;
+  }
+  _transientHash_4(value_0) {
+    const result_0 = __compactRuntime.transientHash(_descriptor_16, value_0);
     return result_0;
   }
   _persistentHash_0(value_0) {
-    const result_0 = __compactRuntime.persistentHash(_descriptor_15, value_0);
+    const result_0 = __compactRuntime.persistentHash(_descriptor_18, value_0);
     return result_0;
   }
   _jubjubPointX_0(np_0) {
@@ -417,8 +633,8 @@ export class Contract {
                                  result_0)
     }
     partialProofData.privateTranscriptOutputs.push({
-      value: _descriptor_12.toValue(result_0),
-      alignment: _descriptor_12.alignment()
+      value: _descriptor_15.toValue(result_0),
+      alignment: _descriptor_15.alignment()
     });
     return result_0;
   }
@@ -426,7 +642,7 @@ export class Contract {
     const __compact_pattern_tmp2_0 = signature_0;
     const announcement_0 = __compact_pattern_tmp2_0.announcement;
     const response_0 = __compact_pattern_tmp2_0.response;
-    const cFull_0 = this._transientHash_2({ ann_x:
+    const cFull_0 = this._transientHash_4({ ann_x:
                                               this._jubjubPointX_0(announcement_0),
                                             ann_y:
                                               this._jubjubPointY_0(announcement_0),
@@ -461,27 +677,27 @@ export class Contract {
                             'Invalid attestation signature');
     return [];
   }
-  _schnorrChallenge3_0(ann_x_0, ann_y_0, pk_x_0, pk_y_0, msg_0) {
-    return this._transientHash_2({ ann_x: ann_x_0,
+  _schnorrChallenge1_0(ann_x_0, ann_y_0, pk_x_0, pk_y_0, msg_0) {
+    return this._transientHash_4({ ann_x: ann_x_0,
                                    ann_y: ann_y_0,
                                    pk_x: pk_x_0,
                                    pk_y: pk_y_0,
                                    msg: msg_0 });
   }
-  _getAttestedSpeedWitness_0(context, partialProofData) {
+  _getAttestedTripWitness_0(context, partialProofData) {
     const witnessContext_0 = __compactRuntime.createWitnessContext(ledger(context.currentQueryContext.state), context.currentPrivateState, context.currentQueryContext.address);
-    const [nextPrivateState_0, result_0] = this.witnesses.getAttestedSpeedWitness(witnessContext_0);
+    const [nextPrivateState_0, result_0] = this.witnesses.getAttestedTripWitness(witnessContext_0);
     context.currentPrivateState = nextPrivateState_0;
-    if (!(Array.isArray(result_0) && result_0.length === 3  && typeof(result_0[0]) === 'object' && typeof(result_0[0].speed) === 'bigint' && result_0[0].speed >= 0n && result_0[0].speed <= 65535n && typeof(result_0[0].attestationId) === 'bigint' && result_0[0].attestationId >= 0 && result_0[0].attestationId <= __compactRuntime.MAX_FIELD && typeof(result_0[1]) === 'object' && true && typeof(result_0[1].response) === 'bigint' && result_0[1].response >= 0 && result_0[1].response <= __compactRuntime.MAX_FIELD && typeof(result_0[2]) === 'bigint' && result_0[2] >= 0n && result_0[2] <= 65535n)) {
-      __compactRuntime.typeError('getAttestedSpeedWitness',
+    if (!(Array.isArray(result_0) && result_0.length === 3  && typeof(result_0[0]) === 'object' && typeof(result_0[0].attestationId) === 'bigint' && result_0[0].attestationId >= 0 && result_0[0].attestationId <= __compactRuntime.MAX_FIELD && typeof(result_0[0].salt) === 'bigint' && result_0[0].salt >= 0 && result_0[0].salt <= __compactRuntime.MAX_FIELD && Array.isArray(result_0[0].gridX) && result_0[0].gridX.length === 16 && result_0[0].gridX.every((t) => typeof(t) === 'bigint' && t >= 0n && t <= 65535n) && Array.isArray(result_0[0].gridY) && result_0[0].gridY.length === 16 && result_0[0].gridY.every((t) => typeof(t) === 'bigint' && t >= 0n && t <= 65535n) && Array.isArray(result_0[0].speed) && result_0[0].speed.length === 16 && result_0[0].speed.every((t) => typeof(t) === 'bigint' && t >= 0n && t <= 65535n) && Array.isArray(result_0[0].braking) && result_0[0].braking.length === 16 && result_0[0].braking.every((t) => typeof(t) === 'bigint' && t >= 0n && t <= 255n) && Array.isArray(result_0[0].timeBucket) && result_0[0].timeBucket.length === 16 && result_0[0].timeBucket.every((t) => typeof(t) === 'bigint' && t >= 0n && t <= 255n) && typeof(result_0[1]) === 'object' && true && typeof(result_0[1].response) === 'bigint' && result_0[1].response >= 0 && result_0[1].response <= __compactRuntime.MAX_FIELD && typeof(result_0[2]) === 'bigint' && result_0[2] >= 0n && result_0[2] <= 65535n)) {
+      __compactRuntime.typeError('getAttestedTripWitness',
                                  'return value',
-                                 'driveproof.compact line 23 char 1',
-                                 '[struct SpeedReading<speed: Uint<0..65536>, attestationId: Field>, struct SchnorrSignature<announcement: Opaque<"JubjubPoint">, response: Field>, Uint<0..65536>]',
+                                 'driveproof.compact line 42 char 1',
+                                 '[struct TripReading<attestationId: Field, salt: Field, gridX: Vector<16, Uint<0..65536>>, gridY: Vector<16, Uint<0..65536>>, speed: Vector<16, Uint<0..65536>>, braking: Vector<16, Uint<0..256>>, timeBucket: Vector<16, Uint<0..256>>>, struct SchnorrSignature<announcement: Opaque<"JubjubPoint">, response: Field>, Uint<0..65536>]',
                                  result_0)
     }
     partialProofData.privateTranscriptOutputs.push({
-      value: _descriptor_9.toValue(result_0),
-      alignment: _descriptor_9.alignment()
+      value: _descriptor_12.toValue(result_0),
+      alignment: _descriptor_12.alignment()
     });
     return result_0;
   }
@@ -492,13 +708,13 @@ export class Contract {
     if (!(result_0.buffer instanceof ArrayBuffer && result_0.BYTES_PER_ELEMENT === 1 && result_0.length === 32)) {
       __compactRuntime.typeError('getDriverSecret',
                                  'return value',
-                                 'driveproof.compact line 24 char 1',
+                                 'driveproof.compact line 43 char 1',
                                  'Bytes<32>',
                                  result_0)
     }
     partialProofData.privateTranscriptOutputs.push({
-      value: _descriptor_6.toValue(result_0),
-      alignment: _descriptor_6.alignment()
+      value: _descriptor_9.toValue(result_0),
+      alignment: _descriptor_9.alignment()
     });
     return result_0;
   }
@@ -511,9 +727,222 @@ export class Contract {
     return this._transientHash_1([new Uint8Array([68, 82, 73, 86, 69, 80, 82, 79, 79, 70, 95, 78, 85, 76, 76, 73, 70, 73, 69, 82, 95, 86, 49]),
                                   attestationId_0]);
   }
+  _foldTripSample_0(prev_0, gridX_0, gridY_0, speed_0, braking_0, timeBucket_0)
+  {
+    return this._transientHash_2({ prev: prev_0,
+                                   gridX: gridX_0,
+                                   gridY: gridY_0,
+                                   speed: speed_0,
+                                   braking: braking_0,
+                                   timeBucket: timeBucket_0 });
+  }
+  _deriveTripCommitment_0(attestationId_0,
+                          driverBinding_0,
+                          salt_0,
+                          gridX_0,
+                          gridY_0,
+                          speed_0,
+                          braking_0,
+                          timeBucket_0)
+  {
+    const seed_0 = this._transientHash_3([new Uint8Array([68, 82, 73, 86, 69, 80, 82, 79, 79, 70, 95, 65, 84, 84, 69, 83, 84, 65, 84, 73, 79, 78, 95, 86, 49]),
+                                          attestationId_0,
+                                          driverBinding_0,
+                                          salt_0]);
+    const h0_0 = this._foldTripSample_0(seed_0,
+                                        gridX_0[0],
+                                        gridY_0[0],
+                                        speed_0[0],
+                                        braking_0[0],
+                                        timeBucket_0[0]);
+    const h1_0 = this._foldTripSample_0(h0_0,
+                                        gridX_0[1],
+                                        gridY_0[1],
+                                        speed_0[1],
+                                        braking_0[1],
+                                        timeBucket_0[1]);
+    const h2_0 = this._foldTripSample_0(h1_0,
+                                        gridX_0[2],
+                                        gridY_0[2],
+                                        speed_0[2],
+                                        braking_0[2],
+                                        timeBucket_0[2]);
+    const h3_0 = this._foldTripSample_0(h2_0,
+                                        gridX_0[3],
+                                        gridY_0[3],
+                                        speed_0[3],
+                                        braking_0[3],
+                                        timeBucket_0[3]);
+    const h4_0 = this._foldTripSample_0(h3_0,
+                                        gridX_0[4],
+                                        gridY_0[4],
+                                        speed_0[4],
+                                        braking_0[4],
+                                        timeBucket_0[4]);
+    const h5_0 = this._foldTripSample_0(h4_0,
+                                        gridX_0[5],
+                                        gridY_0[5],
+                                        speed_0[5],
+                                        braking_0[5],
+                                        timeBucket_0[5]);
+    const h6_0 = this._foldTripSample_0(h5_0,
+                                        gridX_0[6],
+                                        gridY_0[6],
+                                        speed_0[6],
+                                        braking_0[6],
+                                        timeBucket_0[6]);
+    const h7_0 = this._foldTripSample_0(h6_0,
+                                        gridX_0[7],
+                                        gridY_0[7],
+                                        speed_0[7],
+                                        braking_0[7],
+                                        timeBucket_0[7]);
+    const h8_0 = this._foldTripSample_0(h7_0,
+                                        gridX_0[8],
+                                        gridY_0[8],
+                                        speed_0[8],
+                                        braking_0[8],
+                                        timeBucket_0[8]);
+    const h9_0 = this._foldTripSample_0(h8_0,
+                                        gridX_0[9],
+                                        gridY_0[9],
+                                        speed_0[9],
+                                        braking_0[9],
+                                        timeBucket_0[9]);
+    const h10_0 = this._foldTripSample_0(h9_0,
+                                         gridX_0[10],
+                                         gridY_0[10],
+                                         speed_0[10],
+                                         braking_0[10],
+                                         timeBucket_0[10]);
+    const h11_0 = this._foldTripSample_0(h10_0,
+                                         gridX_0[11],
+                                         gridY_0[11],
+                                         speed_0[11],
+                                         braking_0[11],
+                                         timeBucket_0[11]);
+    const h12_0 = this._foldTripSample_0(h11_0,
+                                         gridX_0[12],
+                                         gridY_0[12],
+                                         speed_0[12],
+                                         braking_0[12],
+                                         timeBucket_0[12]);
+    const h13_0 = this._foldTripSample_0(h12_0,
+                                         gridX_0[13],
+                                         gridY_0[13],
+                                         speed_0[13],
+                                         braking_0[13],
+                                         timeBucket_0[13]);
+    const h14_0 = this._foldTripSample_0(h13_0,
+                                         gridX_0[14],
+                                         gridY_0[14],
+                                         speed_0[14],
+                                         braking_0[14],
+                                         timeBucket_0[14]);
+    return this._foldTripSample_0(h14_0,
+                                  gridX_0[15],
+                                  gridY_0[15],
+                                  speed_0[15],
+                                  braking_0[15],
+                                  timeBucket_0[15]);
+  }
+  _harshBrakingFlag_0(braking_0) { return braking_0 > 0n ? 1n : 0n; }
+  _countHarshBraking_0(braking_0) {
+    const c0_0 = this._harshBrakingFlag_0(braking_0[0]);
+    const c1_0 = ((t1) => {
+                   if (t1 > 255n) {
+                     throw new __compactRuntime.CompactError('driveproof.compact line 137 char 16: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                   }
+                   return t1;
+                 })(c0_0 + this._harshBrakingFlag_0(braking_0[1]));
+    const c2_0 = ((t1) => {
+                   if (t1 > 255n) {
+                     throw new __compactRuntime.CompactError('driveproof.compact line 138 char 16: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                   }
+                   return t1;
+                 })(c1_0 + this._harshBrakingFlag_0(braking_0[2]));
+    const c3_0 = ((t1) => {
+                   if (t1 > 255n) {
+                     throw new __compactRuntime.CompactError('driveproof.compact line 139 char 16: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                   }
+                   return t1;
+                 })(c2_0 + this._harshBrakingFlag_0(braking_0[3]));
+    const c4_0 = ((t1) => {
+                   if (t1 > 255n) {
+                     throw new __compactRuntime.CompactError('driveproof.compact line 140 char 16: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                   }
+                   return t1;
+                 })(c3_0 + this._harshBrakingFlag_0(braking_0[4]));
+    const c5_0 = ((t1) => {
+                   if (t1 > 255n) {
+                     throw new __compactRuntime.CompactError('driveproof.compact line 141 char 16: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                   }
+                   return t1;
+                 })(c4_0 + this._harshBrakingFlag_0(braking_0[5]));
+    const c6_0 = ((t1) => {
+                   if (t1 > 255n) {
+                     throw new __compactRuntime.CompactError('driveproof.compact line 142 char 16: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                   }
+                   return t1;
+                 })(c5_0 + this._harshBrakingFlag_0(braking_0[6]));
+    const c7_0 = ((t1) => {
+                   if (t1 > 255n) {
+                     throw new __compactRuntime.CompactError('driveproof.compact line 143 char 16: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                   }
+                   return t1;
+                 })(c6_0 + this._harshBrakingFlag_0(braking_0[7]));
+    const c8_0 = ((t1) => {
+                   if (t1 > 255n) {
+                     throw new __compactRuntime.CompactError('driveproof.compact line 144 char 16: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                   }
+                   return t1;
+                 })(c7_0 + this._harshBrakingFlag_0(braking_0[8]));
+    const c9_0 = ((t1) => {
+                   if (t1 > 255n) {
+                     throw new __compactRuntime.CompactError('driveproof.compact line 145 char 16: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                   }
+                   return t1;
+                 })(c8_0 + this._harshBrakingFlag_0(braking_0[9]));
+    const c10_0 = ((t1) => {
+                    if (t1 > 255n) {
+                      throw new __compactRuntime.CompactError('driveproof.compact line 146 char 17: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                    }
+                    return t1;
+                  })(c9_0 + this._harshBrakingFlag_0(braking_0[10]));
+    const c11_0 = ((t1) => {
+                    if (t1 > 255n) {
+                      throw new __compactRuntime.CompactError('driveproof.compact line 147 char 17: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                    }
+                    return t1;
+                  })(c10_0 + this._harshBrakingFlag_0(braking_0[11]));
+    const c12_0 = ((t1) => {
+                    if (t1 > 255n) {
+                      throw new __compactRuntime.CompactError('driveproof.compact line 148 char 17: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                    }
+                    return t1;
+                  })(c11_0 + this._harshBrakingFlag_0(braking_0[12]));
+    const c13_0 = ((t1) => {
+                    if (t1 > 255n) {
+                      throw new __compactRuntime.CompactError('driveproof.compact line 149 char 17: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                    }
+                    return t1;
+                  })(c12_0 + this._harshBrakingFlag_0(braking_0[13]));
+    const c14_0 = ((t1) => {
+                    if (t1 > 255n) {
+                      throw new __compactRuntime.CompactError('driveproof.compact line 150 char 17: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+                    }
+                    return t1;
+                  })(c13_0 + this._harshBrakingFlag_0(braking_0[14]));
+    return ((t1) => {
+             if (t1 > 255n) {
+               throw new __compactRuntime.CompactError('driveproof.compact line 151 char 12: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 255');
+             }
+             return t1;
+           })(c14_0 + this._harshBrakingFlag_0(braking_0[15]));
+  }
   _proveCompliance_0(context, partialProofData) {
-    const __compact_pattern_tmp1_0 = this._getAttestedSpeedWitness_0(context,
-                                                                     partialProofData);
+    const __compact_pattern_tmp1_0 = this._getAttestedTripWitness_0(context,
+                                                                    partialProofData);
     const reading_0 = __compact_pattern_tmp1_0[0];
     const signature_0 = __compact_pattern_tmp1_0[1];
     const attestorId_0 = __compact_pattern_tmp1_0[2];
@@ -525,8 +954,8 @@ export class Contract {
                                                                                                 pushPath: false,
                                                                                                 path: [
                                                                                                        { tag: 'value',
-                                                                                                         value: { value: _descriptor_22.toValue(0n),
-                                                                                                                  alignment: _descriptor_22.alignment() } }] } },
+                                                                                                         value: { value: _descriptor_3.toValue(0n),
+                                                                                                                  alignment: _descriptor_3.alignment() } }] } },
                                                                                        { push: { storage: false,
                                                                                                  value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(attestorId_0),
                                                                                                                                               alignment: _descriptor_0.alignment() }).encode() } },
@@ -542,8 +971,8 @@ export class Contract {
                                                                                              pushPath: false,
                                                                                              path: [
                                                                                                     { tag: 'value',
-                                                                                                      value: { value: _descriptor_22.toValue(0n),
-                                                                                                               alignment: _descriptor_22.alignment() } }] } },
+                                                                                                      value: { value: _descriptor_3.toValue(0n),
+                                                                                                               alignment: _descriptor_3.alignment() } }] } },
                                                                                     { idx: { cached: false,
                                                                                              pushPath: false,
                                                                                              path: [
@@ -554,14 +983,22 @@ export class Contract {
                                                                                                result: undefined } }]).value);
     const driverBinding_0 = this._deriveDriverBinding_0(this._getDriverSecret_0(context,
                                                                                 partialProofData));
-    const msg_0 = [reading_0.speed, driverBinding_0, reading_0.attestationId];
+    const tripCommitment_0 = this._deriveTripCommitment_0(reading_0.attestationId,
+                                                          driverBinding_0,
+                                                          reading_0.salt,
+                                                          reading_0.gridX,
+                                                          reading_0.gridY,
+                                                          reading_0.speed,
+                                                          reading_0.braking,
+                                                          reading_0.timeBucket);
+    const msg_0 = [tripCommitment_0];
     this._schnorrVerify_0(context,
                           partialProofData,
                           msg_0,
                           signature_0,
                           attestorPk_0);
     let t_0;
-    __compactRuntime.assert((t_0 = reading_0.speed,
+    __compactRuntime.assert((t_0 = reading_0.speed[0],
                              t_0
                              <=
                              _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
@@ -572,11 +1009,1322 @@ export class Contract {
                                                                                                  pushPath: false,
                                                                                                  path: [
                                                                                                         { tag: 'value',
-                                                                                                          value: { value: _descriptor_22.toValue(1n),
-                                                                                                                   alignment: _descriptor_22.alignment() } }] } },
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
                                                                                         { popeq: { cached: false,
                                                                                                    result: undefined } }]).value)),
                             'Speed exceeds policy limit');
+    let t_1;
+    __compactRuntime.assert((t_1 = reading_0.speed[1],
+                             t_1
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_2;
+    __compactRuntime.assert((t_2 = reading_0.speed[2],
+                             t_2
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_3;
+    __compactRuntime.assert((t_3 = reading_0.speed[3],
+                             t_3
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_4;
+    __compactRuntime.assert((t_4 = reading_0.speed[4],
+                             t_4
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_5;
+    __compactRuntime.assert((t_5 = reading_0.speed[5],
+                             t_5
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_6;
+    __compactRuntime.assert((t_6 = reading_0.speed[6],
+                             t_6
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_7;
+    __compactRuntime.assert((t_7 = reading_0.speed[7],
+                             t_7
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_8;
+    __compactRuntime.assert((t_8 = reading_0.speed[8],
+                             t_8
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_9;
+    __compactRuntime.assert((t_9 = reading_0.speed[9],
+                             t_9
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_10;
+    __compactRuntime.assert((t_10 = reading_0.speed[10],
+                             t_10
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_11;
+    __compactRuntime.assert((t_11 = reading_0.speed[11],
+                             t_11
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_12;
+    __compactRuntime.assert((t_12 = reading_0.speed[12],
+                             t_12
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_13;
+    __compactRuntime.assert((t_13 = reading_0.speed[13],
+                             t_13
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_14;
+    __compactRuntime.assert((t_14 = reading_0.speed[14],
+                             t_14
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    let t_15;
+    __compactRuntime.assert((t_15 = reading_0.speed[15],
+                             t_15
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Speed exceeds policy limit');
+    const harshCount_0 = this._countHarshBraking_0(reading_0.braking);
+    __compactRuntime.assert(harshCount_0
+                            <=
+                            _descriptor_3.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                      partialProofData,
+                                                                                      [
+                                                                                       { dup: { n: 0 } },
+                                                                                       { idx: { cached: false,
+                                                                                                pushPath: false,
+                                                                                                path: [
+                                                                                                       { tag: 'value',
+                                                                                                         value: { value: _descriptor_3.toValue(2n),
+                                                                                                                  alignment: _descriptor_3.alignment() } }] } },
+                                                                                       { popeq: { cached: false,
+                                                                                                  result: undefined } }]).value),
+                            'Harsh braking exceeds policy limit');
+    let t_18, t_19, t_16, t_17;
+    __compactRuntime.assert((t_17 = reading_0.gridX[0],
+                             t_17
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_16 = reading_0.gridX[0],
+                             t_16
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_19 = reading_0.gridY[0],
+                             t_19
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_18 = reading_0.gridY[0],
+                             t_18
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_22, t_23, t_20, t_21;
+    __compactRuntime.assert((t_21 = reading_0.gridX[1],
+                             t_21
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_20 = reading_0.gridX[1],
+                             t_20
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_23 = reading_0.gridY[1],
+                             t_23
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_22 = reading_0.gridY[1],
+                             t_22
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_26, t_27, t_24, t_25;
+    __compactRuntime.assert((t_25 = reading_0.gridX[2],
+                             t_25
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_24 = reading_0.gridX[2],
+                             t_24
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_27 = reading_0.gridY[2],
+                             t_27
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_26 = reading_0.gridY[2],
+                             t_26
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_30, t_31, t_28, t_29;
+    __compactRuntime.assert((t_29 = reading_0.gridX[3],
+                             t_29
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_28 = reading_0.gridX[3],
+                             t_28
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_31 = reading_0.gridY[3],
+                             t_31
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_30 = reading_0.gridY[3],
+                             t_30
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_34, t_35, t_32, t_33;
+    __compactRuntime.assert((t_33 = reading_0.gridX[4],
+                             t_33
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_32 = reading_0.gridX[4],
+                             t_32
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_35 = reading_0.gridY[4],
+                             t_35
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_34 = reading_0.gridY[4],
+                             t_34
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_38, t_39, t_36, t_37;
+    __compactRuntime.assert((t_37 = reading_0.gridX[5],
+                             t_37
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_36 = reading_0.gridX[5],
+                             t_36
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_39 = reading_0.gridY[5],
+                             t_39
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_38 = reading_0.gridY[5],
+                             t_38
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_42, t_43, t_40, t_41;
+    __compactRuntime.assert((t_41 = reading_0.gridX[6],
+                             t_41
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_40 = reading_0.gridX[6],
+                             t_40
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_43 = reading_0.gridY[6],
+                             t_43
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_42 = reading_0.gridY[6],
+                             t_42
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_46, t_47, t_44, t_45;
+    __compactRuntime.assert((t_45 = reading_0.gridX[7],
+                             t_45
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_44 = reading_0.gridX[7],
+                             t_44
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_47 = reading_0.gridY[7],
+                             t_47
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_46 = reading_0.gridY[7],
+                             t_46
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_50, t_51, t_48, t_49;
+    __compactRuntime.assert((t_49 = reading_0.gridX[8],
+                             t_49
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_48 = reading_0.gridX[8],
+                             t_48
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_51 = reading_0.gridY[8],
+                             t_51
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_50 = reading_0.gridY[8],
+                             t_50
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_54, t_55, t_52, t_53;
+    __compactRuntime.assert((t_53 = reading_0.gridX[9],
+                             t_53
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_52 = reading_0.gridX[9],
+                             t_52
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_55 = reading_0.gridY[9],
+                             t_55
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_54 = reading_0.gridY[9],
+                             t_54
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_58, t_59, t_56, t_57;
+    __compactRuntime.assert((t_57 = reading_0.gridX[10],
+                             t_57
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_56 = reading_0.gridX[10],
+                             t_56
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_59 = reading_0.gridY[10],
+                             t_59
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_58 = reading_0.gridY[10],
+                             t_58
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_62, t_63, t_60, t_61;
+    __compactRuntime.assert((t_61 = reading_0.gridX[11],
+                             t_61
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_60 = reading_0.gridX[11],
+                             t_60
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_63 = reading_0.gridY[11],
+                             t_63
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_62 = reading_0.gridY[11],
+                             t_62
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_66, t_67, t_64, t_65;
+    __compactRuntime.assert((t_65 = reading_0.gridX[12],
+                             t_65
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_64 = reading_0.gridX[12],
+                             t_64
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_67 = reading_0.gridY[12],
+                             t_67
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_66 = reading_0.gridY[12],
+                             t_66
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_70, t_71, t_68, t_69;
+    __compactRuntime.assert((t_69 = reading_0.gridX[13],
+                             t_69
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_68 = reading_0.gridX[13],
+                             t_68
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_71 = reading_0.gridY[13],
+                             t_71
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_70 = reading_0.gridY[13],
+                             t_70
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_74, t_75, t_72, t_73;
+    __compactRuntime.assert((t_73 = reading_0.gridX[14],
+                             t_73
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_72 = reading_0.gridX[14],
+                             t_72
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_75 = reading_0.gridY[14],
+                             t_75
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_74 = reading_0.gridY[14],
+                             t_74
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
+    let t_78, t_79, t_76, t_77;
+    __compactRuntime.assert((t_77 = reading_0.gridX[15],
+                             t_77
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_76 = reading_0.gridX[15],
+                             t_76
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_79 = reading_0.gridY[15],
+                             t_79
+                             >=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value))
+                            &&
+                            (t_78 = reading_0.gridY[15],
+                             t_78
+                             <=
+                             _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                       partialProofData,
+                                                                                       [
+                                                                                        { dup: { n: 0 } },
+                                                                                        { idx: { cached: false,
+                                                                                                 pushPath: false,
+                                                                                                 path: [
+                                                                                                        { tag: 'value',
+                                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                                        { popeq: { cached: false,
+                                                                                                   result: undefined } }]).value)),
+                            'Sample outside policy geofence');
     const nullifier_0 = this._deriveNullifier_0(reading_0.attestationId);
     __compactRuntime.assert(!_descriptor_2.fromValue(__compactRuntime.queryLedgerState(context,
                                                                                        partialProofData,
@@ -586,11 +2334,11 @@ export class Contract {
                                                                                                  pushPath: false,
                                                                                                  path: [
                                                                                                         { tag: 'value',
-                                                                                                          value: { value: _descriptor_22.toValue(3n),
-                                                                                                                   alignment: _descriptor_22.alignment() } }] } },
+                                                                                                          value: { value: _descriptor_3.toValue(8n),
+                                                                                                                   alignment: _descriptor_3.alignment() } }] } },
                                                                                         { push: { storage: false,
-                                                                                                  value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(nullifier_0),
-                                                                                                                                               alignment: _descriptor_3.alignment() }).encode() } },
+                                                                                                  value: __compactRuntime.StateValue.newCell({ value: _descriptor_4.toValue(nullifier_0),
+                                                                                                                                               alignment: _descriptor_4.alignment() }).encode() } },
                                                                                         'member',
                                                                                         { popeq: { cached: true,
                                                                                                    result: undefined } }]).value),
@@ -602,21 +2350,21 @@ export class Contract {
                                                 pushPath: true,
                                                 path: [
                                                        { tag: 'value',
-                                                         value: { value: _descriptor_22.toValue(3n),
-                                                                  alignment: _descriptor_22.alignment() } }] } },
+                                                         value: { value: _descriptor_3.toValue(8n),
+                                                                  alignment: _descriptor_3.alignment() } }] } },
                                        { push: { storage: false,
-                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(nullifier_0),
-                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_4.toValue(nullifier_0),
+                                                                                              alignment: _descriptor_4.alignment() }).encode() } },
                                        { push: { storage: true,
                                                  value: __compactRuntime.StateValue.newNull().encode() } },
                                        { ins: { cached: false, n: 1 } },
                                        { ins: { cached: true, n: 1 } }]);
     const tmp_0 = ((t1) => {
                     if (t1 > 4294967295n) {
-                      throw new __compactRuntime.CompactError('driveproof.compact line 66 char 32: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 4294967295');
+                      throw new __compactRuntime.CompactError('driveproof.compact line 215 char 32: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 4294967295');
                     }
                     return t1;
-                  })(_descriptor_4.fromValue(__compactRuntime.queryLedgerState(context,
+                  })(_descriptor_5.fromValue(__compactRuntime.queryLedgerState(context,
                                                                                partialProofData,
                                                                                [
                                                                                 { dup: { n: 0 } },
@@ -624,8 +2372,8 @@ export class Contract {
                                                                                          pushPath: false,
                                                                                          path: [
                                                                                                 { tag: 'value',
-                                                                                                  value: { value: _descriptor_22.toValue(2n),
-                                                                                                           alignment: _descriptor_22.alignment() } }] } },
+                                                                                                  value: { value: _descriptor_3.toValue(7n),
+                                                                                                           alignment: _descriptor_3.alignment() } }] } },
                                                                                 { popeq: { cached: false,
                                                                                            result: undefined } }]).value)
                      +
@@ -634,16 +2382,16 @@ export class Contract {
                                       partialProofData,
                                       [
                                        { push: { storage: false,
-                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_22.toValue(2n),
-                                                                                              alignment: _descriptor_22.alignment() }).encode() } },
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(7n),
+                                                                                              alignment: _descriptor_3.alignment() }).encode() } },
                                        { push: { storage: true,
-                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_4.toValue(tmp_0),
-                                                                                              alignment: _descriptor_4.alignment() }).encode() } },
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_5.toValue(tmp_0),
+                                                                                              alignment: _descriptor_5.alignment() }).encode() } },
                                        { ins: { cached: false, n: 1 } }]);
     return [];
   }
   _schnorrChallenge_0(ann_x_0, ann_y_0, pk_x_0, pk_y_0, msg_0) {
-    return this._schnorrChallenge3_0(ann_x_0, ann_y_0, pk_x_0, pk_y_0, msg_0);
+    return this._schnorrChallenge1_0(ann_x_0, ann_y_0, pk_x_0, pk_y_0, msg_0);
   }
 }
 export function ledger(stateOrChargedState) {
@@ -673,12 +2421,12 @@ export function ledger(stateOrChargedState) {
                                                                                    pushPath: false,
                                                                                    path: [
                                                                                           { tag: 'value',
-                                                                                            value: { value: _descriptor_22.toValue(0n),
-                                                                                                     alignment: _descriptor_22.alignment() } }] } },
+                                                                                            value: { value: _descriptor_3.toValue(0n),
+                                                                                                     alignment: _descriptor_3.alignment() } }] } },
                                                                           'size',
                                                                           { push: { storage: false,
-                                                                                    value: __compactRuntime.StateValue.newCell({ value: _descriptor_18.toValue(0n),
-                                                                                                                                 alignment: _descriptor_18.alignment() }).encode() } },
+                                                                                    value: __compactRuntime.StateValue.newCell({ value: _descriptor_24.toValue(0n),
+                                                                                                                                 alignment: _descriptor_24.alignment() }).encode() } },
                                                                           'eq',
                                                                           { popeq: { cached: true,
                                                                                      result: undefined } }]).value);
@@ -687,7 +2435,7 @@ export function ledger(stateOrChargedState) {
         if (args_0.length !== 0) {
           throw new __compactRuntime.CompactError(`size: expected 0 arguments, received ${args_0.length}`);
         }
-        return _descriptor_18.fromValue(__compactRuntime.queryLedgerState(context,
+        return _descriptor_24.fromValue(__compactRuntime.queryLedgerState(context,
                                                                           partialProofData,
                                                                           [
                                                                            { dup: { n: 0 } },
@@ -695,8 +2443,8 @@ export function ledger(stateOrChargedState) {
                                                                                     pushPath: false,
                                                                                     path: [
                                                                                            { tag: 'value',
-                                                                                             value: { value: _descriptor_22.toValue(0n),
-                                                                                                      alignment: _descriptor_22.alignment() } }] } },
+                                                                                             value: { value: _descriptor_3.toValue(0n),
+                                                                                                      alignment: _descriptor_3.alignment() } }] } },
                                                                            'size',
                                                                            { popeq: { cached: true,
                                                                                       result: undefined } }]).value);
@@ -709,7 +2457,7 @@ export function ledger(stateOrChargedState) {
         if (!(typeof(key_0) === 'bigint' && key_0 >= 0n && key_0 <= 65535n)) {
           __compactRuntime.typeError('member',
                                      'argument 1',
-                                     'driveproof.compact line 18 char 1',
+                                     'driveproof.compact line 32 char 1',
                                      'Uint<0..65536>',
                                      key_0)
         }
@@ -721,8 +2469,8 @@ export function ledger(stateOrChargedState) {
                                                                                    pushPath: false,
                                                                                    path: [
                                                                                           { tag: 'value',
-                                                                                            value: { value: _descriptor_22.toValue(0n),
-                                                                                                     alignment: _descriptor_22.alignment() } }] } },
+                                                                                            value: { value: _descriptor_3.toValue(0n),
+                                                                                                     alignment: _descriptor_3.alignment() } }] } },
                                                                           { push: { storage: false,
                                                                                     value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(key_0),
                                                                                                                                  alignment: _descriptor_0.alignment() }).encode() } },
@@ -738,7 +2486,7 @@ export function ledger(stateOrChargedState) {
         if (!(typeof(key_0) === 'bigint' && key_0 >= 0n && key_0 <= 65535n)) {
           __compactRuntime.typeError('lookup',
                                      'argument 1',
-                                     'driveproof.compact line 18 char 1',
+                                     'driveproof.compact line 32 char 1',
                                      'Uint<0..65536>',
                                      key_0)
         }
@@ -750,8 +2498,8 @@ export function ledger(stateOrChargedState) {
                                                                                    pushPath: false,
                                                                                    path: [
                                                                                           { tag: 'value',
-                                                                                            value: { value: _descriptor_22.toValue(0n),
-                                                                                                     alignment: _descriptor_22.alignment() } }] } },
+                                                                                            value: { value: _descriptor_3.toValue(0n),
+                                                                                                     alignment: _descriptor_3.alignment() } }] } },
                                                                           { idx: { cached: false,
                                                                                    pushPath: false,
                                                                                    path: [
@@ -778,13 +2526,13 @@ export function ledger(stateOrChargedState) {
                                                                                  pushPath: false,
                                                                                  path: [
                                                                                         { tag: 'value',
-                                                                                          value: { value: _descriptor_22.toValue(1n),
-                                                                                                   alignment: _descriptor_22.alignment() } }] } },
+                                                                                          value: { value: _descriptor_3.toValue(1n),
+                                                                                                   alignment: _descriptor_3.alignment() } }] } },
                                                                         { popeq: { cached: false,
                                                                                    result: undefined } }]).value);
     },
-    get complianceCount() {
-      return _descriptor_4.fromValue(__compactRuntime.queryLedgerState(context,
+    get brakingLimit() {
+      return _descriptor_3.fromValue(__compactRuntime.queryLedgerState(context,
                                                                        partialProofData,
                                                                        [
                                                                         { dup: { n: 0 } },
@@ -792,8 +2540,78 @@ export function ledger(stateOrChargedState) {
                                                                                  pushPath: false,
                                                                                  path: [
                                                                                         { tag: 'value',
-                                                                                          value: { value: _descriptor_22.toValue(2n),
-                                                                                                   alignment: _descriptor_22.alignment() } }] } },
+                                                                                          value: { value: _descriptor_3.toValue(2n),
+                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                        { popeq: { cached: false,
+                                                                                   result: undefined } }]).value);
+    },
+    get geofenceMinX() {
+      return _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                       partialProofData,
+                                                                       [
+                                                                        { dup: { n: 0 } },
+                                                                        { idx: { cached: false,
+                                                                                 pushPath: false,
+                                                                                 path: [
+                                                                                        { tag: 'value',
+                                                                                          value: { value: _descriptor_3.toValue(3n),
+                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                        { popeq: { cached: false,
+                                                                                   result: undefined } }]).value);
+    },
+    get geofenceMinY() {
+      return _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                       partialProofData,
+                                                                       [
+                                                                        { dup: { n: 0 } },
+                                                                        { idx: { cached: false,
+                                                                                 pushPath: false,
+                                                                                 path: [
+                                                                                        { tag: 'value',
+                                                                                          value: { value: _descriptor_3.toValue(4n),
+                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                        { popeq: { cached: false,
+                                                                                   result: undefined } }]).value);
+    },
+    get geofenceMaxX() {
+      return _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                       partialProofData,
+                                                                       [
+                                                                        { dup: { n: 0 } },
+                                                                        { idx: { cached: false,
+                                                                                 pushPath: false,
+                                                                                 path: [
+                                                                                        { tag: 'value',
+                                                                                          value: { value: _descriptor_3.toValue(5n),
+                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                        { popeq: { cached: false,
+                                                                                   result: undefined } }]).value);
+    },
+    get geofenceMaxY() {
+      return _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                       partialProofData,
+                                                                       [
+                                                                        { dup: { n: 0 } },
+                                                                        { idx: { cached: false,
+                                                                                 pushPath: false,
+                                                                                 path: [
+                                                                                        { tag: 'value',
+                                                                                          value: { value: _descriptor_3.toValue(6n),
+                                                                                                   alignment: _descriptor_3.alignment() } }] } },
+                                                                        { popeq: { cached: false,
+                                                                                   result: undefined } }]).value);
+    },
+    get complianceCount() {
+      return _descriptor_5.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                       partialProofData,
+                                                                       [
+                                                                        { dup: { n: 0 } },
+                                                                        { idx: { cached: false,
+                                                                                 pushPath: false,
+                                                                                 path: [
+                                                                                        { tag: 'value',
+                                                                                          value: { value: _descriptor_3.toValue(7n),
+                                                                                                   alignment: _descriptor_3.alignment() } }] } },
                                                                         { popeq: { cached: false,
                                                                                    result: undefined } }]).value);
     },
@@ -810,12 +2628,12 @@ export function ledger(stateOrChargedState) {
                                                                                    pushPath: false,
                                                                                    path: [
                                                                                           { tag: 'value',
-                                                                                            value: { value: _descriptor_22.toValue(3n),
-                                                                                                     alignment: _descriptor_22.alignment() } }] } },
+                                                                                            value: { value: _descriptor_3.toValue(8n),
+                                                                                                     alignment: _descriptor_3.alignment() } }] } },
                                                                           'size',
                                                                           { push: { storage: false,
-                                                                                    value: __compactRuntime.StateValue.newCell({ value: _descriptor_18.toValue(0n),
-                                                                                                                                 alignment: _descriptor_18.alignment() }).encode() } },
+                                                                                    value: __compactRuntime.StateValue.newCell({ value: _descriptor_24.toValue(0n),
+                                                                                                                                 alignment: _descriptor_24.alignment() }).encode() } },
                                                                           'eq',
                                                                           { popeq: { cached: true,
                                                                                      result: undefined } }]).value);
@@ -824,7 +2642,7 @@ export function ledger(stateOrChargedState) {
         if (args_0.length !== 0) {
           throw new __compactRuntime.CompactError(`size: expected 0 arguments, received ${args_0.length}`);
         }
-        return _descriptor_18.fromValue(__compactRuntime.queryLedgerState(context,
+        return _descriptor_24.fromValue(__compactRuntime.queryLedgerState(context,
                                                                           partialProofData,
                                                                           [
                                                                            { dup: { n: 0 } },
@@ -832,8 +2650,8 @@ export function ledger(stateOrChargedState) {
                                                                                     pushPath: false,
                                                                                     path: [
                                                                                            { tag: 'value',
-                                                                                             value: { value: _descriptor_22.toValue(3n),
-                                                                                                      alignment: _descriptor_22.alignment() } }] } },
+                                                                                             value: { value: _descriptor_3.toValue(8n),
+                                                                                                      alignment: _descriptor_3.alignment() } }] } },
                                                                            'size',
                                                                            { popeq: { cached: true,
                                                                                       result: undefined } }]).value);
@@ -846,7 +2664,7 @@ export function ledger(stateOrChargedState) {
         if (!(typeof(elem_0) === 'bigint' && elem_0 >= 0 && elem_0 <= __compactRuntime.MAX_FIELD)) {
           __compactRuntime.typeError('member',
                                      'argument 1',
-                                     'driveproof.compact line 21 char 1',
+                                     'driveproof.compact line 40 char 1',
                                      'Field',
                                      elem_0)
         }
@@ -858,11 +2676,11 @@ export function ledger(stateOrChargedState) {
                                                                                    pushPath: false,
                                                                                    path: [
                                                                                           { tag: 'value',
-                                                                                            value: { value: _descriptor_22.toValue(3n),
-                                                                                                     alignment: _descriptor_22.alignment() } }] } },
+                                                                                            value: { value: _descriptor_3.toValue(8n),
+                                                                                                     alignment: _descriptor_3.alignment() } }] } },
                                                                           { push: { storage: false,
-                                                                                    value: __compactRuntime.StateValue.newCell({ value: _descriptor_3.toValue(elem_0),
-                                                                                                                                 alignment: _descriptor_3.alignment() }).encode() } },
+                                                                                    value: __compactRuntime.StateValue.newCell({ value: _descriptor_4.toValue(elem_0),
+                                                                                                                                 alignment: _descriptor_4.alignment() }).encode() } },
                                                                           'member',
                                                                           { popeq: { cached: true,
                                                                                      result: undefined } }]).value);
@@ -871,8 +2689,8 @@ export function ledger(stateOrChargedState) {
         if (args_0.length !== 0) {
           throw new __compactRuntime.CompactError(`iter: expected 0 arguments, received ${args_0.length}`);
         }
-        const self_0 = state.asArray()[3];
-        return self_0.asMap().keys().map((elem) => _descriptor_3.fromValue(elem.value))[Symbol.iterator]();
+        const self_0 = state.asArray()[8];
+        return self_0.asMap().keys().map((elem) => _descriptor_4.fromValue(elem.value))[Symbol.iterator]();
       }
     }
   };
@@ -882,7 +2700,7 @@ const _emptyContext = {
 };
 const _dummyContract = new Contract({
   getSchnorrReduction: (...args) => undefined,
-  getAttestedSpeedWitness: (...args) => undefined,
+  getAttestedTripWitness: (...args) => undefined,
   getDriverSecret: (...args) => undefined
 });
 export const pureCircuits = {
@@ -894,7 +2712,7 @@ export const pureCircuits = {
     if (!(secret_0.buffer instanceof ArrayBuffer && secret_0.BYTES_PER_ELEMENT === 1 && secret_0.length === 32)) {
       __compactRuntime.typeError('deriveDriverBinding',
                                  'argument 1',
-                                 'driveproof.compact line 31 char 1',
+                                 'driveproof.compact line 64 char 1',
                                  'Bytes<32>',
                                  secret_0)
     }
@@ -908,11 +2726,175 @@ export const pureCircuits = {
     if (!(typeof(attestationId_0) === 'bigint' && attestationId_0 >= 0 && attestationId_0 <= __compactRuntime.MAX_FIELD)) {
       __compactRuntime.typeError('deriveNullifier',
                                  'argument 1',
-                                 'driveproof.compact line 39 char 1',
+                                 'driveproof.compact line 72 char 1',
                                  'Field',
                                  attestationId_0)
     }
     return _dummyContract._deriveNullifier_0(attestationId_0);
+  },
+  foldTripSample: (...args_0) => {
+    if (args_0.length !== 6) {
+      throw new __compactRuntime.CompactError(`foldTripSample: expected 6 arguments (as invoked from Typescript), received ${args_0.length}`);
+    }
+    const prev_0 = args_0[0];
+    const gridX_0 = args_0[1];
+    const gridY_0 = args_0[2];
+    const speed_0 = args_0[3];
+    const braking_0 = args_0[4];
+    const timeBucket_0 = args_0[5];
+    if (!(typeof(prev_0) === 'bigint' && prev_0 >= 0 && prev_0 <= __compactRuntime.MAX_FIELD)) {
+      __compactRuntime.typeError('foldTripSample',
+                                 'argument 1',
+                                 'driveproof.compact line 79 char 1',
+                                 'Field',
+                                 prev_0)
+    }
+    if (!(typeof(gridX_0) === 'bigint' && gridX_0 >= 0n && gridX_0 <= 65535n)) {
+      __compactRuntime.typeError('foldTripSample',
+                                 'argument 2',
+                                 'driveproof.compact line 79 char 1',
+                                 'Uint<0..65536>',
+                                 gridX_0)
+    }
+    if (!(typeof(gridY_0) === 'bigint' && gridY_0 >= 0n && gridY_0 <= 65535n)) {
+      __compactRuntime.typeError('foldTripSample',
+                                 'argument 3',
+                                 'driveproof.compact line 79 char 1',
+                                 'Uint<0..65536>',
+                                 gridY_0)
+    }
+    if (!(typeof(speed_0) === 'bigint' && speed_0 >= 0n && speed_0 <= 65535n)) {
+      __compactRuntime.typeError('foldTripSample',
+                                 'argument 4',
+                                 'driveproof.compact line 79 char 1',
+                                 'Uint<0..65536>',
+                                 speed_0)
+    }
+    if (!(typeof(braking_0) === 'bigint' && braking_0 >= 0n && braking_0 <= 255n)) {
+      __compactRuntime.typeError('foldTripSample',
+                                 'argument 5',
+                                 'driveproof.compact line 79 char 1',
+                                 'Uint<0..256>',
+                                 braking_0)
+    }
+    if (!(typeof(timeBucket_0) === 'bigint' && timeBucket_0 >= 0n && timeBucket_0 <= 255n)) {
+      __compactRuntime.typeError('foldTripSample',
+                                 'argument 6',
+                                 'driveproof.compact line 79 char 1',
+                                 'Uint<0..256>',
+                                 timeBucket_0)
+    }
+    return _dummyContract._foldTripSample_0(prev_0,
+                                            gridX_0,
+                                            gridY_0,
+                                            speed_0,
+                                            braking_0,
+                                            timeBucket_0);
+  },
+  deriveTripCommitment: (...args_0) => {
+    if (args_0.length !== 8) {
+      throw new __compactRuntime.CompactError(`deriveTripCommitment: expected 8 arguments (as invoked from Typescript), received ${args_0.length}`);
+    }
+    const attestationId_0 = args_0[0];
+    const driverBinding_0 = args_0[1];
+    const salt_0 = args_0[2];
+    const gridX_0 = args_0[3];
+    const gridY_0 = args_0[4];
+    const speed_0 = args_0[5];
+    const braking_0 = args_0[6];
+    const timeBucket_0 = args_0[7];
+    if (!(typeof(attestationId_0) === 'bigint' && attestationId_0 >= 0 && attestationId_0 <= __compactRuntime.MAX_FIELD)) {
+      __compactRuntime.typeError('deriveTripCommitment',
+                                 'argument 1',
+                                 'driveproof.compact line 97 char 1',
+                                 'Field',
+                                 attestationId_0)
+    }
+    if (!(typeof(driverBinding_0) === 'bigint' && driverBinding_0 >= 0 && driverBinding_0 <= __compactRuntime.MAX_FIELD)) {
+      __compactRuntime.typeError('deriveTripCommitment',
+                                 'argument 2',
+                                 'driveproof.compact line 97 char 1',
+                                 'Field',
+                                 driverBinding_0)
+    }
+    if (!(typeof(salt_0) === 'bigint' && salt_0 >= 0 && salt_0 <= __compactRuntime.MAX_FIELD)) {
+      __compactRuntime.typeError('deriveTripCommitment',
+                                 'argument 3',
+                                 'driveproof.compact line 97 char 1',
+                                 'Field',
+                                 salt_0)
+    }
+    if (!(Array.isArray(gridX_0) && gridX_0.length === 16 && gridX_0.every((t) => typeof(t) === 'bigint' && t >= 0n && t <= 65535n))) {
+      __compactRuntime.typeError('deriveTripCommitment',
+                                 'argument 4',
+                                 'driveproof.compact line 97 char 1',
+                                 'Vector<16, Uint<0..65536>>',
+                                 gridX_0)
+    }
+    if (!(Array.isArray(gridY_0) && gridY_0.length === 16 && gridY_0.every((t) => typeof(t) === 'bigint' && t >= 0n && t <= 65535n))) {
+      __compactRuntime.typeError('deriveTripCommitment',
+                                 'argument 5',
+                                 'driveproof.compact line 97 char 1',
+                                 'Vector<16, Uint<0..65536>>',
+                                 gridY_0)
+    }
+    if (!(Array.isArray(speed_0) && speed_0.length === 16 && speed_0.every((t) => typeof(t) === 'bigint' && t >= 0n && t <= 65535n))) {
+      __compactRuntime.typeError('deriveTripCommitment',
+                                 'argument 6',
+                                 'driveproof.compact line 97 char 1',
+                                 'Vector<16, Uint<0..65536>>',
+                                 speed_0)
+    }
+    if (!(Array.isArray(braking_0) && braking_0.length === 16 && braking_0.every((t) => typeof(t) === 'bigint' && t >= 0n && t <= 255n))) {
+      __compactRuntime.typeError('deriveTripCommitment',
+                                 'argument 7',
+                                 'driveproof.compact line 97 char 1',
+                                 'Vector<16, Uint<0..256>>',
+                                 braking_0)
+    }
+    if (!(Array.isArray(timeBucket_0) && timeBucket_0.length === 16 && timeBucket_0.every((t) => typeof(t) === 'bigint' && t >= 0n && t <= 255n))) {
+      __compactRuntime.typeError('deriveTripCommitment',
+                                 'argument 8',
+                                 'driveproof.compact line 97 char 1',
+                                 'Vector<16, Uint<0..256>>',
+                                 timeBucket_0)
+    }
+    return _dummyContract._deriveTripCommitment_0(attestationId_0,
+                                                  driverBinding_0,
+                                                  salt_0,
+                                                  gridX_0,
+                                                  gridY_0,
+                                                  speed_0,
+                                                  braking_0,
+                                                  timeBucket_0);
+  },
+  harshBrakingFlag: (...args_0) => {
+    if (args_0.length !== 1) {
+      throw new __compactRuntime.CompactError(`harshBrakingFlag: expected 1 argument (as invoked from Typescript), received ${args_0.length}`);
+    }
+    const braking_0 = args_0[0];
+    if (!(typeof(braking_0) === 'bigint' && braking_0 >= 0n && braking_0 <= 255n)) {
+      __compactRuntime.typeError('harshBrakingFlag',
+                                 'argument 1',
+                                 'driveproof.compact line 131 char 1',
+                                 'Uint<0..256>',
+                                 braking_0)
+    }
+    return _dummyContract._harshBrakingFlag_0(braking_0);
+  },
+  countHarshBraking: (...args_0) => {
+    if (args_0.length !== 1) {
+      throw new __compactRuntime.CompactError(`countHarshBraking: expected 1 argument (as invoked from Typescript), received ${args_0.length}`);
+    }
+    const braking_0 = args_0[0];
+    if (!(Array.isArray(braking_0) && braking_0.length === 16 && braking_0.every((t) => typeof(t) === 'bigint' && t >= 0n && t <= 255n))) {
+      __compactRuntime.typeError('countHarshBraking',
+                                 'argument 1',
+                                 'driveproof.compact line 135 char 1',
+                                 'Vector<16, Uint<0..256>>',
+                                 braking_0)
+    }
+    return _dummyContract._countHarshBraking_0(braking_0);
   },
   schnorrChallenge: (...args_0) => {
     if (args_0.length !== 5) {
@@ -926,36 +2908,36 @@ export const pureCircuits = {
     if (!(typeof(ann_x_0) === 'bigint' && ann_x_0 >= 0 && ann_x_0 <= __compactRuntime.MAX_FIELD)) {
       __compactRuntime.typeError('schnorrChallenge',
                                  'argument 1',
-                                 'driveproof.compact line 69 char 1',
+                                 'driveproof.compact line 218 char 1',
                                  'Field',
                                  ann_x_0)
     }
     if (!(typeof(ann_y_0) === 'bigint' && ann_y_0 >= 0 && ann_y_0 <= __compactRuntime.MAX_FIELD)) {
       __compactRuntime.typeError('schnorrChallenge',
                                  'argument 2',
-                                 'driveproof.compact line 69 char 1',
+                                 'driveproof.compact line 218 char 1',
                                  'Field',
                                  ann_y_0)
     }
     if (!(typeof(pk_x_0) === 'bigint' && pk_x_0 >= 0 && pk_x_0 <= __compactRuntime.MAX_FIELD)) {
       __compactRuntime.typeError('schnorrChallenge',
                                  'argument 3',
-                                 'driveproof.compact line 69 char 1',
+                                 'driveproof.compact line 218 char 1',
                                  'Field',
                                  pk_x_0)
     }
     if (!(typeof(pk_y_0) === 'bigint' && pk_y_0 >= 0 && pk_y_0 <= __compactRuntime.MAX_FIELD)) {
       __compactRuntime.typeError('schnorrChallenge',
                                  'argument 4',
-                                 'driveproof.compact line 69 char 1',
+                                 'driveproof.compact line 218 char 1',
                                  'Field',
                                  pk_y_0)
     }
-    if (!(Array.isArray(msg_0) && msg_0.length === 3 && msg_0.every((t) => typeof(t) === 'bigint' && t >= 0 && t <= __compactRuntime.MAX_FIELD))) {
+    if (!(Array.isArray(msg_0) && msg_0.length === 1 && msg_0.every((t) => typeof(t) === 'bigint' && t >= 0 && t <= __compactRuntime.MAX_FIELD))) {
       __compactRuntime.typeError('schnorrChallenge',
                                  'argument 5',
-                                 'driveproof.compact line 69 char 1',
-                                 'Vector<3, Field>',
+                                 'driveproof.compact line 218 char 1',
+                                 'Vector<1, Field>',
                                  msg_0)
     }
     return _dummyContract._schnorrChallenge_0(ann_x_0,

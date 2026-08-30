@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { ecAdd, ecMul, ecMulGenerator } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import { DriveProof, computeDriverBinding, generateDriverSecret } from 'driveproof-contract';
-import { generateKeyPair, sign, signTripAttestation } from '../src/signing.js';
+import { getFixtureSamples } from '@driveproof/fixtures';
+import { DriveProof, computeDriverBinding, computeTripCommitment, generateDriverSecret } from 'driveproof-contract';
+import { generateKeyPair, sign, signTripSamples } from '../src/signing.js';
 
 const { pureCircuits } = DriveProof;
 
@@ -12,22 +13,37 @@ const JUBJUB_ORDER = 65544843968907738099309675635232457297059212658723172813653
 const TWO_248 = 452312848583266388373324160190187140051835877600158453279131187530910662656n;
 
 describe('Attestor Schnorr signing', () => {
-  it('signTripAttestation produces signatures verifiable against contract pureCircuits', () => {
+  it('signTripSamples produces signatures verifiable against contract pureCircuits', () => {
     const { sk, pk } = generateKeyPair();
     const driverSecret = generateDriverSecret();
     const driverBinding = computeDriverBinding(driverSecret);
     const attestationId = 12345n;
-    const msg = [67n, driverBinding, attestationId];
-    const sig = signTripAttestation(sk, 67, driverBinding, attestationId);
+    const samples = getFixtureSamples('safe');
+    const { signature, salt, tripCommitment } = signTripSamples(sk, samples, driverBinding, attestationId);
+    const msg = [tripCommitment];
 
-    const cFull = pureCircuits.schnorrChallenge(sig.announcement.x, sig.announcement.y, pk.x, pk.y, msg);
+    const cFull = pureCircuits.schnorrChallenge(signature.announcement.x, signature.announcement.y, pk.x, pk.y, msg);
     const c = cFull % TWO_248;
 
-    const lhs = ecMulGenerator(sig.response);
-    const rhs = ecAdd(sig.announcement, ecMul(pk, c));
+    const lhs = ecMulGenerator(signature.response);
+    const rhs = ecAdd(signature.announcement, ecMul(pk, c));
 
     expect(lhs.x).toEqual(rhs.x);
     expect(lhs.y).toEqual(rhs.y);
+    expect(tripCommitment).toEqual(
+      computeTripCommitment(
+        attestationId,
+        driverBinding,
+        salt,
+        samples.map((sample) => ({
+          gridX: BigInt(sample.gridX),
+          gridY: BigInt(sample.gridY),
+          speed: BigInt(sample.speed),
+          braking: BigInt(sample.braking),
+          timeBucket: BigInt(sample.timeBucket),
+        })),
+      ),
+    );
   });
 
   it('produces different signatures for different driver bindings', () => {
@@ -35,16 +51,17 @@ describe('Attestor Schnorr signing', () => {
     const bindingA = computeDriverBinding(generateDriverSecret());
     const bindingB = computeDriverBinding(generateDriverSecret());
     const attestationId = 99n;
-    const sigA = signTripAttestation(sk, 67, bindingA, attestationId);
-    const sigB = signTripAttestation(sk, 67, bindingB, attestationId);
-    expect(sigA.response).not.toEqual(sigB.response);
+    const samples = getFixtureSamples('safe');
+    const sigA = signTripSamples(sk, samples, bindingA, attestationId);
+    const sigB = signTripSamples(sk, samples, bindingB, attestationId);
+    expect(sigA.signature.response).not.toEqual(sigB.signature.response);
   });
 
   it('signature response stays within Jubjub scalar field', () => {
     const { sk } = generateKeyPair();
     const driverBinding = computeDriverBinding(generateDriverSecret());
     for (let i = 0; i < 5; i++) {
-      const sig = sign(sk, [BigInt(67 + i), driverBinding, BigInt(i + 1)]);
+      const sig = sign(sk, [BigInt(i + 1)]);
       expect(sig.response).toBeGreaterThanOrEqual(0n);
       expect(sig.response).toBeLessThan(JUBJUB_ORDER);
     }

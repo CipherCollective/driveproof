@@ -9,11 +9,16 @@ export type Schnorr_SchnorrSignature = { announcement: __compactRuntime.JubjubPo
 export type Witnesses<PS> = {
   getSchnorrReduction(context: __compactRuntime.WitnessContext<Ledger, PS>,
                       challengeHash_0: bigint): [PS, [bigint, bigint]];
-  getAttestedSpeedWitness(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, [{ speed: bigint,
-                                                                                         attestationId: bigint
-                                                                                       },
-                                                                                       Schnorr_SchnorrSignature,
-                                                                                       bigint]];
+  getAttestedTripWitness(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, [{ attestationId: bigint,
+                                                                                        salt: bigint,
+                                                                                        gridX: bigint[],
+                                                                                        gridY: bigint[],
+                                                                                        speed: bigint[],
+                                                                                        braking: bigint[],
+                                                                                        timeBucket: bigint[]
+                                                                                      },
+                                                                                      Schnorr_SchnorrSignature,
+                                                                                      bigint]];
   getDriverSecret(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, DriverSecret];
 }
 
@@ -28,6 +33,22 @@ export type ProvableCircuits<PS> = {
 export type PureCircuits = {
   deriveDriverBinding(secret_0: DriverSecret): bigint;
   deriveNullifier(attestationId_0: bigint): bigint;
+  foldTripSample(prev_0: bigint,
+                 gridX_0: bigint,
+                 gridY_0: bigint,
+                 speed_0: bigint,
+                 braking_0: bigint,
+                 timeBucket_0: bigint): bigint;
+  deriveTripCommitment(attestationId_0: bigint,
+                       driverBinding_0: bigint,
+                       salt_0: bigint,
+                       gridX_0: bigint[],
+                       gridY_0: bigint[],
+                       speed_0: bigint[],
+                       braking_0: bigint[],
+                       timeBucket_0: bigint[]): bigint;
+  harshBrakingFlag(braking_0: bigint): bigint;
+  countHarshBraking(braking_0: bigint[]): bigint;
   schnorrChallenge(ann_x_0: bigint,
                    ann_y_0: bigint,
                    pk_x_0: bigint,
@@ -40,6 +61,26 @@ export type Circuits<PS> = {
                       secret_0: DriverSecret): __compactRuntime.CircuitResults<PS, bigint>;
   deriveNullifier(context: __compactRuntime.CircuitContext<PS>,
                   attestationId_0: bigint): __compactRuntime.CircuitResults<PS, bigint>;
+  foldTripSample(context: __compactRuntime.CircuitContext<PS>,
+                 prev_0: bigint,
+                 gridX_0: bigint,
+                 gridY_0: bigint,
+                 speed_0: bigint,
+                 braking_0: bigint,
+                 timeBucket_0: bigint): __compactRuntime.CircuitResults<PS, bigint>;
+  deriveTripCommitment(context: __compactRuntime.CircuitContext<PS>,
+                       attestationId_0: bigint,
+                       driverBinding_0: bigint,
+                       salt_0: bigint,
+                       gridX_0: bigint[],
+                       gridY_0: bigint[],
+                       speed_0: bigint[],
+                       braking_0: bigint[],
+                       timeBucket_0: bigint[]): __compactRuntime.CircuitResults<PS, bigint>;
+  harshBrakingFlag(context: __compactRuntime.CircuitContext<PS>,
+                   braking_0: bigint): __compactRuntime.CircuitResults<PS, bigint>;
+  countHarshBraking(context: __compactRuntime.CircuitContext<PS>,
+                    braking_0: bigint[]): __compactRuntime.CircuitResults<PS, bigint>;
   proveCompliance(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, []>;
   schnorrChallenge(context: __compactRuntime.CircuitContext<PS>,
                    ann_x_0: bigint,
@@ -58,6 +99,11 @@ export type Ledger = {
     [Symbol.iterator](): Iterator<[bigint, __compactRuntime.JubjubPoint]>
   };
   readonly speedLimit: bigint;
+  readonly brakingLimit: bigint;
+  readonly geofenceMinX: bigint;
+  readonly geofenceMinY: bigint;
+  readonly geofenceMaxX: bigint;
+  readonly geofenceMaxY: bigint;
   readonly complianceCount: bigint;
   usedNullifiers: {
     isEmpty(): boolean;
@@ -79,6 +125,11 @@ export declare class Contract<PS = any, W extends Witnesses<PS> = Witnesses<PS>>
   constructor(witnesses: W);
   initialState(context: __compactRuntime.ConstructorContext<PS>,
                limit_0: bigint,
+               brakeLimit_0: bigint,
+               minX_0: bigint,
+               minY_0: bigint,
+               maxX_0: bigint,
+               maxY_0: bigint,
                attestorId_0: bigint,
                attestorPk_0: __compactRuntime.JubjubPoint): __compactRuntime.ConstructorResult<PS>;
 }

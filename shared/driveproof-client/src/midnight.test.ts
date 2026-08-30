@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { POLICY_ID } from "@driveproof/fixtures";
+import { getFixtureSamples, POLICY_ID } from "@driveproof/fixtures";
 import type { MidnightWalletBridge, MidnightWalletSession } from "@driveproof/midnight-wallet";
 import type { MidnightRuntime } from "@driveproof/midnight-runtime";
 import type { FinalizedTxData } from "@midnight-ntwrk/midnight-js-types";
@@ -11,14 +11,21 @@ import {
 } from "./index";
 
 const privateState: DriveProofPrivateState = {
-  speed: 67n,
   attestationId: 42n,
+  salt: 43n,
+  samples: getFixtureSamples("safe").map((sample) => ({
+    gridX: BigInt(sample.gridX),
+    gridY: BigInt(sample.gridY),
+    speed: BigInt(sample.speed),
+    braking: BigInt(sample.braking),
+    timeBucket: BigInt(sample.timeBucket)
+  })),
   attestationSignature: {
     announcement: { x: 1n, y: 2n },
     response: 3n
   },
   attestorId: 1n,
-  driverSecretKey: new Uint8Array([1, 2, 3])
+  driverSecretKey: new Uint8Array(32).fill(1)
 };
 
 function connectedWalletBridge(): MidnightWalletBridge {
@@ -98,13 +105,22 @@ describe("MidnightDriveProofClient", () => {
       const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
       requests.push(body);
       attestationNumber += 1;
+      const samples = getFixtureSamples(body.tripId === "safe" ? "safe" : "unsafe").map((sample) => ({
+        gridX: String(sample.gridX),
+        gridY: String(sample.gridY),
+        speed: String(sample.speed),
+        braking: String(sample.braking),
+        timeBucket: String(sample.timeBucket)
+      }));
       return jsonResponse({
         signature: { announcement: { x: "1", y: "2" }, response: "3" },
         message: {
           tripId: body.tripId,
-          speed: body.tripId === "safe" ? "67" : "112",
           driverBinding: body.driverBinding,
-          attestationId: String(attestationNumber)
+          attestationId: String(attestationNumber),
+          salt: "99",
+          tripCommitment: "100",
+          samples
         }
       });
     }) as unknown as typeof fetch;
@@ -120,8 +136,8 @@ describe("MidnightDriveProofClient", () => {
     const safe = await client.issueDemoTrip("safe");
     const unsafe = await client.issueDemoTrip("unsafe");
 
-    expect(safe.samples).toHaveLength(0);
-    expect(unsafe.samples).toHaveLength(0);
+    expect(safe.samples).toHaveLength(16);
+    expect(unsafe.samples).toHaveLength(16);
     expect(requests).toHaveLength(2);
     expect(requests[0]).toMatchObject({ tripId: "safe" });
     expect(requests[1]).toMatchObject({ tripId: "unsafe" });
@@ -168,6 +184,8 @@ describe("MidnightDriveProofClient", () => {
 
   it.each([
     ["Speed exceeds policy limit", "policy"],
+    ["Harsh braking exceeds policy limit", "policy"],
+    ["Sample outside policy geofence", "policy"],
     ["Invalid attestation signature", "integrity"],
     ["Attestation already used", "replay"]
   ] as const)("maps the known %s assertion to %s", async (message, reason) => {

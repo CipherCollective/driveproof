@@ -1,14 +1,12 @@
-/** Server-owned demo trip fixtures — speed is never taken from the client. */
-export type DemoTripId = 'safe' | 'unsafe';
+import { getAttestorTripSamples } from '@driveproof/fixtures';
+import type { TelemetrySampleInput } from 'driveproof-contract';
 
-export const DEMO_TRIP_SPEEDS: Record<DemoTripId, number> = {
-  safe: 67,
-  unsafe: 112,
-};
+/** Server-owned demo trip fixtures — telemetry is never taken from the client. */
+export type DemoTripId = 'safe' | 'unsafe' | 'out-of-geofence';
 
-export function resolveDemoTripSpeed(tripId: string): number | undefined {
-  if (tripId === 'safe' || tripId === 'unsafe') {
-    return DEMO_TRIP_SPEEDS[tripId];
+export function resolveDemoTripSamples(tripId: string): TelemetrySampleInput[] | undefined {
+  if (tripId === 'safe' || tripId === 'unsafe' || tripId === 'out-of-geofence') {
+    return getAttestorTripSamples(tripId);
   }
   return undefined;
 }

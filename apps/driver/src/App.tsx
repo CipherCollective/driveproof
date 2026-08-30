@@ -64,7 +64,10 @@ function normalizeClientError(error: unknown): string {
 }
 
 function insurerUrlForResult(fixture: DemoFixture, result?: ProofResult): string {
-  const baseUrl = `${import.meta.env.VITE_INSURER_URL ?? "http://localhost:5174"}/?fixture=${fixture}`;
+  const insurerOrigin = (import.meta.env.VITE_INSURER_ORIGIN?.trim()
+    || import.meta.env.VITE_INSURER_URL?.trim()
+    || "http://localhost:5174").replace(/\/$/, "");
+  const baseUrl = `${insurerOrigin}/?fixture=${fixture}`;
   if (!result || result.status !== "verified") return baseUrl;
 
   // Only the public receipt crosses the app boundary. TripAttestation and
@@ -170,7 +173,7 @@ function PrivacyPanel({ attestation, receipt }: { attestation?: TripAttestation;
     ? "not loaded"
     : attestation.samples.length > 0
       ? `${attestation.samples.length} samples`
-      : "v2 measurement";
+      : "attested measurement";
   const publicFields: PublicProofMetadataField[] | undefined = receipt
     ? [
         { label: "Policy identifier", value: receipt.policyId ?? "NOT RETURNED", note: receipt.policyId ? "product metadata" : "not returned by client" },
@@ -522,7 +525,7 @@ const onboardingTasks: Array<{
     description: "Open the verifier view and inspect the public-safe result boundary.",
     why: "The insurer sees a compliance result and relevant receipt metadata, not private telemetry.",
     action: "Open Insurer",
-    href: "http://localhost:5174/"
+    href: "/"
   }
 ];
 
@@ -584,14 +587,14 @@ function PrivateMeasurementCard() {
   return (
     <section className="panel route-card private-trip-placeholder">
       <div className="panel-heading">
-        <div><h2 className="panel-title">Private Trip</h2><p className="panel-subtitle">The current v2 contract proves one issuer-signed speed measurement.</p></div>
+        <div><h2 className="panel-title">Private Trip</h2><p className="panel-subtitle">An issuer-signed measurement is ready for the private proof flow.</p></div>
         <div className="status-label">Local only</div>
       </div>
       <div className="private-trip-placeholder-body">
         <LockKeyhole size={22} strokeWidth={1.5} />
         <div>
           <h3>Attested measurement ready</h3>
-          <p>The signed measurement is held in the private witness. Route and expanded telemetry are not part of this contract version.</p>
+          <p>The signed measurement is held in the private witness. Raw route and telemetry remain outside the insurer's view.</p>
         </div>
       </div>
       <div className="lock-line"><ShieldCheck size={12} /> the authorized attestor signs the private measurement</div>
@@ -906,7 +909,10 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
                 <ProofPipeline />
                 <div className="proof-list">
                   <div className="proof-row"><span className="proof-row-label" title="A cryptographic signature from an authorized telemetry source.">Authorized attestation</span><span className="proof-row-value">{attestation ? "ready" : "waiting"}</span></div>
-                  <div className="proof-row"><span className="proof-row-label" title="The conditions the insurer requires the trip to satisfy.">Safety policy</span><span className="proof-row-value">{POLICY_ID}</span></div>
+                  <div className="proof-row"><span className="proof-row-label" title="The conditions the insurer requires the trip to satisfy.">Maximum speed</span><span className="proof-row-value">80 km/h</span></div>
+                  <div className="proof-row"><span className="proof-row-label" title="Harsh braking is counted when a braking sample is greater than zero.">Harsh braking</span><span className="proof-row-value">≤ 2 events</span></div>
+                  <div className="proof-row"><span className="proof-row-label" title="Every private sample must remain inside the configured policy rectangle.">Allowed operating area</span><span className="proof-row-value">configured private grid</span></div>
+                  <div className="proof-row"><span className="proof-row-label" title="The conditions the insurer requires the trip to satisfy.">Policy identifier</span><span className="proof-row-value">{POLICY_ID}</span></div>
                   <div className="proof-row"><span className="proof-row-label">Replay protection</span><span className="proof-row-value">active</span></div>
                 </div>
                 <div style={{ marginTop: "auto", paddingTop: 23 }}>

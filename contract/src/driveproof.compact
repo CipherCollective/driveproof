@@ -1,4 +1,4 @@
-// DriveProof Phase 3: subject binding + contract-local replay nullifier.
+// DriveProof Phase 6: rectangular geofence policy on 16-sample trip commitment.
 // Trusted attestor must issue unique attestationIds — a malicious attestor can still
 // re-issue duplicate records under different IDs (known trust boundary).
 
@@ -10,21 +10,54 @@ export { Schnorr_SchnorrSignature };
 
 export new type DriverSecret = Bytes<32>;
 
-struct SpeedReading {
-    speed: Uint<16>;
+struct TripReading {
     attestationId: Field;
+    salt: Field;
+    gridX: Vector<16, Uint<16>>;
+    gridY: Vector<16, Uint<16>>;
+    speed: Vector<16, Uint<16>>;
+    braking: Vector<16, Uint<8>>;
+    timeBucket: Vector<16, Uint<8>>;
+}
+
+struct TripSampleHash {
+    prev: Field;
+    gridX: Uint<16>;
+    gridY: Uint<16>;
+    speed: Uint<16>;
+    braking: Uint<8>;
+    timeBucket: Uint<8>;
 }
 
 export ledger attestors: Map<Uint<16>, JubjubPoint>;
 export ledger speedLimit: Uint<16>;
+export ledger brakingLimit: Uint<8>;
+export ledger geofenceMinX: Uint<16>;
+export ledger geofenceMinY: Uint<16>;
+export ledger geofenceMaxX: Uint<16>;
+export ledger geofenceMaxY: Uint<16>;
 export ledger complianceCount: Uint<32>;
 export ledger usedNullifiers: Set<Field>;
 
-witness getAttestedSpeedWitness(): [SpeedReading, Schnorr_SchnorrSignature, Uint<16>];
+witness getAttestedTripWitness(): [TripReading, Schnorr_SchnorrSignature, Uint<16>];
 witness getDriverSecret(): DriverSecret;
 
-constructor(limit: Uint<16>, attestorId: Uint<16>, attestorPk: JubjubPoint) {
+constructor(
+    limit: Uint<16>,
+    brakeLimit: Uint<8>,
+    minX: Uint<16>,
+    minY: Uint<16>,
+    maxX: Uint<16>,
+    maxY: Uint<16>,
+    attestorId: Uint<16>,
+    attestorPk: JubjubPoint
+) {
     speedLimit = disclose(limit);
+    brakingLimit = disclose(brakeLimit);
+    geofenceMinX = disclose(minX);
+    geofenceMinY = disclose(minY);
+    geofenceMaxX = disclose(maxX);
+    geofenceMaxY = disclose(maxY);
     attestors.insert(disclose(attestorId), disclose(attestorPk));
 }
 
@@ -43,21 +76,137 @@ export pure circuit deriveNullifier(attestationId: Field): Field {
     ]);
 }
 
+export pure circuit foldTripSample(
+    prev: Field,
+    gridX: Uint<16>,
+    gridY: Uint<16>,
+    speed: Uint<16>,
+    braking: Uint<8>,
+    timeBucket: Uint<8>
+): Field {
+    return transientHash<TripSampleHash>(TripSampleHash {
+        prev: prev,
+        gridX: gridX,
+        gridY: gridY,
+        speed: speed,
+        braking: braking,
+        timeBucket: timeBucket
+    });
+}
+
+export pure circuit deriveTripCommitment(
+    attestationId: Field,
+    driverBinding: Field,
+    salt: Field,
+    gridX: Vector<16, Uint<16>>,
+    gridY: Vector<16, Uint<16>>,
+    speed: Vector<16, Uint<16>>,
+    braking: Vector<16, Uint<8>>,
+    timeBucket: Vector<16, Uint<8>>
+): Field {
+    const seed = transientHash<[Bytes<25>, Field, Field, Field]>([
+        "DRIVEPROOF_ATTESTATION_V1",
+        attestationId,
+        driverBinding,
+        salt
+    ]);
+    const h0 = foldTripSample(seed, gridX[0], gridY[0], speed[0], braking[0], timeBucket[0]);
+    const h1 = foldTripSample(h0, gridX[1], gridY[1], speed[1], braking[1], timeBucket[1]);
+    const h2 = foldTripSample(h1, gridX[2], gridY[2], speed[2], braking[2], timeBucket[2]);
+    const h3 = foldTripSample(h2, gridX[3], gridY[3], speed[3], braking[3], timeBucket[3]);
+    const h4 = foldTripSample(h3, gridX[4], gridY[4], speed[4], braking[4], timeBucket[4]);
+    const h5 = foldTripSample(h4, gridX[5], gridY[5], speed[5], braking[5], timeBucket[5]);
+    const h6 = foldTripSample(h5, gridX[6], gridY[6], speed[6], braking[6], timeBucket[6]);
+    const h7 = foldTripSample(h6, gridX[7], gridY[7], speed[7], braking[7], timeBucket[7]);
+    const h8 = foldTripSample(h7, gridX[8], gridY[8], speed[8], braking[8], timeBucket[8]);
+    const h9 = foldTripSample(h8, gridX[9], gridY[9], speed[9], braking[9], timeBucket[9]);
+    const h10 = foldTripSample(h9, gridX[10], gridY[10], speed[10], braking[10], timeBucket[10]);
+    const h11 = foldTripSample(h10, gridX[11], gridY[11], speed[11], braking[11], timeBucket[11]);
+    const h12 = foldTripSample(h11, gridX[12], gridY[12], speed[12], braking[12], timeBucket[12]);
+    const h13 = foldTripSample(h12, gridX[13], gridY[13], speed[13], braking[13], timeBucket[13]);
+    const h14 = foldTripSample(h13, gridX[14], gridY[14], speed[14], braking[14], timeBucket[14]);
+    return foldTripSample(h14, gridX[15], gridY[15], speed[15], braking[15], timeBucket[15]);
+}
+
+export pure circuit harshBrakingFlag(braking: Uint<8>): Uint<8> {
+    return (braking > 0 ? 1 : 0) as Uint<8>;
+}
+
+export pure circuit countHarshBraking(braking: Vector<16, Uint<8>>): Uint<8> {
+    const c0 = harshBrakingFlag(braking[0]);
+    const c1 = (c0 + harshBrakingFlag(braking[1])) as Uint<8>;
+    const c2 = (c1 + harshBrakingFlag(braking[2])) as Uint<8>;
+    const c3 = (c2 + harshBrakingFlag(braking[3])) as Uint<8>;
+    const c4 = (c3 + harshBrakingFlag(braking[4])) as Uint<8>;
+    const c5 = (c4 + harshBrakingFlag(braking[5])) as Uint<8>;
+    const c6 = (c5 + harshBrakingFlag(braking[6])) as Uint<8>;
+    const c7 = (c6 + harshBrakingFlag(braking[7])) as Uint<8>;
+    const c8 = (c7 + harshBrakingFlag(braking[8])) as Uint<8>;
+    const c9 = (c8 + harshBrakingFlag(braking[9])) as Uint<8>;
+    const c10 = (c9 + harshBrakingFlag(braking[10])) as Uint<8>;
+    const c11 = (c10 + harshBrakingFlag(braking[11])) as Uint<8>;
+    const c12 = (c11 + harshBrakingFlag(braking[12])) as Uint<8>;
+    const c13 = (c12 + harshBrakingFlag(braking[13])) as Uint<8>;
+    const c14 = (c13 + harshBrakingFlag(braking[14])) as Uint<8>;
+    return (c14 + harshBrakingFlag(braking[15])) as Uint<8>;
+}
+
 export circuit proveCompliance(): [] {
-    const [reading, signature, attestorId] = getAttestedSpeedWitness();
+    const [reading, signature, attestorId] = getAttestedTripWitness();
 
     assert(attestors.member(disclose(attestorId)), "Attestor not registered");
     const attestorPk = attestors.lookup(disclose(attestorId));
 
     const driverBinding = deriveDriverBinding(getDriverSecret());
-    const msg: Vector<3, Field> = [
-        reading.speed as Field,
+    const tripCommitment = deriveTripCommitment(
+        reading.attestationId,
         driverBinding,
-        reading.attestationId
-    ];
-    Schnorr_schnorrVerify<3>(msg, signature, attestorPk);
+        reading.salt,
+        reading.gridX,
+        reading.gridY,
+        reading.speed,
+        reading.braking,
+        reading.timeBucket
+    );
+    const msg: Vector<1, Field> = [tripCommitment];
+    Schnorr_schnorrVerify<1>(msg, signature, attestorPk);
 
-    assert(reading.speed <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[0] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[1] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[2] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[3] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[4] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[5] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[6] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[7] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[8] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[9] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[10] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[11] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[12] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[13] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[14] <= speedLimit, "Speed exceeds policy limit");
+    assert(reading.speed[15] <= speedLimit, "Speed exceeds policy limit");
+
+    const harshCount = countHarshBraking(reading.braking);
+    assert(harshCount <= brakingLimit, "Harsh braking exceeds policy limit");
+
+    assert(disclose(reading.gridX[0]) >= geofenceMinX && disclose(reading.gridX[0]) <= geofenceMaxX && disclose(reading.gridY[0]) >= geofenceMinY && disclose(reading.gridY[0]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[1]) >= geofenceMinX && disclose(reading.gridX[1]) <= geofenceMaxX && disclose(reading.gridY[1]) >= geofenceMinY && disclose(reading.gridY[1]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[2]) >= geofenceMinX && disclose(reading.gridX[2]) <= geofenceMaxX && disclose(reading.gridY[2]) >= geofenceMinY && disclose(reading.gridY[2]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[3]) >= geofenceMinX && disclose(reading.gridX[3]) <= geofenceMaxX && disclose(reading.gridY[3]) >= geofenceMinY && disclose(reading.gridY[3]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[4]) >= geofenceMinX && disclose(reading.gridX[4]) <= geofenceMaxX && disclose(reading.gridY[4]) >= geofenceMinY && disclose(reading.gridY[4]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[5]) >= geofenceMinX && disclose(reading.gridX[5]) <= geofenceMaxX && disclose(reading.gridY[5]) >= geofenceMinY && disclose(reading.gridY[5]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[6]) >= geofenceMinX && disclose(reading.gridX[6]) <= geofenceMaxX && disclose(reading.gridY[6]) >= geofenceMinY && disclose(reading.gridY[6]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[7]) >= geofenceMinX && disclose(reading.gridX[7]) <= geofenceMaxX && disclose(reading.gridY[7]) >= geofenceMinY && disclose(reading.gridY[7]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[8]) >= geofenceMinX && disclose(reading.gridX[8]) <= geofenceMaxX && disclose(reading.gridY[8]) >= geofenceMinY && disclose(reading.gridY[8]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[9]) >= geofenceMinX && disclose(reading.gridX[9]) <= geofenceMaxX && disclose(reading.gridY[9]) >= geofenceMinY && disclose(reading.gridY[9]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[10]) >= geofenceMinX && disclose(reading.gridX[10]) <= geofenceMaxX && disclose(reading.gridY[10]) >= geofenceMinY && disclose(reading.gridY[10]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[11]) >= geofenceMinX && disclose(reading.gridX[11]) <= geofenceMaxX && disclose(reading.gridY[11]) >= geofenceMinY && disclose(reading.gridY[11]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[12]) >= geofenceMinX && disclose(reading.gridX[12]) <= geofenceMaxX && disclose(reading.gridY[12]) >= geofenceMinY && disclose(reading.gridY[12]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[13]) >= geofenceMinX && disclose(reading.gridX[13]) <= geofenceMaxX && disclose(reading.gridY[13]) >= geofenceMinY && disclose(reading.gridY[13]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[14]) >= geofenceMinX && disclose(reading.gridX[14]) <= geofenceMaxX && disclose(reading.gridY[14]) >= geofenceMinY && disclose(reading.gridY[14]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[15]) >= geofenceMinX && disclose(reading.gridX[15]) <= geofenceMaxX && disclose(reading.gridY[15]) >= geofenceMinY && disclose(reading.gridY[15]) <= geofenceMaxY, "Sample outside policy geofence");
 
     const nullifier = deriveNullifier(reading.attestationId);
     assert(!usedNullifiers.member(disclose(nullifier)), "Attestation already used");
@@ -69,7 +218,7 @@ export circuit proveCompliance(): [] {
 export pure circuit schnorrChallenge(
     ann_x: Field, ann_y: Field,
     pk_x: Field, pk_y: Field,
-    msg: Vector<3, Field>
+    msg: Vector<1, Field>
 ): Field {
-    return Schnorr_schnorrChallenge3(ann_x, ann_y, pk_x, pk_y, msg);
+    return Schnorr_schnorrChallenge1(ann_x, ann_y, pk_x, pk_y, msg);
 }

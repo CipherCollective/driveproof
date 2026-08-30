@@ -48,15 +48,15 @@ module schnorr {
            "Invalid attestation signature");
   }
 
-  export pure circuit schnorrChallenge3(
+  export pure circuit schnorrChallenge1(
                         ann_x: Field,
                         ann_y: Field,
                         pk_x: Field,
                         pk_y: Field,
-                        msg: Vector<3, Field>
+                        msg: Vector<1, Field>
                         ): Field {
-    return transientHash<SchnorrHashInput<3>>(
-              SchnorrHashInput<3> { ann_x: ann_x, ann_y: ann_y, pk_x: pk_x, pk_y: pk_y, msg: msg }
+    return transientHash<SchnorrHashInput<1>>(
+              SchnorrHashInput<1> { ann_x: ann_x, ann_y: ann_y, pk_x: pk_x, pk_y: pk_y, msg: msg }
               );
   }
 }

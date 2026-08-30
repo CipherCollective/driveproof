@@ -8,11 +8,15 @@ import {
 import { Contract, type Ledger, ledger, pureCircuits } from '../managed/driveproof/contract/index.js';
 import { type DriveProofPrivateState, witnesses } from '../witnesses.js';
 import {
-  createSignedSpeedState,
+  createSignedTripState,
   generateAttestorKeyPair,
   generateDriverSecret,
   DEFAULT_SPEED_LIMIT,
+  DEFAULT_BRAKING_LIMIT,
+  DEFAULT_GEOFENCE,
+  type GeofenceBounds,
 } from './utils/test-data.js';
+import { getAttestorTripSamples, type AttestorTripId } from '@driveproof/fixtures';
 
 const toHexPadded = (str: string, len = 64) => Buffer.from(str, 'ascii').toString('hex').padStart(len, '0');
 
@@ -29,10 +33,19 @@ export class DriveProofSimulator {
   readonly attestorPk: JubjubPoint;
   readonly attestorId: bigint = 1n;
   readonly speedLimit: bigint;
+  readonly brakingLimit: bigint;
+  readonly geofence: GeofenceBounds;
   readonly driverSecretKey: Uint8Array;
 
-  constructor(speedLimit: bigint = DEFAULT_SPEED_LIMIT, witnessOverrides: Partial<typeof witnesses> = {}) {
+  constructor(
+    speedLimit: bigint = DEFAULT_SPEED_LIMIT,
+    brakingLimit: bigint = DEFAULT_BRAKING_LIMIT,
+    geofence: GeofenceBounds = DEFAULT_GEOFENCE,
+    witnessOverrides: Partial<typeof witnesses> = {},
+  ) {
     this.speedLimit = speedLimit;
+    this.brakingLimit = brakingLimit;
+    this.geofence = geofence;
     this.contract = new Contract<DriveProofPrivateState>({ ...witnesses, ...witnessOverrides });
     this.driverSecretKey = generateDriverSecret();
 
@@ -40,8 +53,8 @@ export class DriveProofSimulator {
     this.attestorSk = keyPair.sk;
     this.attestorPk = keyPair.pk;
 
-    const initialPrivateState = createSignedSpeedState(
-      67n,
+    const initialPrivateState = createSignedTripState(
+      getAttestorTripSamples('safe'),
       this.attestorSk,
       this.driverSecretKey,
       this.attestorId,
@@ -51,6 +64,11 @@ export class DriveProofSimulator {
     const { currentPrivateState, currentContractState, currentZswapLocalState } = this.contract.initialState(
       createConstructorContext(initialPrivateState, deployer.left.hex),
       speedLimit,
+      brakingLimit,
+      geofence.minGridX,
+      geofence.minGridY,
+      geofence.maxGridX,
+      geofence.maxGridY,
       this.attestorId,
       this.attestorPk,
     );
@@ -77,13 +95,19 @@ export class DriveProofSimulator {
     };
   }
 
-  setSignedSpeedState(
-    speed: bigint,
+  setSignedTripState(
+    tripId: AttestorTripId,
     driverSecret: Uint8Array = this.driverSecretKey,
     attestationId?: bigint,
   ): void {
     this.setPrivateState(
-      createSignedSpeedState(speed, this.attestorSk, driverSecret, this.attestorId, attestationId),
+      createSignedTripState(
+        getAttestorTripSamples(tripId),
+        this.attestorSk,
+        driverSecret,
+        this.attestorId,
+        attestationId,
+      ),
     );
   }
 
@@ -98,4 +122,4 @@ export class DriveProofSimulator {
   }
 }
 
-export { DEFAULT_SPEED_LIMIT };
+export { DEFAULT_SPEED_LIMIT, DEFAULT_BRAKING_LIMIT, DEFAULT_GEOFENCE };
