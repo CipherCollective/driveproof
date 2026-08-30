@@ -10,6 +10,19 @@ const SAMPLE_COUNT = 16;
 
 export const DEFAULT_SPEED_LIMIT = 80n;
 export const DEFAULT_BRAKING_LIMIT = 2n;
+export const DEFAULT_GEOFENCE = {
+  minGridX: 0n,
+  minGridY: 50n,
+  maxGridX: 350n,
+  maxGridY: 100n,
+} as const;
+
+export type GeofenceBounds = {
+  minGridX: bigint;
+  minGridY: bigint;
+  maxGridX: bigint;
+  maxGridY: bigint;
+};
 
 export type TelemetrySampleInput = {
   gridX: number;

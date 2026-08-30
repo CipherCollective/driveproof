@@ -171,7 +171,7 @@ export function createServer(providerSk: bigint, providerId: number, providerPk:
 
         const samples = resolveDemoTripSamples(body.tripId);
         if (samples === undefined) {
-          sendJson(res, 400, { error: 'Unknown tripId — use "safe" or "unsafe"' }, requestOrigin, allowedOrigin);
+          sendJson(res, 400, { error: 'Unknown tripId — use "safe", "unsafe", or "out-of-geofence"' }, requestOrigin, allowedOrigin);
           return;
         }
 

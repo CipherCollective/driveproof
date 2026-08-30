@@ -1,6 +1,6 @@
 import { setNetworkId } from '@midnight-ntwrk/midnight-js-network-id';
 import { describe, it, expect } from 'vitest';
-import { getFixtureSamples } from '@driveproof/fixtures';
+import { getFixtureSamples, getAttestorTripSamples } from '@driveproof/fixtures';
 import { DriveProofSimulator, DEFAULT_SPEED_LIMIT, DEFAULT_BRAKING_LIMIT } from './driveproof.simulator.js';
 import { createSignedTripState, generateDriverSecret } from './utils/test-data.js';
 
@@ -110,6 +110,25 @@ describe('DriveProof acceptance — 16-sample trip commitment', () => {
 
     expect(thrown).toBeDefined();
     expect(thrown!.message).toContain('Harsh braking exceeds policy limit');
+    expect(simulator.getLedger().complianceCount).toEqual(0n);
+    expect(simulator.nullifierUsed(attestationId)).toBe(false);
+  });
+
+  it('rejects out-of-geofence samples without consuming nullifier', () => {
+    const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT, DEFAULT_BRAKING_LIMIT);
+    const attestationId = 66666666n;
+    simulator.setSignedTripState('out-of-geofence', simulator.driverSecretKey, attestationId);
+
+    let thrown: Error | undefined;
+    try {
+      simulator.proveCompliance();
+    } catch (err) {
+      thrown = err as Error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown!.message).toContain('Sample outside policy geofence');
+    expect(thrown!.message).not.toContain('Invalid attestation signature');
     expect(simulator.getLedger().complianceCount).toEqual(0n);
     expect(simulator.nullifierUsed(attestationId)).toBe(false);
   });

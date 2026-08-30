@@ -28,6 +28,16 @@ const unsafeSpeeds = [42, 48, 53, 56, 61, 63, 112, 65, 60, 58, 55, 59, 62, 64, 6
 const safeBraking = [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 const unsafeBraking = [0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0];
 
+/** Demo policy rectangle that contains the safe route but excludes the out-of-geofence fixture. */
+export const DEFAULT_POLICY_GEOFENCE = {
+  minGridX: 0,
+  minGridY: 50,
+  maxGridX: 350,
+  maxGridY: 100
+} as const;
+
+export type AttestorTripId = "safe" | "unsafe" | "out-of-geofence";
+
 function buildSamples(fixture: DemoFixture): TelemetrySample[] {
   const speeds = fixture === "unsafe" || fixture === "tampered" ? unsafeSpeeds : safeSpeeds;
   const braking = fixture === "unsafe" || fixture === "tampered" ? unsafeBraking : safeBraking;
@@ -53,6 +63,15 @@ export function createDemoAttestation(fixture: DemoFixture, sequence = 1): TripA
 
 export function getFixtureSamples(fixture: DemoFixture): TelemetrySample[] {
   return buildSamples(fixture);
+}
+
+export function getAttestorTripSamples(tripId: AttestorTripId): TelemetrySample[] {
+  if (tripId === "out-of-geofence") {
+    return getFixtureSamples("safe").map((sample, index) =>
+      index === 7 ? { ...sample, gridX: 400 } : sample
+    );
+  }
+  return getFixtureSamples(tripId);
 }
 
 export function maxSpeed(samples: TelemetrySample[]): number {

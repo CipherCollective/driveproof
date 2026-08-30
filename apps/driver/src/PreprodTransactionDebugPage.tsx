@@ -41,6 +41,10 @@ const PRIVATE_STATE_ID = "driveproofPrivateState";
 const ZK_CONFIG_BASE_PATH = "/contract/compiled/driveproof";
 const SPEED_LIMIT = 80n;
 const BRAKING_LIMIT = 2n;
+const GEOFENCE_MIN_X = 0n;
+const GEOFENCE_MIN_Y = 50n;
+const GEOFENCE_MAX_X = 350n;
+const GEOFENCE_MAX_Y = 100n;
 const ATTESTOR_ID = 1n;
 const ATTESTOR_PUBLIC_KEY = {
   x: 24963340820686704563874210959139693074205807300853579178326830224576306549782n,
@@ -307,7 +311,16 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
     try {
       const result = await deployContract(runtime.providers, {
         compiledContract,
-        args: [SPEED_LIMIT, BRAKING_LIMIT, ATTESTOR_ID, ATTESTOR_PUBLIC_KEY],
+        args: [
+          SPEED_LIMIT,
+          BRAKING_LIMIT,
+          GEOFENCE_MIN_X,
+          GEOFENCE_MIN_Y,
+          GEOFENCE_MAX_X,
+          GEOFENCE_MAX_Y,
+          ATTESTOR_ID,
+          ATTESTOR_PUBLIC_KEY,
+        ],
         privateStateId: PRIVATE_STATE_ID,
         initialPrivateState: attestation
       });
@@ -593,7 +606,7 @@ export function PreprodTransactionDebugPage({ config }: { config?: MidnightWalle
         <section className="wallet-debug-panel">
           <div className="wallet-debug-panel-heading"><span className="eyebrow">3 · DEPLOY CONSTRUCTOR-BOUND CONTRACT</span><span className={deployment ? "debug-good" : "debug-neutral"}>{deployment ? "CONFIRMED ON PREPROD" : "NOT SUBMITTED"}</span></div>
           {deployment && <div className="wallet-debug-evidence-kicker">MIDNIGHT PREPROD</div>}
-          <p>Exact constructor: <code>speedLimit=80</code>, <code>brakingLimit=2</code>, <code>attestorId=1</code>, and the handoff public key. Lace approval is required for the real deployment transaction.</p>
+          <p>Exact constructor: <code>speedLimit=80</code>, <code>brakingLimit=2</code>, <code>geofence=(0,50)-(350,100)</code>, <code>attestorId=1</code>, and the handoff public key. Lace approval is required for the real deployment transaction.</p>
           <button className="debug-primary-button" disabled={busy || !runtime || !attestation || Boolean(deployment)} onClick={() => void deploy()} type="button">{operation === "deploying" ? "DEPLOYING · APPROVE LACE" : deployment ? "CONTRACT DEPLOYED" : "DEPLOY TO PREPROD"} {operation === "deploying" && <RefreshCw className="debug-spin" size={15} />}</button>
           <div className="wallet-debug-details" aria-live="polite">
             <div>

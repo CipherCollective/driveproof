@@ -1,6 +1,7 @@
 export {
   DEFAULT_SPEED_LIMIT,
   DEFAULT_BRAKING_LIMIT,
+  DEFAULT_GEOFENCE,
   generateAttestorKeyPair,
   generateDriverSecret,
   generateAttestationId,
@@ -14,6 +15,7 @@ export {
   maxSampleSpeed,
   harshBrakingCount,
   type TelemetrySampleInput,
+  type GeofenceBounds,
 } from '../../signing-helpers.js';
 
-export { getFixtureSamples } from '@driveproof/fixtures';
+export { getFixtureSamples, getAttestorTripSamples } from '@driveproof/fixtures';
