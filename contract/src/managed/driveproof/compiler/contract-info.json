@@ -462,8 +462,48 @@
       }
     },
     {
-      "name": "complianceCount",
+      "name": "geofenceMinX",
       "index": 3,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Uint",
+        "maxval": 65535
+      }
+    },
+    {
+      "name": "geofenceMinY",
+      "index": 4,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Uint",
+        "maxval": 65535
+      }
+    },
+    {
+      "name": "geofenceMaxX",
+      "index": 5,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Uint",
+        "maxval": 65535
+      }
+    },
+    {
+      "name": "geofenceMaxY",
+      "index": 6,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Uint",
+        "maxval": 65535
+      }
+    },
+    {
+      "name": "complianceCount",
+      "index": 7,
       "exported": true,
       "storage": "Cell",
       "type": {
@@ -473,7 +513,7 @@
     },
     {
       "name": "usedNullifiers",
-      "index": 4,
+      "index": 8,
       "exported": true,
       "storage": "Set",
       "type": {

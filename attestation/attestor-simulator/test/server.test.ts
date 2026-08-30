@@ -137,6 +137,19 @@ describe('Attestor simulator server', () => {
     expect(body.error).toContain('driverBinding');
   });
 
+  it('POST /attest with tripId out-of-geofence returns sample outside policy box', async () => {
+    const res = await fetch(`${baseUrl}/attest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: attestBody('out-of-geofence'),
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.message.tripId).toBe('out-of-geofence');
+    expect(body.message.samples[7].gridX).toBe('400');
+    expect(Math.max(...body.message.samples.map((sample: { speed: string }) => Number(sample.speed)))).toBe(67);
+  });
+
   it('POST /attest returns 400 for unknown tripId', async () => {
     const res = await fetch(`${baseUrl}/attest`, {
       method: 'POST',

@@ -17,6 +17,10 @@ import {
   ATTESTOR_ID,
   ATTESTOR_PUBLIC_KEY,
   BRAKING_LIMIT,
+  GEOFENCE_MAX_X,
+  GEOFENCE_MAX_Y,
+  GEOFENCE_MIN_X,
+  GEOFENCE_MIN_Y,
   PRIVATE_STATE_ID,
   SPEED_LIMIT,
   createCompiledDriveProof,
@@ -124,7 +128,16 @@ async function runRealPath(): Promise<void> {
     console.log("Deploying DriveProof to Midnight Preprod.");
     const deployed = await deployContract(providers, {
       compiledContract,
-      args: [SPEED_LIMIT, BRAKING_LIMIT, ATTESTOR_ID, ATTESTOR_PUBLIC_KEY],
+      args: [
+        SPEED_LIMIT,
+        BRAKING_LIMIT,
+        GEOFENCE_MIN_X,
+        GEOFENCE_MIN_Y,
+        GEOFENCE_MAX_X,
+        GEOFENCE_MAX_Y,
+        ATTESTOR_ID,
+        ATTESTOR_PUBLIC_KEY,
+      ],
       privateStateId: PRIVATE_STATE_ID,
       initialPrivateState: attestation
     });
@@ -159,6 +172,21 @@ async function runRealPath(): Promise<void> {
     const countAfterUnsafe = await readComplianceCount(providers, deployment.contractAddress, "After unsafe rejection");
     if (countAfterUnsafe !== 1n) {
       throw new Error(`Expected complianceCount 1 after unsafe rejection, received ${countAfterUnsafe.toString()}.`);
+    }
+
+    const outOfGeofence = await requestAttestorPrivateState(config.attestorUrl, "out-of-geofence", driverSecretKey);
+    if (outOfGeofence.samples[7]?.gridX !== 400n) {
+      throw new Error("Expected out-of-geofence trip sample 7 gridX 400.");
+    }
+    await providers.privateStateProvider.set(PRIVATE_STATE_ID, outOfGeofence);
+    await expectProofRejection(
+      "GEOFENCE RESULT",
+      () => joined.callTx.proveCompliance(),
+      "Sample outside policy geofence",
+    );
+    const countAfterGeofence = await readComplianceCount(providers, deployment.contractAddress, "After geofence rejection");
+    if (countAfterGeofence !== 1n) {
+      throw new Error(`Expected complianceCount 1 after geofence rejection, received ${countAfterGeofence.toString()}.`);
     }
 
     await providers.privateStateProvider.set(PRIVATE_STATE_ID, {
@@ -208,6 +236,7 @@ async function runRealPath(): Promise<void> {
     console.log("- replay rejected without incrementing complianceCount");
     console.log("- wrong driver binding rejected");
     console.log("- unsafe rejected without consuming nullifier");
+    console.log("- geofence violation rejected without consuming nullifier");
     console.log("- tamper rejected without consuming nullifier");
   } finally {
     await wallet.facade.stop();

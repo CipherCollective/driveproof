@@ -13,8 +13,10 @@ import {
   generateDriverSecret,
   DEFAULT_SPEED_LIMIT,
   DEFAULT_BRAKING_LIMIT,
+  DEFAULT_GEOFENCE,
+  type GeofenceBounds,
 } from './utils/test-data.js';
-import { getFixtureSamples } from '@driveproof/fixtures';
+import { getAttestorTripSamples, type AttestorTripId } from '@driveproof/fixtures';
 
 const toHexPadded = (str: string, len = 64) => Buffer.from(str, 'ascii').toString('hex').padStart(len, '0');
 
@@ -32,15 +34,18 @@ export class DriveProofSimulator {
   readonly attestorId: bigint = 1n;
   readonly speedLimit: bigint;
   readonly brakingLimit: bigint;
+  readonly geofence: GeofenceBounds;
   readonly driverSecretKey: Uint8Array;
 
   constructor(
     speedLimit: bigint = DEFAULT_SPEED_LIMIT,
     brakingLimit: bigint = DEFAULT_BRAKING_LIMIT,
+    geofence: GeofenceBounds = DEFAULT_GEOFENCE,
     witnessOverrides: Partial<typeof witnesses> = {},
   ) {
     this.speedLimit = speedLimit;
     this.brakingLimit = brakingLimit;
+    this.geofence = geofence;
     this.contract = new Contract<DriveProofPrivateState>({ ...witnesses, ...witnessOverrides });
     this.driverSecretKey = generateDriverSecret();
 
@@ -49,7 +54,7 @@ export class DriveProofSimulator {
     this.attestorPk = keyPair.pk;
 
     const initialPrivateState = createSignedTripState(
-      getFixtureSamples('safe'),
+      getAttestorTripSamples('safe'),
       this.attestorSk,
       this.driverSecretKey,
       this.attestorId,
@@ -60,6 +65,10 @@ export class DriveProofSimulator {
       createConstructorContext(initialPrivateState, deployer.left.hex),
       speedLimit,
       brakingLimit,
+      geofence.minGridX,
+      geofence.minGridY,
+      geofence.maxGridX,
+      geofence.maxGridY,
       this.attestorId,
       this.attestorPk,
     );
@@ -87,13 +96,13 @@ export class DriveProofSimulator {
   }
 
   setSignedTripState(
-    fixture: 'safe' | 'unsafe',
+    tripId: AttestorTripId,
     driverSecret: Uint8Array = this.driverSecretKey,
     attestationId?: bigint,
   ): void {
     this.setPrivateState(
       createSignedTripState(
-        getFixtureSamples(fixture),
+        getAttestorTripSamples(tripId),
         this.attestorSk,
         driverSecret,
         this.attestorId,
@@ -113,4 +122,4 @@ export class DriveProofSimulator {
   }
 }
 
-export { DEFAULT_SPEED_LIMIT, DEFAULT_BRAKING_LIMIT };
+export { DEFAULT_SPEED_LIMIT, DEFAULT_BRAKING_LIMIT, DEFAULT_GEOFENCE };

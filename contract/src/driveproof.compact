@@ -1,4 +1,4 @@
-// DriveProof Phase 5: 16-sample telemetry via signed tripCommitment.
+// DriveProof Phase 6: rectangular geofence policy on 16-sample trip commitment.
 // Trusted attestor must issue unique attestationIds — a malicious attestor can still
 // re-issue duplicate records under different IDs (known trust boundary).
 
@@ -32,15 +32,32 @@ struct TripSampleHash {
 export ledger attestors: Map<Uint<16>, JubjubPoint>;
 export ledger speedLimit: Uint<16>;
 export ledger brakingLimit: Uint<8>;
+export ledger geofenceMinX: Uint<16>;
+export ledger geofenceMinY: Uint<16>;
+export ledger geofenceMaxX: Uint<16>;
+export ledger geofenceMaxY: Uint<16>;
 export ledger complianceCount: Uint<32>;
 export ledger usedNullifiers: Set<Field>;
 
 witness getAttestedTripWitness(): [TripReading, Schnorr_SchnorrSignature, Uint<16>];
 witness getDriverSecret(): DriverSecret;
 
-constructor(limit: Uint<16>, brakeLimit: Uint<8>, attestorId: Uint<16>, attestorPk: JubjubPoint) {
+constructor(
+    limit: Uint<16>,
+    brakeLimit: Uint<8>,
+    minX: Uint<16>,
+    minY: Uint<16>,
+    maxX: Uint<16>,
+    maxY: Uint<16>,
+    attestorId: Uint<16>,
+    attestorPk: JubjubPoint
+) {
     speedLimit = disclose(limit);
     brakingLimit = disclose(brakeLimit);
+    geofenceMinX = disclose(minX);
+    geofenceMinY = disclose(minY);
+    geofenceMaxX = disclose(maxX);
+    geofenceMaxY = disclose(maxY);
     attestors.insert(disclose(attestorId), disclose(attestorPk));
 }
 
@@ -173,6 +190,23 @@ export circuit proveCompliance(): [] {
 
     const harshCount = countHarshBraking(reading.braking);
     assert(harshCount <= brakingLimit, "Harsh braking exceeds policy limit");
+
+    assert(disclose(reading.gridX[0]) >= geofenceMinX && disclose(reading.gridX[0]) <= geofenceMaxX && disclose(reading.gridY[0]) >= geofenceMinY && disclose(reading.gridY[0]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[1]) >= geofenceMinX && disclose(reading.gridX[1]) <= geofenceMaxX && disclose(reading.gridY[1]) >= geofenceMinY && disclose(reading.gridY[1]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[2]) >= geofenceMinX && disclose(reading.gridX[2]) <= geofenceMaxX && disclose(reading.gridY[2]) >= geofenceMinY && disclose(reading.gridY[2]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[3]) >= geofenceMinX && disclose(reading.gridX[3]) <= geofenceMaxX && disclose(reading.gridY[3]) >= geofenceMinY && disclose(reading.gridY[3]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[4]) >= geofenceMinX && disclose(reading.gridX[4]) <= geofenceMaxX && disclose(reading.gridY[4]) >= geofenceMinY && disclose(reading.gridY[4]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[5]) >= geofenceMinX && disclose(reading.gridX[5]) <= geofenceMaxX && disclose(reading.gridY[5]) >= geofenceMinY && disclose(reading.gridY[5]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[6]) >= geofenceMinX && disclose(reading.gridX[6]) <= geofenceMaxX && disclose(reading.gridY[6]) >= geofenceMinY && disclose(reading.gridY[6]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[7]) >= geofenceMinX && disclose(reading.gridX[7]) <= geofenceMaxX && disclose(reading.gridY[7]) >= geofenceMinY && disclose(reading.gridY[7]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[8]) >= geofenceMinX && disclose(reading.gridX[8]) <= geofenceMaxX && disclose(reading.gridY[8]) >= geofenceMinY && disclose(reading.gridY[8]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[9]) >= geofenceMinX && disclose(reading.gridX[9]) <= geofenceMaxX && disclose(reading.gridY[9]) >= geofenceMinY && disclose(reading.gridY[9]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[10]) >= geofenceMinX && disclose(reading.gridX[10]) <= geofenceMaxX && disclose(reading.gridY[10]) >= geofenceMinY && disclose(reading.gridY[10]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[11]) >= geofenceMinX && disclose(reading.gridX[11]) <= geofenceMaxX && disclose(reading.gridY[11]) >= geofenceMinY && disclose(reading.gridY[11]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[12]) >= geofenceMinX && disclose(reading.gridX[12]) <= geofenceMaxX && disclose(reading.gridY[12]) >= geofenceMinY && disclose(reading.gridY[12]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[13]) >= geofenceMinX && disclose(reading.gridX[13]) <= geofenceMaxX && disclose(reading.gridY[13]) >= geofenceMinY && disclose(reading.gridY[13]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[14]) >= geofenceMinX && disclose(reading.gridX[14]) <= geofenceMaxX && disclose(reading.gridY[14]) >= geofenceMinY && disclose(reading.gridY[14]) <= geofenceMaxY, "Sample outside policy geofence");
+    assert(disclose(reading.gridX[15]) >= geofenceMinX && disclose(reading.gridX[15]) <= geofenceMaxX && disclose(reading.gridY[15]) >= geofenceMinY && disclose(reading.gridY[15]) <= geofenceMaxY, "Sample outside policy geofence");
 
     const nullifier = deriveNullifier(reading.attestationId);
     assert(!usedNullifiers.member(disclose(nullifier)), "Attestation already used");

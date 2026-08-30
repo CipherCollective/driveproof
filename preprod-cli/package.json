@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "preprod": "tsx src/index.ts",
-    "prepare-wallet": "tsx src/index.ts --prepare-wallet",
+    "preprod": "npm run build && node dist/index.js",
+    "prepare-wallet": "npm run build && node dist/index.js --prepare-wallet",
     "build": "tsc --project tsconfig.build.json",
     "typecheck": "tsc --project tsconfig.json --noEmit"
   },

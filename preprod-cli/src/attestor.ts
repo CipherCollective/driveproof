@@ -1,7 +1,7 @@
 import { computeDriverBinding, generateDriverSecret, toTelemetrySamples, maxSampleSpeed } from "driveproof-contract";
 import type { DriveProofPrivateState } from "driveproof-contract";
 
-export type AttestorTripId = "safe" | "unsafe";
+export type AttestorTripId = "safe" | "unsafe" | "out-of-geofence";
 
 type AttestationSample = {
   gridX: string;

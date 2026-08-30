@@ -100,6 +100,10 @@ export type Ledger = {
   };
   readonly speedLimit: bigint;
   readonly brakingLimit: bigint;
+  readonly geofenceMinX: bigint;
+  readonly geofenceMinY: bigint;
+  readonly geofenceMaxX: bigint;
+  readonly geofenceMaxY: bigint;
   readonly complianceCount: bigint;
   usedNullifiers: {
     isEmpty(): boolean;
@@ -122,6 +126,10 @@ export declare class Contract<PS = any, W extends Witnesses<PS> = Witnesses<PS>>
   initialState(context: __compactRuntime.ConstructorContext<PS>,
                limit_0: bigint,
                brakeLimit_0: bigint,
+               minX_0: bigint,
+               minY_0: bigint,
+               maxX_0: bigint,
+               maxY_0: bigint,
                attestorId_0: bigint,
                attestorPk_0: __compactRuntime.JubjubPoint): __compactRuntime.ConstructorResult<PS>;
 }
