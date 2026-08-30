@@ -11,6 +11,7 @@ import { createMidnightWalletProviders, type PreprodWallet } from "./wallet.js";
 
 export const PRIVATE_STATE_ID = "driveproofPrivateState" as const;
 export const SPEED_LIMIT = 80n;
+export const BRAKING_LIMIT = 2n;
 export const ATTESTOR_ID = 1n;
 export const ATTESTOR_PUBLIC_KEY = {
   x: 24963340820686704563874210959139693074205807300853579178326830224576306549782n,

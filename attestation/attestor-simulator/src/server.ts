@@ -1,13 +1,21 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { JubjubPoint } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import { signTripAttestation, generateAttestationId } from './signing.js';
-import { resolveDemoTripSpeed } from './trips.js';
+import { signTripSamples, generateAttestationId } from './signing.js';
+import { resolveDemoTripSamples } from './trips.js';
 
 export interface AttestationRequest {
   tripId: string;
   /** H("DRIVEPROOF_SUBJECT_V1", driverSecret) — driver sends binding, never the raw secret. */
   driverBinding: string;
 }
+
+export type AttestationSample = {
+  gridX: string;
+  gridY: string;
+  speed: string;
+  braking: string;
+  timeBucket: string;
+};
 
 export interface AttestationResponse {
   signature: {
@@ -16,9 +24,11 @@ export interface AttestationResponse {
   };
   message: {
     tripId: string;
-    speed: string;
     driverBinding: string;
     attestationId: string;
+    salt: string;
+    tripCommitment: string;
+    samples: AttestationSample[];
   };
 }
 
@@ -98,6 +108,16 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
+function serializeSamples(samples: ReturnType<typeof resolveDemoTripSamples>): AttestationSample[] {
+  return (samples ?? []).map((sample) => ({
+    gridX: sample.gridX.toString(),
+    gridY: sample.gridY.toString(),
+    speed: sample.speed.toString(),
+    braking: sample.braking.toString(),
+    timeBucket: sample.timeBucket.toString(),
+  }));
+}
+
 export function createServer(providerSk: bigint, providerId: number, providerPk: JubjubPoint) {
   const allowedOrigin = resolveAllowedOrigin();
 
@@ -149,15 +169,20 @@ export function createServer(providerSk: bigint, providerId: number, providerPk:
           return;
         }
 
-        const speed = resolveDemoTripSpeed(body.tripId);
-        if (speed === undefined) {
+        const samples = resolveDemoTripSamples(body.tripId);
+        if (samples === undefined) {
           sendJson(res, 400, { error: 'Unknown tripId — use "safe" or "unsafe"' }, requestOrigin, allowedOrigin);
           return;
         }
 
         const driverBinding = BigInt(body.driverBinding);
         const attestationId = generateAttestationId();
-        const signature = signTripAttestation(providerSk, speed, driverBinding, attestationId);
+        const { signature, salt, tripCommitment } = signTripSamples(
+          providerSk,
+          samples,
+          driverBinding,
+          attestationId,
+        );
         const response: AttestationResponse = {
           signature: {
             announcement: {
@@ -168,9 +193,11 @@ export function createServer(providerSk: bigint, providerId: number, providerPk:
           },
           message: {
             tripId: body.tripId,
-            speed: speed.toString(),
             driverBinding: driverBinding.toString(),
             attestationId: attestationId.toString(),
+            salt: salt.toString(),
+            tripCommitment: tripCommitment.toString(),
+            samples: serializeSamples(samples),
           },
         };
         sendJson(res, 200, response, requestOrigin, allowedOrigin);

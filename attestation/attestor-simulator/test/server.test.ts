@@ -70,7 +70,7 @@ describe('Attestor simulator server', () => {
     expect(res.headers.get('access-control-allow-origin')).toBeNull();
   });
 
-  it('POST /attest with tripId safe returns speed 67 attestation', async () => {
+  it('POST /attest with tripId safe returns 16-sample attestation', async () => {
     const res = await fetch(`${baseUrl}/attest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -81,12 +81,15 @@ describe('Attestor simulator server', () => {
     expect(body.signature).toBeDefined();
     expect(body.signature.announcement.x).toBeDefined();
     expect(body.message.tripId).toBe('safe');
-    expect(body.message.speed).toBe('67');
     expect(body.message.driverBinding).toBe(driverBinding.toString());
     expect(body.message.attestationId).toBeDefined();
+    expect(body.message.salt).toBeDefined();
+    expect(body.message.tripCommitment).toBeDefined();
+    expect(body.message.samples).toHaveLength(16);
+    expect(Math.max(...body.message.samples.map((sample: { speed: string }) => Number(sample.speed)))).toBe(67);
   });
 
-  it('POST /attest with tripId unsafe returns speed 112 attestation', async () => {
+  it('POST /attest with tripId unsafe returns max speed 112 attestation', async () => {
     const res = await fetch(`${baseUrl}/attest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -95,18 +98,21 @@ describe('Attestor simulator server', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.message.tripId).toBe('unsafe');
-    expect(body.message.speed).toBe('112');
+    expect(body.message.samples).toHaveLength(16);
+    expect(Math.max(...body.message.samples.map((sample: { speed: string }) => Number(sample.speed)))).toBe(112);
   });
 
-  it('POST /attest ignores client-supplied speed', async () => {
+  it('POST /attest ignores client-supplied samples', async () => {
     const res = await fetch(`${baseUrl}/attest`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: attestBody('safe', { speed: 999 }),
+      body: attestBody('safe', {
+        samples: [{ gridX: 0, gridY: 0, speed: 999, braking: 0, timeBucket: 1 }],
+      }),
     });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.message.speed).toBe('67');
+    expect(Math.max(...body.message.samples.map((sample: { speed: string }) => Number(sample.speed)))).toBe(67);
   });
 
   it('POST /attest returns 400 for missing tripId', async () => {

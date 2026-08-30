@@ -1,11 +1,15 @@
-import { computeDriverBinding, generateDriverSecret } from "driveproof-contract";
+import { computeDriverBinding, generateDriverSecret, toTelemetrySamples } from "driveproof-contract";
 import type { DriveProofPrivateState } from "driveproof-contract";
 
 export type AttestorTripId = "safe" | "unsafe";
 
-export type AttestorHealthStatus =
-  | { status: "ready"; url: string; providerId?: number }
-  | { status: "unavailable"; url: string; message: string };
+type AttestationSample = {
+  gridX: string;
+  gridY: string;
+  speed: string;
+  braking: string;
+  timeBucket: string;
+};
 
 type AttestorResponse = {
   signature: {
@@ -14,9 +18,11 @@ type AttestorResponse = {
   };
   message: {
     tripId: string;
-    speed: string;
     driverBinding: string;
     attestationId: string;
+    salt: string;
+    tripCommitment: string;
+    samples: AttestationSample[];
   };
 };
 
@@ -37,6 +43,10 @@ export class AttestorClientError extends Error {
   }
 }
 
+export type AttestorHealthStatus =
+  | { status: "ready"; url: string; providerId?: number }
+  | { status: "unavailable"; url: string; message: string };
+
 function asBigInt(value: unknown, label: string): bigint {
   if (typeof value !== "string" && typeof value !== "number") {
     throw new AttestorClientError(`Attestor returned an invalid ${label}.`);
@@ -47,6 +57,21 @@ function asBigInt(value: unknown, label: string): bigint {
   } catch {
     throw new AttestorClientError(`Attestor returned an invalid ${label}.`);
   }
+}
+
+function parseSamples(samples: AttestationSample[]) {
+  if (!Array.isArray(samples) || samples.length !== 16) {
+    throw new AttestorClientError("Attestor returned an invalid telemetry sample set.");
+  }
+  return toTelemetrySamples(
+    samples.map((sample) => ({
+      gridX: Number(sample.gridX),
+      gridY: Number(sample.gridY),
+      speed: Number(sample.speed),
+      braking: Number(sample.braking),
+      timeBucket: Number(sample.timeBucket)
+    }))
+  );
 }
 
 async function readJson<T>(response: Response, endpoint: string): Promise<T> {
@@ -150,8 +175,9 @@ export async function requestAttestorPrivateState(
   }
 
   return {
-    speed: asBigInt(attestation.message.speed, "speed"),
     attestationId: asBigInt(attestation.message.attestationId, "attestationId"),
+    salt: asBigInt(attestation.message.salt, "salt"),
+    samples: parseSamples(attestation.message.samples),
     attestationSignature: {
       announcement: {
         x: asBigInt(attestation.signature.announcement.x, "announcement x"),

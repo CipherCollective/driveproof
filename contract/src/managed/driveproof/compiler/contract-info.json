@@ -41,6 +41,180 @@
       }
     },
     {
+      "name": "foldTripSample",
+      "pure": true,
+      "proof": false,
+      "arguments": [
+        {
+          "name": "prev",
+          "type": {
+            "type-name": "Field"
+          }
+        },
+        {
+          "name": "gridX",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 65535
+          }
+        },
+        {
+          "name": "gridY",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 65535
+          }
+        },
+        {
+          "name": "speed",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 65535
+          }
+        },
+        {
+          "name": "braking",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 255
+          }
+        },
+        {
+          "name": "timeBucket",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 255
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Field"
+      }
+    },
+    {
+      "name": "deriveTripCommitment",
+      "pure": true,
+      "proof": false,
+      "arguments": [
+        {
+          "name": "attestationId",
+          "type": {
+            "type-name": "Field"
+          }
+        },
+        {
+          "name": "driverBinding",
+          "type": {
+            "type-name": "Field"
+          }
+        },
+        {
+          "name": "salt",
+          "type": {
+            "type-name": "Field"
+          }
+        },
+        {
+          "name": "gridX",
+          "type": {
+            "type-name": "Vector",
+            "length": 16,
+            "type": {
+              "type-name": "Uint",
+              "maxval": 65535
+            }
+          }
+        },
+        {
+          "name": "gridY",
+          "type": {
+            "type-name": "Vector",
+            "length": 16,
+            "type": {
+              "type-name": "Uint",
+              "maxval": 65535
+            }
+          }
+        },
+        {
+          "name": "speed",
+          "type": {
+            "type-name": "Vector",
+            "length": 16,
+            "type": {
+              "type-name": "Uint",
+              "maxval": 65535
+            }
+          }
+        },
+        {
+          "name": "braking",
+          "type": {
+            "type-name": "Vector",
+            "length": 16,
+            "type": {
+              "type-name": "Uint",
+              "maxval": 255
+            }
+          }
+        },
+        {
+          "name": "timeBucket",
+          "type": {
+            "type-name": "Vector",
+            "length": 16,
+            "type": {
+              "type-name": "Uint",
+              "maxval": 255
+            }
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Field"
+      }
+    },
+    {
+      "name": "harshBrakingFlag",
+      "pure": true,
+      "proof": false,
+      "arguments": [
+        {
+          "name": "braking",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 255
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Uint",
+        "maxval": 255
+      }
+    },
+    {
+      "name": "countHarshBraking",
+      "pure": true,
+      "proof": false,
+      "arguments": [
+        {
+          "name": "braking",
+          "type": {
+            "type-name": "Vector",
+            "length": 16,
+            "type": {
+              "type-name": "Uint",
+              "maxval": 255
+            }
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Uint",
+        "maxval": 255
+      }
+    },
+    {
       "name": "proveCompliance",
       "pure": false,
       "proof": true,
@@ -85,7 +259,7 @@
           "name": "msg",
           "type": {
             "type-name": "Vector",
-            "length": 3,
+            "length": 1,
             "type": {
               "type-name": "Field"
             }
@@ -123,7 +297,7 @@
       }
     },
     {
-      "name": "getAttestedSpeedWitness",
+      "name": "getAttestedTripWitness",
       "arguments": [
       ],
       "result type": {
@@ -131,19 +305,73 @@
         "types": [
           {
             "type-name": "Struct",
-            "name": "SpeedReading",
+            "name": "TripReading",
             "elements": [
-              {
-                "name": "speed",
-                "type": {
-                  "type-name": "Uint",
-                  "maxval": 65535
-                }
-              },
               {
                 "name": "attestationId",
                 "type": {
                   "type-name": "Field"
+                }
+              },
+              {
+                "name": "salt",
+                "type": {
+                  "type-name": "Field"
+                }
+              },
+              {
+                "name": "gridX",
+                "type": {
+                  "type-name": "Vector",
+                  "length": 16,
+                  "type": {
+                    "type-name": "Uint",
+                    "maxval": 65535
+                  }
+                }
+              },
+              {
+                "name": "gridY",
+                "type": {
+                  "type-name": "Vector",
+                  "length": 16,
+                  "type": {
+                    "type-name": "Uint",
+                    "maxval": 65535
+                  }
+                }
+              },
+              {
+                "name": "speed",
+                "type": {
+                  "type-name": "Vector",
+                  "length": 16,
+                  "type": {
+                    "type-name": "Uint",
+                    "maxval": 65535
+                  }
+                }
+              },
+              {
+                "name": "braking",
+                "type": {
+                  "type-name": "Vector",
+                  "length": 16,
+                  "type": {
+                    "type-name": "Uint",
+                    "maxval": 255
+                  }
+                }
+              },
+              {
+                "name": "timeBucket",
+                "type": {
+                  "type-name": "Vector",
+                  "length": 16,
+                  "type": {
+                    "type-name": "Uint",
+                    "maxval": 255
+                  }
                 }
               }
             ]
@@ -224,8 +452,18 @@
       }
     },
     {
-      "name": "complianceCount",
+      "name": "brakingLimit",
       "index": 2,
+      "exported": true,
+      "storage": "Cell",
+      "type": {
+        "type-name": "Uint",
+        "maxval": 255
+      }
+    },
+    {
+      "name": "complianceCount",
+      "index": 3,
       "exported": true,
       "storage": "Cell",
       "type": {
@@ -235,7 +473,7 @@
     },
     {
       "name": "usedNullifiers",
-      "index": 3,
+      "index": 4,
       "exported": true,
       "storage": "Set",
       "type": {
