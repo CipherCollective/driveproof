@@ -1,124 +1,152 @@
 # DriveProof Demo Runbook
 
-This is the shortest supported local path for the final demo. It uses the
-real DEV transaction harness for Preprod evidence and keeps the product pages
-honestly labeled as mock until `MidnightDriveProofClient` is supplied.
+This is the shortest reliable final-demo path. The hosted product is configured
+for the real Midnight Preprod client. The engineering evidence page remains
+available for transaction stages and expected rejection cases.
 
-## Start order
+## Primary hosted setup
 
-Use four PowerShell terminals from the repository root.
+Use these URLs:
 
-1. Start the existing attestor simulator. Its persistent, gitignored service
-   configuration must already be at `attestation/attestor-simulator/.env`.
-   Do not print, copy, replace, or commit that file.
+- Driver: https://driveproof-driver-atharv.vercel.app/driver
+- Insurer: https://driveproof-insurer-atharv.vercel.app
+- Attestor health: https://driveproof-attestor-atharv.vercel.app/health
 
-   ```powershell
-   Set-Location attestation/attestor-simulator
-   npm run dev
-   ```
+The custom aliases are optional. Prefer the Vercel URLs during recording because
+the custom Driver hostname has shown resolver-specific failures on some clients.
 
-   It should listen on `http://localhost:4000`. The service owns the safe/unsafe
-   speed selection; the browser sends only `tripId`.
+The hosted stack uses:
 
-2. Start the official local proof server:
+- Driver, Insurer, and Attestor on Vercel;
+- Midnight proof server 8.1.0 on Azure Container Apps;
+- Lace in desktop Chrome or Brave; and
+- Midnight Preprod.
 
-   ```powershell
-   docker run --rm -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v
-   ```
+No product page auto-connects Lace, auto-approves a wallet request, or silently
+falls back to mock mode.
 
-   In another terminal, confirm the expected version:
+## Hosted recording order
 
-   ```powershell
-   curl.exe http://localhost:6300/version
-   ```
+1. Open the Driver URL in a desktop browser and size the Driver viewport to a
+   phone-like frame for the product shots.
+2. Confirm the visible label is REAL · MIDNIGHT PREPROD.
+3. Connect Lace and authorize this Driver origin manually.
+4. Confirm the wallet is on Midnight Preprod.
+5. Prepare the signed 16-sample safe trip.
+6. Review the private policy: speed at most 80, harsh braking at most 2, and
+   every private sample inside the inclusive allowed operating area.
+7. Select Create Private Proof.
+8. Approve the real transaction in Lace.
+9. Wait for the actual verified receipt and capture its transaction/block/
+   contract metadata.
+10. Select View Insurer Receipt and show the public-only result.
+11. If recording rejection evidence, use the technical evidence page for unsafe
+    speed, telemetry tamper, geofence, and same-attestation replay.
 
-   The response must identify `8.1.0`. Stop it with `Ctrl+C`; `--rm` removes
-   the stopped container.
+The Vehicle Attestor Simulator is the prototype trust root. Do not describe it
+as physical vehicle telemetry.
 
-3. Start the Driver:
+## Engineering evidence page
 
-   ```powershell
-   npm run dev:driver
-   ```
+Open:
 
-4. Start the Insurer if its placeholder product shot is needed:
+    https://driveproof-driver-atharv.vercel.app/wallet-debug/transaction?recording=1
 
-   ```powershell
-   npm run dev:insurer
-   ```
+Use this page only for real readiness, provider stages, transaction evidence,
+and expected rejection boundaries. It is not a mock success surface.
 
-## Lace and readiness
+## Local fallback path
 
-In Lace, select Midnight **Preprod**, use the local proof-server setting
-`http://localhost:6300`, and unlock the wallet. Open:
+Use this when hosted wallet/prover conditions are not convenient. Start four
+terminals from the repository root.
 
-`http://localhost:5173/wallet-debug/transaction?recording=1`
+1. Start the attestor with its existing private, persistent configuration:
 
-The page runs real checks. Before the flow, expect:
+       Set-Location attestation/attestor-simulator
+       npm run dev
 
-- Lace extension: `DETECTED`
-- Wallet: `CONNECTED`
-- Network: `PREPROD`
-- Proof server: `LOCAL 8.1.0`
-- Attestor: `READY`
-- Contract: `NOT DEPLOYED` on a fresh tab
-- Safe attestation: `NOT LOADED` until requested
+   Its ignored file must be attestation/attestor-simulator/.env. Never print,
+   copy, rotate, or commit PROVIDER_SECRET_KEY.
 
-If a previous run deployed in this same tab, the harness can reuse that
-address for proving. Otherwise deploy once in this tab; it does not currently
-restore a deployed address after reload.
+2. Start the pinned local proof server:
 
-## Recording flow
+       docker run --rm -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v
 
-1. If needed, click `RESET UI ONLY` before starting. This clears only transient
-   Driver page state and does not reset Lace, wallet storage, the private-state
-   provider, a deployed contract, or chain state.
-2. Click `CONNECT LACE` and complete the origin authorization manually.
-3. Click `REQUEST SAFE · EXPECT 67`.
-4. Click `BUILD PROVIDERS` and wait for `PROVIDERS READY`.
-5. If the status says `NOT DEPLOYED`, click `DEPLOY TO PREPROD`. Review the
-   constructor shown on screen and approve only the intended Lace request.
-6. After `CONFIRMED ON PREPROD`, click `PROVE SAFE 67` and approve the proof
-   request manually if Lace asks.
-7. Capture the real `MIDNIGHT PREPROD` evidence and observed
-   `complianceCount = 1`.
-8. Without resetting or reloading the tab, click `TRY UNSAFE · 112`, then
-   `TRY TAMPER · 112 → 71`. Both are expected proof rejections and must not be
-   presented as successful transactions.
+   Check it:
 
-The page never auto-deploys, auto-approves, retries, or falls back to the
-product mock client.
+       curl.exe http://localhost:6300/version
 
-## Quick service checks
+   The response must report 8.1.0. Stop with Ctrl+C; --rm removes the stopped
+   container.
 
-```powershell
-curl.exe http://localhost:4000/health
-curl.exe http://localhost:6300/version
-```
+3. Start the Driver from the repository root:
 
-The harness itself also displays Attestor `/health` and proof-server `/version`
-results in its readiness summary. Use `READ WALLET DIAGNOSTICS` only when
-needed; it is read-only and does not build or submit a transaction.
+       npm run dev:driver
 
-## Known failures
+4. Start the Insurer:
 
-- **Lace disconnected:** unlock Lace, confirm it is on Midnight Preprod, then
-  click `CONNECT LACE` again. Do not reset the extension.
-- **Wrong network:** switch Lace to Preprod and reconnect. The harness will not
-  configure or use Preprod from a wrong-network session.
-- **Proof server unavailable:** restart the documented Docker command and
-  confirm `/version` reports `8.1.0`.
-- **Proof server wrong version:** stop the incompatible server and start the
-  exact `8.1.0` image; the harness fails closed on a mismatch.
-- **Attestor unavailable:** confirm the simulator terminal is running and
-  `curl.exe http://localhost:4000/health` returns its healthy response. The
-  provider secret remains only in the simulator's ignored `.env`.
-- **Lace wallet syncing:** wait for the sync state shown inside Lace. The
-  Connector API does not expose an authoritative sync percentage, and the
-  demo must not reset Lace or wallet storage.
-- **Expected policy/signature assertion:** `Speed exceeds policy limit` and
-  `Invalid attestation signature` are intentional negative cases. The harness
-  shows `REJECTED AS EXPECTED` and no successful transaction.
+       npm run dev:insurer
 
-Unknown errors remain visible as `ERROR` and should not be edited into a
-successful result.
+For the local real path, set the public app variables to midnight mode, Preprod,
+the local proof server, the local attestor URL, and the local Insurer origin.
+Use docs/DEPLOYMENT.md for the variable names. Do not place provider secrets,
+wallet seeds, mnemonics, or private witnesses in Vite variables.
+
+## Local readiness checklist
+
+On the real harness, expect:
+
+- Lace extension: DETECTED;
+- Wallet: CONNECTED;
+- Network: PREPROD;
+- Proof server: LOCAL 8.1.0;
+- Attestor: READY;
+- Contract: DEPLOYED only after a real deployment in the current page session;
+- Safe attestation: LOADED only after a real request.
+
+The readiness panel uses real checks. A failed check remains failed.
+
+## Safe flow
+
+1. Connect Lace and approve only the intended origin request.
+2. Request the safe attestation. The browser sends the trip ID and subject
+   binding; the attestor owns the fixture values.
+3. Build providers and confirm the real proof server version.
+4. Reuse a deployed contract in the same page session when available. If none
+   is loaded, deploy once and approve Lace manually.
+5. Generate the private proof and approve the proof transaction manually.
+6. Capture the verified Preprod result and observed complianceCount.
+7. Do not repeat a successful attestation except when intentionally recording
+   the replay rejection.
+
+## Expected rejection cases
+
+- Unsafe speed 112: Speed exceeds policy limit.
+- Three harsh-braking events: Harsh braking exceeds policy limit.
+- Out-of-area sample: Sample outside policy geofence.
+- Signed telemetry changed: Invalid attestation signature.
+- Same attestation submitted again: Attestation already used.
+
+All of these remain rejected states. They do not create a fabricated receipt.
+
+## Troubleshooting
+
+- Lace disconnected: unlock Lace, confirm Preprod, and reconnect. Do not reset
+  the extension.
+- Wrong network: switch Lace to Preprod and reconnect. The runtime fails closed.
+- Proof server unavailable or wrong version: restart the pinned server and
+  verify /version reports 8.1.0.
+- Attestor unavailable: check /health and the simulator terminal. Never expose
+  the provider secret.
+- Lace syncing: use the sync status shown by Lace. The Connector API does not
+  expose an authoritative sync percentage.
+- Expected assertion: keep the rejection visible as evidence. Unknown runtime
+  errors must remain errors.
+
+## Privacy language
+
+Use: Raw telemetry is not written to public ledger state and is not included in
+the Insurer receipt.
+
+Do not say telemetry never leaves the device, and do not claim physical GPS
+provenance.

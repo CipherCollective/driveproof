@@ -1,155 +1,150 @@
-# DriveProof Final Hosted Deployment
+# DriveProof Final Deployment
 
-This is the final Vercel deployment layout for the real Midnight Preprod product. The Driver and Insurer are static Vite applications. The Vehicle Attestor Simulator is a small Vercel Node function adapter around the existing simulator HTTP handler. No Midnight proof server is deployed by DriveProof; the Driver uses Midnight's hosted Preprod proof endpoint.
+DriveProof's final hosted layout runs the product surfaces on Vercel and the
+proof server on Azure Container Apps. The Compact contract and transaction
+semantics are unchanged between local and hosted deployment modes.
 
-## Production surfaces
+## Primary reliable public URLs
 
-| Surface | Vercel project | URL | Config |
-| --- | --- | --- | --- |
-| Driver | `driveproof-driver-atharv` | https://driveproof-driver-atharv.vercel.app | `vercel.driver.json` |
-| Insurer | `driveproof-insurer-atharv` | https://driveproof-insurer-atharv.vercel.app | `vercel.insurer.json` |
-| Vehicle Attestor Simulator | `driveproof-attestor-atharv` | https://driveproof-attestor-atharv.vercel.app | `vercel.attestor.json` |
+| Surface | URL |
+| --- | --- |
+| Driver | https://driveproof-driver-atharv.vercel.app/driver |
+| Insurer | https://driveproof-insurer-atharv.vercel.app |
+| Vehicle Attestor Simulator | https://driveproof-attestor-atharv.vercel.app |
 
-All three projects use the repository root so npm workspaces resolve consistently. The latest production deployments were created from the final UI-polish source and are `READY` in Vercel.
+Optional custom aliases are attached to the Vercel projects:
 
-## Public production configuration
+- https://driveproof.atharv.me
+- https://verify.driveproof.atharv.me
 
-Vite values are compiled into the browser bundle at build time. The production Driver is configured with:
+The *.vercel.app URLs are the primary judge URLs because the custom Driver
+hostname has shown resolver-specific failures on some clients. Do not remove
+the Vercel fallback domains.
 
-```text
-VITE_DRIVEPROOF_CLIENT_MODE=midnight
-VITE_INSURER_ORIGIN=https://driveproof-insurer-atharv.vercel.app
-VITE_MIDNIGHT_NETWORK=preprod
-VITE_MIDNIGHT_PROOF_SERVER=https://driveproof-proof-server.bluewater-aa5f9cb8.centralindia.azurecontainerapps.io
-VITE_MIDNIGHT_ATTESTOR_URL=https://driveproof-attestor-atharv.vercel.app
-VITE_ENABLE_WALLET_DEBUG=true
-```
+## Hosted architecture
 
-The production Insurer is configured with:
+    Driver PWA
+      -> Vercel
+      -> Vehicle Attestor Simulator (Vercel)
+      -> Proof Server 8.1.0 (Azure Container Apps)
+      -> Lace browser extension
+      -> Midnight Preprod
+      -> public compliance receipt
+      -> Insurer verifier (Vercel)
 
-```text
-VITE_DRIVEPROOF_CLIENT_MODE=midnight
-VITE_DRIVER_URL=https://driveproof-driver-atharv.vercel.app
-```
+The proof server is the pinned image:
 
-The attestor's non-secret production values are:
+    midnightntwrk/proof-server:8.1.0
 
-```text
-PROVIDER_ID=1
-NETWORK_ID=preprod
-ATTTESTOR_ALLOWED_ORIGIN=https://driveproof-driver-atharv.vercel.app
-```
+Current hosted endpoint:
 
-`ATTTESTOR_ALLOWED_ORIGIN` intentionally preserves the existing simulator environment-variable spelling. Its value is a single production Driver origin; wildcard CORS is not enabled.
+    https://driveproof-proof-server.bluewater-aa5f9cb8.centralindia.azurecontainerapps.io
 
-No wallet seed, mnemonic, private witness, signing key, or `PROVIDER_SECRET_KEY` is present in Vite variables or committed files.
+The hosted Driver uses this Azure endpoint rather than the public Midnight
+endpoint that previously returned 403 for proving requests. The Azure service
+reports version 8.1.0 and allows the production Driver origin for the actual
+proof-provider path.
 
-## Deploy commands
+## Vercel project configuration
 
-Run from the repository root with Vercel CLI authenticated to the `atharv-mantris-projects` team:
+The repository root is the build root for all projects.
 
-```powershell
-vercel deploy --scope atharv-mantris-projects --project driveproof-driver-atharv --local-config vercel.driver.json --prod --yes
+Driver:
 
-vercel deploy --scope atharv-mantris-projects --project driveproof-insurer-atharv --local-config vercel.insurer.json --prod --yes
+    Project: driveproof-driver-atharv
+    Config:  vercel.driver.json
+    Build:   npm run build --workspace @driveproof/driver
+    Output:  apps/driver/dist
 
-vercel deploy --scope atharv-mantris-projects --project driveproof-attestor-atharv --local-config vercel.attestor.json --prod --yes
-```
+Insurer:
 
-The Driver and Insurer commands use their Vercel Production variables. The attestor command uses its public values, but the production secret below must be present before its HTTP endpoints can start.
+    Project: driveproof-insurer-atharv
+    Config:  vercel.insurer.json
+    Build:   npm run build --workspace @driveproof/insurer
+    Output:  apps/insurer/dist
 
-The attestor build is:
+Attestor:
 
-```text
-npm run build --workspace driveproof-attestor-simulator
-```
+    Project: driveproof-attestor-atharv
+    Config:  vercel.attestor.json
+    Build:   npm run build --workspace driveproof-attestor-simulator
 
-`vercel.attestor.json` maps `/health`, `/provider-info`, and `/attest` to `api/attestor.ts`, which delegates to the existing request handler. `.vercelignore` excludes local `.env` files from all uploads.
+The attestor adapter exposes GET /health, GET /provider-info, and POST
+/attest while delegating to the existing simulator handler. It does not change
+signing, fixtures, commitment construction, or provider-key semantics.
 
-## Manual secret step required
+## Production configuration
 
-The hosted attestor is intentionally fail-closed until its existing persistent provider secret is added. In Vercel:
+Vite values are public build-time configuration. They contain no wallet or
+signing secrets.
 
-1. Open project `driveproof-attestor-atharv` → Settings → Environment Variables.
-2. Add `PROVIDER_SECRET_KEY` for **Production** as a sensitive/secret variable.
-3. Use the existing persistent attestor secret from the local gitignored attestor environment. Do not rotate it, commit it, log it, or paste it into chat.
-4. Redeploy the attestor production project.
+Driver production:
 
-Do not put this secret in a `VITE_` variable. The corresponding public key must remain the key already registered by the final Compact contract.
+    VITE_DRIVEPROOF_CLIENT_MODE=midnight
+    VITE_MIDNIGHT_NETWORK=preprod
+    VITE_MIDNIGHT_PROOF_SERVER=https://driveproof-proof-server.bluewater-aa5f9cb8.centralindia.azurecontainerapps.io
+    VITE_MIDNIGHT_ATTESTOR_URL=https://driveproof-attestor-atharv.vercel.app
+    VITE_INSURER_ORIGIN=https://verify.driveproof.atharv.me
+    VITE_ENABLE_WALLET_DEBUG=true
 
-Until this step is completed, the deployed function returns Vercel `FUNCTION_INVOCATION_FAILED` for `/health` and `/provider-info` because startup refuses to run without `PROVIDER_SECRET_KEY`. This is an expected safe failure, not a successful attestor deployment.
+Insurer production:
+
+    VITE_DRIVEPROOF_CLIENT_MODE=midnight
+    VITE_DRIVER_URL=https://driveproof.atharv.me
+
+Attestor non-secret configuration:
+
+    PROVIDER_ID=1
+    NETWORK_ID=preprod
+    ATTTESTOR_ALLOWED_ORIGIN=https://driveproof.atharv.me
+
+The spelling ATTTESTOR_ALLOWED_ORIGIN matches the current simulator contract.
+It must contain one exact Driver origin; wildcard CORS is not allowed. The
+existing persistent PROVIDER_SECRET_KEY is configured privately in Vercel and
+must never appear in source, Vite variables, logs, documentation, or commits.
+
+## Deployment commands
+
+From the repository root, with the Vercel CLI authenticated to the project
+team:
+
+    vercel deploy --scope atharv-mantris-projects --project driveproof-driver-atharv --local-config vercel.driver.json --prod --yes
+
+    vercel deploy --scope atharv-mantris-projects --project driveproof-insurer-atharv --local-config vercel.insurer.json --prod --yes
+
+    vercel deploy --scope atharv-mantris-projects --project driveproof-attestor-atharv --local-config vercel.attestor.json --prod --yes
+
+Set production environment variables in the Vercel project settings or through
+the Vercel CLI. Never put PROVIDER_SECRET_KEY, a wallet seed, mnemonic, private
+witness, or signing secret in a Vite variable.
 
 ## Verification checklist
 
-After the manual secret step and redeploy:
+    curl.exe https://driveproof-driver-atharv.vercel.app/driver
+    curl.exe https://driveproof-insurer-atharv.vercel.app/
+    curl.exe https://driveproof-attestor-atharv.vercel.app/health
+    curl.exe https://driveproof-proof-server.bluewater-aa5f9cb8.centralindia.azurecontainerapps.io/version
 
-```powershell
-Invoke-WebRequest https://driveproof-attestor-atharv.vercel.app/health
-Invoke-WebRequest https://driveproof-attestor-atharv.vercel.app/provider-info
-```
+Expected results:
 
-`/health` should return HTTP 200. `/provider-info` should report provider ID `1` and the same public key authorized by the final contract. Do not print or compare the private key.
+- Driver, Insurer, and Attestor return HTTP 200;
+- Attestor health is healthy and its provider info matches the constructor
+  registered public key;
+- Azure proof server version is 8.1.0;
+- production product surfaces display REAL · MIDNIGHT PREPROD;
+- Attestor CORS allows only the configured Driver origin; and
+- no production page falls back silently to mock mode.
 
-The Driver's production pages currently return HTTP 200:
+The real wallet path still requires a manual Lace approval. The hosted
+deployment does not auto-connect Lace, generate a proof, or submit a
+transaction.
 
-```text
-https://driveproof-driver-atharv.vercel.app/
-https://driveproof-driver-atharv.vercel.app/driver
-https://driveproof-driver-atharv.vercel.app/wallet-debug
-https://driveproof-driver-atharv.vercel.app/wallet-debug/transaction
-```
+## Local privacy-maximal mode
 
-The Insurer returns HTTP 200 at:
+For device-local proving, run the pinned local proof server:
 
-```text
-https://driveproof-insurer-atharv.vercel.app/
-```
+    docker run --rm -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v
 
-## Azure proof server
-
-The production Driver uses the dedicated Azure Container Apps proof server directly:
-
-```text
-https://driveproof-proof-server.bluewater-aa5f9cb8.centralindia.azurecontainerapps.io
-```
-
-It runs the pinned official image:
-
-```text
-midnightntwrk/proof-server:8.1.0
-```
-
-The endpoint exposes HTTPS on port 6300. Local development remains configured for `http://localhost:6300`.
-
-The hosted upstream responds:
-
-```text
-GET /version -> 200
-body -> 8.1.0
-```
-
-The Azure endpoint allows the exact production Driver origin for `POST /check` with the provider's binary content type. Safe invalid-payload checks return ordinary HTTP responses with CORS headers; this verifies reachability and version compatibility only and does not perform a proof or transaction.
-
-## Hosted Lace and real proof steps
-
-No wallet action or transaction was automated during deployment. After the attestor secret is installed:
-
-1. Open https://driveproof-driver-atharv.vercel.app in Chrome or Brave with Lace installed and unlocked.
-2. Connect Lace and authorize the exact HTTPS origin if prompted.
-3. Confirm the wallet is on Midnight Preprod.
-4. Open the Driver proof flow and prepare the attested trip.
-5. Create the private proof.
-6. Approve the real Midnight transaction in Lace.
-7. Confirm the Driver shows the real Preprod receipt.
-8. Open https://driveproof-insurer-atharv.vercel.app and load the receipt using the product's existing flow.
-
-The main product remains explicit about real versus mock mode. The deployed Driver is real mode (`REAL · MIDNIGHT PREPROD`); mock mode remains available only when selected through configuration. The attestor remains honestly described as a Vehicle Attestor Simulator.
-
-## Security notes
-
-- `PROVIDER_SECRET_KEY` belongs only to the attestor service and must persist across restarts.
-- Browser code receives only public attestor/deployment metadata and never receives the provider secret.
-- The hosted attestor allows only the configured Driver origin; it does not use `*`.
-- No custom public proxy is used for Midnight proving.
-- `http://localhost:6300` is not used in the final production Driver; viewers' localhost is their own machine.
-- Deployment does not deploy Compact, create a contract, or submit a transaction.
+Run the attestor with its private persistent .env, then start the Driver and
+Insurer with the local mode variables documented in docs/DEMO_RUNBOOK.md. This
+mode uses the same Compact contract and policy as the hosted deployment.

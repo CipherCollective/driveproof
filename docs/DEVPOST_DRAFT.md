@@ -1,84 +1,160 @@
-# DriveProof - Devpost Draft
+# DriveProof
 
-## Project title
+## Prove you drove safely without revealing where you drove.
 
-DriveProof
+Built for the Midnight Hackathon - August 2026
+Track: Mobile Track
 
-## One-line tagline
+## What we built
 
-Prove you drove safely without revealing where you drove.
+DriveProof is a mobile-first PWA for privacy-preserving driving compliance.
+A Vehicle Attestor Simulator signs a 16-sample trip commitment. The Driver
+privately proves that the signed samples satisfy an insurer's policy, and the
+Insurer receives a public compliance result rather than the route or telemetry.
 
-## Inspiration
+The final stack is real:
 
-Usage-based insurance can answer a simple question - was a trip safe? - by demanding an unnecessarily complete record of the driver's routes, locations, speeds, and braking behavior. We wanted to separate the compliance signal from the sensitive journey that produced it.
+    Driver PWA -> Lace -> Midnight Preprod -> public receipt -> Insurer
 
-## What it does
+The hosted demo runs the Driver, Insurer, and attestor on Vercel and the pinned
+8.1.0 proof server on Azure Container Apps.
 
-DriveProof lets a driver use a signed measurement from an authorized vehicle attestor as a private witness. A Midnight Compact circuit verifies the attestor signature and checks the Phase 1 speed policy without publishing the raw speed. A successful proof is submitted to Midnight Preprod, where the observed public application result is `complianceCount = 1`. The insurer can verify the compliance result without receiving the raw telemetry or route.
+## The problem
 
-The current product shell includes a mobile-first Driver PWA and a separate Insurer verifier experience. Both are clearly marked mock-mode product surfaces until the final product `MidnightDriveProofClient` is connected to the generated contract API. The real transaction evidence is available in the isolated Preprod harness.
+Usage-based insurance often asks drivers to surrender route and location
+history, speed history, braking history, and trip telemetry. That is far more
+information than an insurer needs to answer a narrow question:
 
-## How we built it
+    Did this signed trip satisfy the safety policy?
 
-- TypeScript, React, and Vite for separate Driver and Insurer web apps.
-- A shared `DriveProofClient` boundary keeps UI components independent from blockchain mechanics.
-- A Vehicle Attestor Simulator owns the safe `67` and unsafe `112` demo measurements and signs them with its service-side provider key.
-- A Phase 1 Compact contract verifies a constructor-registered attestor's Schnorr-on-Jubjub signature and checks `speed <= 80`.
-- The Midnight runtime harness combines Lace's ConnectedAPI, encrypted browser private state, generated Compact assets, the local proof server `8.1.0`, and Midnight Preprod providers.
-- The real acceptance path uses the Lace browser extension because current Lace Mobile does not support Midnight signing.
+Retaining the full journey creates privacy and data-retention risk.
 
-## Real Preprod accomplishment
+## The solution
 
-The confirmed Phase 1 run deployed the contract and produced a real safe proof on Midnight Preprod:
+1. An authorized Vehicle Attestor Simulator issues a signed 16-sample trip.
+2. The Driver keeps the telemetry and subject secret in the private proving
+   boundary.
+3. Compact checks the authorized signature, subject binding, trip commitment,
+   speed, braking, allowed operating area, and replay state.
+4. Lace authorizes the real Midnight Preprod transaction.
+5. The Insurer sees only the public compliance receipt and safe transaction
+   metadata.
 
-- Contract: `5f9f3d256d9beccbff093793e5cd5d886397a51ed41e6b52d7912cc619276d2e`
-- Deployment transaction: `0089fdc7d64e4ec8005118825b86000f57b021f68600072b3c0dadadfcd0b9f089`, block `2318666`, status `SucceedEntirely`
-- Safe proof transaction: `003174c12ab58e357107aa49aeb16f615d7c98ff37ebfbb4fc580a58acdf980119`, block `2318673`, status `SucceedEntirely`
-- Signed speed: `67`; policy limit: `80`; observed `complianceCount`: `0 -> 1`
+## Core thesis
 
-The same real proof path rejects an attestor-signed `112` with `Speed exceeds policy limit`, and rejects a signed `112` whose private witness is changed to `71` with `Invalid attestation signature`.
+> Zero knowledge protects privacy.
+> Attestation protects integrity.
 
-## Challenges
+Zero knowledge proves predicates over private witness data without publishing the
+witness. The attestor signature prevents a user from changing a committed value
+and still presenting it as the authorized measurement.
 
-The hardest part was keeping a compelling mobile product experience separate from the engineering evidence needed to prove a real wallet path. Lace authorization, Midnight network configuration, browser compatibility shims, private-state setup, proof-server versioning, and manual wallet approval all have distinct failure boundaries. We kept those boundaries visible instead of hiding them behind a simulated success.
+## Final policy
 
-The hosted app can connect to a browser wallet, but a local proof server is per-machine and HTTPS-to-localhost browser security can block it. The documented demo path therefore keeps the real proof server local and uses a dedicated engineering harness.
+- 16 private telemetry samples.
+- Maximum speed: 80 km/h for every sample.
+- Harsh braking: at most 2 events, where braking greater than zero counts as
+  one event.
+- Allowed operating area: every sample inside the inclusive private grid
+  rectangle X 0..350 and Y 50..100.
+- Authorized attestor: Provider 1.
+- Subject binding: derived from a private client-side driver secret.
+- Replay protection: contract-local attestation nullifier.
 
-## Accomplishments
+This is an allowed operating area policy, not a prohibited-zone avoidance claim.
 
-- Delivered a restrained, mobile-first Driver experience for the Mobile track.
-- Made the private/public boundary legible in under two minutes.
-- Preserved real Lace authorization and Midnight Preprod execution.
-- Recorded a genuine contract deployment and safe proof transaction.
-- Demonstrated policy rejection and signature-integrity rejection without fabricating chain results.
-- Kept the Vehicle Attestor Simulator honest as a prototype trust root.
+## Why Midnight
 
-## What we learned
+A hash can commit to data, but it cannot make an insurer verify a policy
+predicate over hidden values without revealing the preimage or moving the raw
+data to a trusted backend. Hashing also does not by itself prove that an
+authorized issuer signed the committed measurement or enforce a contract-local
+replay rule.
 
-Zero knowledge and attestation solve different problems. The proof can hide a measurement and still show that it satisfies a predicate; the attestation ties that measurement to an authorized issuer. Neither mechanism, by itself, proves that a simulated measurement came from a physical vehicle. That trust boundary needs an OEM, secure vehicle computer, trusted OBD device, or other hardware-backed provider.
+Midnight combines private witnesses, zero-knowledge policy predicates,
+registered-attestor verification, minimal disclosure, and contract state for
+replay protection.
 
-## What's next
+## Trust boundary
 
-- Wire the product `MidnightDriveProofClient` to the generated contract API.
-- Connect the Insurer view to the exact public fields returned by the completed contract.
-- Add the next cryptographic phases for subject binding and deterministic nullifiers/replay protection.
-- Expand the witness only when the contract handoff defines the final telemetry, braking, and geofence semantics.
-- Replace the simulator with a production hardware-backed telemetry issuer.
+The hackathon prototype simulates the authorized vehicle telemetry issuer.
+DriveProof proves integrity and policy compliance after that trust boundary; it
+does not independently prove physical sensor provenance.
 
-## Built with
+Production replacements could include an OEM telematics control unit, a secure
+vehicle computer, trusted OBD hardware, or a hardware-backed telemetry provider.
 
-Midnight Compact, Midnight.js, Midnight Preprod, Lace browser extension, local Midnight proof server `8.1.0`, React, Vite, TypeScript, Vitest, and a Vehicle Attestor Simulator.
+## Privacy model
 
-## Privacy and security
+Private witness data includes:
 
-The intended private data includes telemetry measurements, route/grid locations, speed and braking history, attestation material, and any subject secret required by the final contract. Raw driving telemetry is not revealed to the insurer or public ledger. Public chain data includes the contract state and transaction metadata; the Phase 1 proof call's observed application result is `complianceCount = 1`.
+- 16 samples;
+- private grid positions;
+- speed, braking, and time buckets;
+- salt and signature witness; and
+- the client-side driver secret.
 
-The attestor service owns its persistent provider secret. It never belongs in browser code, Vite environment variables, logs, or committed files. Lace owns wallet signing. No seed, mnemonic, private witness, or signing secret is part of this submission.
+The public receipt contains the compliance result and protocol-approved
+metadata such as policy, attestor, transaction, block, contract, and network
+where available. It does not contain route, coordinates, speed history,
+braking history, raw telemetry, salt, subject secrets, or signature material.
 
-## Prototype trust-boundary disclosure
+The hosted demo uses a remotely hosted proof server for accessibility. The
+privacy-maximal configuration uses a local 8.1.0 proof server. We therefore do
+not claim that private witness bytes literally never leave a hosted browser.
+The precise claim is that raw telemetry is not written to public ledger state
+and is not included in the Insurer receipt.
 
-The hackathon prototype simulates the authorized vehicle telemetry issuer. DriveProof proves integrity and policy compliance after that trust boundary; it does not independently prove physical sensor provenance, and it does not claim that the simulator itself cannot lie.
+## Real evidence
 
-## Mobile-track note
+The final stack has been accepted with:
 
-The Driver is a responsive, mobile-first PWA designed for a phone-sized viewport. The final hackathon signing step is performed through the Lace desktop/browser extension because Lace Mobile currently does not support Midnight. The product remains mobile-first even though the wallet approval surface is desktop-based.
+- real constructor-bound Preprod deployment;
+- real safe 16-sample proof;
+- real Lace approval and Preprod submission;
+- replay rejection: Attestation already used;
+- unsafe speed rejection: Speed exceeds policy limit;
+- geofence rejection: Sample outside policy geofence;
+- telemetry tamper rejection: Invalid attestation signature; and
+- contract acceptance for excessive braking, coordinate tampering, and failed
+  attempts not consuming the replay nullifier.
+
+Exact transaction identifiers already recorded in the repository are preserved
+in docs/PREPROD_EVIDENCE.md. No new transaction IDs are fabricated here.
+
+## Mobile Track relevance
+
+The Driver is a mobile-first PWA designed for phone-sized screens. The
+experience makes the private/public boundary understandable on mobile, while
+the current Preprod wallet authorization uses the Lace desktop/browser
+extension because Lace Mobile does not currently support Midnight signing.
+Local proof-server configuration provides the strongest device-local proving
+path.
+
+## Hosted architecture
+
+    Driver PWA - Vercel
+      -> Vehicle Attestor Simulator - Vercel
+      -> Proof Server 8.1.0 - Azure Container Apps
+      -> Lace browser extension
+      -> Midnight Preprod
+      -> public receipt
+      -> Insurer - Vercel
+
+## Product value
+
+DriveProof could support usage-based auto insurance, fleet compliance,
+safe-driver discounts, commercial-driver certification, and
+privacy-preserving telematics programs. The opportunity is to verify risk
+predicates without retaining complete route and behavior histories. This
+prototype does not claim production hardware provenance, regulatory readiness,
+or commercial pricing.
+
+## Links
+
+- Driver: https://driveproof-driver-atharv.vercel.app/driver
+- Insurer: https://driveproof-insurer-atharv.vercel.app
+- Evidence: docs/PREPROD_EVIDENCE.md
+- Deployment: docs/DEPLOYMENT.md
+- Judge quickstart: docs/JUDGE_QUICKSTART.md
+- Demo script: docs/DEMO_SCRIPT.md

@@ -1,76 +1,76 @@
 # Real Midnight Preprod Evidence
 
-This is the recorded Phase 1 end-to-end checkpoint for DriveProof. Values below are copied from the confirmed run at commit [`ea14c9f`](https://github.com/CipherCollective/driveproof/commit/ea14c9f), tagged `preprod-e2e-success`.
+This document separates the final-stack acceptance record from the exact transaction
+identifiers preserved from an earlier confirmed Preprod checkpoint. No transaction
+identifier is inferred or invented.
 
-## Environment
+## Final-stack acceptance
 
-| Item | Confirmed value |
+The final 16-sample stack has been accepted against real Midnight Preprod:
+
+- constructor-bound DriveProof deployment succeeded;
+- a safe 16-sample proof succeeded through Lace and Midnight Preprod;
+- the resulting public compliance result was observed;
+- the same attestation was rejected on replay with the assertion
+  "Attestation already used";
+- a signed unsafe trip containing speed 112 was rejected with
+  "Speed exceeds policy limit";
+- an out-of-geofence trip was rejected with
+  "Sample outside policy geofence";
+- a telemetry value changed after signing was rejected with
+  "Invalid attestation signature"; and
+- the contract acceptance suite covers excessive harsh braking, coordinate
+  tampering, and the fact that failed policy/integrity attempts do not consume
+  the replay nullifier.
+
+Raw samples, route/grid positions, speed history, braking history, time buckets,
+salt, signatures, and subject secrets are not part of the public receipt.
+
+## Exact recorded transaction evidence
+
+The following values are the exact real Preprod values already recorded in this
+repository at the earlier preprod-e2e-success checkpoint. They remain useful
+evidence of the real Lace/runtime path, but they are not relabeled as final
+16-sample transaction identifiers.
+
+| Field | Recorded value |
 | --- | --- |
 | Network | Midnight Preprod |
 | Wallet | Lace browser extension |
-| Proof server | Local Midnight proof server `8.1.0` at `http://localhost:6300` |
-| Attestor | Vehicle Attestor Simulator at `http://localhost:4000` |
-| Phase 1 policy | Speed limit `80 km/h` |
-| Constructor attestor ID | `1` |
+| Contract address | 5f9f3d256d9beccbff093793e5cd5d886397a51ed41e6b52d7912cc619276d2e |
+| Deployment transaction | 0089fdc7d64e4ec8005118825b86000f57b021f68600072b3c0dadadfcd0b9f089 |
+| Deployment status | SucceedEntirely |
+| Deployment block | 2318666 |
+| Safe signed speed | 67 km/h |
+| Policy speed limit | 80 km/h |
+| Safe proof transaction | 003174c12ab58e357107aa49aeb16f615d7c98ff37ebfbb4fc580a58acdf980119 |
+| Safe proof status | SucceedEntirely |
+| Safe proof block | 2318673 |
+| Observed complianceCount | 0 -> 1 |
 
-No wallet seed, mnemonic, provider secret, or private witness is included in this document.
+These values were recorded from the confirmed run at commit ea14c9f,
+tagged preprod-e2e-success. The final stack acceptance above is the current
+cryptographic state; use a newly captured final-stack transaction record when
+quoting final 16-sample transaction IDs.
 
-## Contract deployment
+## What the evidence demonstrates
 
-| Field | Result |
-| --- | --- |
-| Network | Midnight Preprod |
-| Contract address | `5f9f3d256d9beccbff093793e5cd5d886397a51ed41e6b52d7912cc619276d2e` |
-| Deployment transaction | `0089fdc7d64e4ec8005118825b86000f57b021f68600072b3c0dadadfcd0b9f089` |
-| Status | `SucceedEntirely` |
-| Block | `2318666` |
+DriveProof's real path combines:
 
-The deployed constructor bound the Phase 1 speed limit `80` and trusted attestor ID `1`. The attestor public key is the registered handoff key used by the harness; its private provider key is never part of the browser or repository.
+1. an authorized Vehicle Attestor Simulator issuing the private signed input;
+2. client-side subject binding;
+3. private 16-sample witness handling;
+4. Compact signature, commitment, policy, geofence, and replay checks;
+5. Lace authorization;
+6. Midnight Preprod submission; and
+7. a public compliance result that can be rendered by the Insurer surface.
 
-## Safe proof
+The Vehicle Attestor Simulator is the prototype trust root. This evidence does
+not independently prove physical vehicle, GPS, or sensor provenance.
 
-1. The Driver requested `POST /attest` with `{ "tripId": "safe" }`.
-2. The Vehicle Attestor Simulator returned an issuer-signed speed of `67`.
-3. The private state held the speed, Schnorr signature, and attestor ID.
-4. The generated `proveCompliance()` circuit evaluated `67 <= 80`.
-5. Lace authorized the real transaction.
-6. Midnight Preprod returned the following confirmed result:
+## Evidence boundaries
 
-| Field | Result |
-| --- | --- |
-| Signed attestor value | `67 km/h` |
-| Policy limit | `80 km/h` |
-| Proof transaction | `003174c12ab58e357107aa49aeb16f615d7c98ff37ebfbb4fc580a58acdf980119` |
-| Status | `SucceedEntirely` |
-| Block | `2318673` |
-| Observed `complianceCount` | `0 -> 1` |
-
-The public result observed for this Phase 1 proof was `complianceCount = 1`. The raw speed and signature were used as private proving inputs and were not published as raw telemetry.
-
-## Negative acceptance
-
-### Unsafe signed measurement
-
-The attestor-issued unsafe fixture returned `112 km/h`. The Compact proof was rejected with:
-
-```text
-Speed exceeds policy limit
-```
-
-No successful compliance transaction is claimed for this attempt.
-
-### Tampered private witness
-
-An attestor-signed `112 km/h` witness was locally changed to `71 km/h` while retaining the original signature. The Compact proof was rejected with:
-
-```text
-Invalid attestation signature
-```
-
-No successful compliance transaction is claimed for this attempt. The negative cases intentionally do not fabricate transaction IDs, block heights, or ledger success.
-
-## What this proves
-
-This checkpoint demonstrates the real Phase 1 path: an authorized simulator-issued signed measurement, private witness handling, generated Compact proof execution, Lace authorization, Midnight Preprod submission, and an indexed public compliance result.
-
-It does not prove physical vehicle sensor provenance. The simulator remains the prototype trust root. Subject binding, deterministic nullifiers/replay protection, and expanded telemetry are not included in this Phase 1 evidence.
+The public ledger and Insurer receipt expose only the protocol's public result
+and safe transaction metadata. Exact final public fields remain governed by the
+generated contract and receipt mapping; this document does not add fields that
+were not observed.

@@ -137,7 +137,10 @@ The generated contract integration remains blocked on these exact inputs:
 - confirmation whether the final generated stack uses the local HTTP proof provider or Lace's `getProvingProvider(keyMaterialProvider)` path;
 - final compatible package/version matrix and proof-server version.
 
-This provider-only handoff did not record contract values. The confirmed Phase 1 contract address, transaction IDs, and ledger result are maintained in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md); final product-client fields remain pending.
+This provider-only handoff did not record contract values at the time. Current
+contract evidence and public product fields are maintained in
+[`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md) and the final integration
+boundary; this historical handoff intentionally does not duplicate them.
 
 ## Security boundary
 

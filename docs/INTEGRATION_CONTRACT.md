@@ -1,130 +1,155 @@
-# DriveProof · Cryptographic integration contract
+# DriveProof Integration Contract
 
-Status: the Phase 1 Compact artifacts and real Preprod checkpoint are complete. This remains the frontend handoff boundary for the product `MidnightDriveProofClient`, the final public-field mapping, and the next cryptographic phases.
+Status: final 16-sample product integration is present on this branch. This
+document records the stable boundary between the product and the generated
+Midnight contract; it does not replace the Compact source or generated artifacts.
 
-## Non-negotiable trust and secret boundary
+## Trust and secret boundary
 
-- The attestor service owns `PROVIDER_SECRET_KEY`.
-- `PROVIDER_SECRET_KEY` must persist across attestor service restarts so the registered public key remains stable.
-- The corresponding public key is what gets registered on Midnight.
-- The frontend/integration layer receives only `attestorId`, the attestor public key, and deployment metadata as needed.
-- Never expose `PROVIDER_SECRET_KEY` to browser code, Vite env vars, logs, README files, or committed files.
-- The root `.gitignore` preserves the repository’s existing safe rules and covers `.env`, `.env.*`, and `!.env.example`.
+- The Vehicle Attestor Simulator is the prototype trust root.
+- The attestor service owns PROVIDER_SECRET_KEY.
+- PROVIDER_SECRET_KEY persists across restarts so its registered public key
+  remains stable.
+- The corresponding public key is constructor-registered on Midnight.
+- The frontend receives only the attestor identifier, public key metadata where
+  needed, and deployment metadata.
+- PROVIDER_SECRET_KEY must never appear in browser code, Vite variables, logs,
+  README files, or committed files.
+- The driver secret and private witness remain client-side/private and never
+  enter the public receipt.
 
-## Intended frontend path
+## Product boundary
 
-```text
-Driver PWA
-    ↓
-DriveProofClient
-    ↓
-Midnight generated contract client
-    ↓
-Midnight Preprod
-    ↓
-Lace browser extension / desktop browser signing
-```
+The product-facing interface is defined in shared/types:
 
-The Driver remains a mobile-first PWA. Lace Mobile on Android is not assumed to sign Midnight transactions. The first genuine wallet-connected path is Preprod plus the Lace desktop/browser extension. Local UI development continues to use `MockDriveProofClient`.
+    interface DriveProofClient {
+      readonly mode: "mock" | "midnight";
+      readonly displayName: string;
+      issueDemoTrip(fixture: DemoFixture): Promise<TripAttestation>;
+      proveCompliance(attestation: TripAttestation, policyId: string): Promise<ProofResult>;
+      getProofStatus?(transactionId: string): Promise<ProofResult>;
+      getConnectionState?(): DriveProofConnectionState;
+      connect?(): Promise<DriveProofConnectionState>;
+      detect?(): Promise<boolean>;
+      getLatestReceipt?(): PublicProofReceipt | undefined;
+    }
 
-## Confirmed Phase 1 checkpoint
+policyId remains product metadata at this boundary. The current Midnight
+circuit call is proveCompliance() without a caller-controlled policy namespace;
+replay is contract-local and derived from the attestation identity.
 
-The local `driveproof-contract` workspace contains the generated Phase 1 contract artifacts used by the real harness. The confirmed Midnight Preprod deployment and safe proof are recorded in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md):
+MidnightDriveProofClient owns all generated-contract mapping, provider
+construction, private-state handling, attestor calls, and public receipt
+normalization. React components do not import Lace, ConnectedAPI, witnesses,
+compiled contracts, ZK providers, or transaction primitives.
 
-- contract address: `5f9f3d256d9beccbff093793e5cd5d886397a51ed41e6b52d7912cc619276d2e`;
-- constructor speed limit: `80`;
-- constructor attestor ID: `1`;
-- safe signed speed: `67`;
-- observed `complianceCount`: `0 -> 1`.
+## Current contract behavior
 
-The product adapter is still intentionally pending. The Phase 1 private state is a single speed, attestation signature, and attestor ID. Subject binding, deterministic nullifiers/replay protection, expanded telemetry, and the final connected Insurer data path are not claimed here.
+The current constructor binds:
 
-## Current frontend boundary
+- speed limit 80;
+- harsh-braking limit 2;
+- inclusive geofence X 0..350 and Y 50..100;
+- authorized attestor ID 1; and
+- the registered attestor public key.
 
-The product currently exposes these TypeScript shapes in `shared/types`:
+The private trip contains 16 ordered samples. Each sample binds gridX, gridY,
+speed, braking, and timeBucket. The signed commitment also binds the attestation
+ID, driver binding, and salt.
 
-```ts
-type DemoFixture = "safe" | "unsafe" | "tampered";
+The current proof checks:
 
-type TelemetrySample = {
-  gridX: number;
-  gridY: number;
-  speed: number;
-  braking: number;
-  timeBucket: number;
-};
+1. authorized attestor;
+2. signature and trip-commitment integrity;
+3. subject binding;
+4. every speed against the limit;
+5. total braking events where braking is greater than zero;
+6. every sample inside the inclusive allowed operating area;
+7. unused attestation nullifier; then
+8. nullifier consumption and complianceCount increment.
 
-type TripAttestation = {
-  attestorId: string;
-  attestationId: string;
-  samples: TelemetrySample[];
-  signature: string;
-  fixture: DemoFixture;
-};
+Failed integrity or policy checks do not consume the nullifier.
 
-type ProofResult =
-  | { status: "verified"; transactionId: string; nullifier?: string }
-  | { status: "rejected"; reason?: "policy" | "integrity" | "replay" | "unknown" };
-```
+## Attestor boundary
 
-These are not cryptographic truth. They are a replaceable product boundary and may be adapted once the generated API is known. The real serialization, witness shape, signature encoding, nullifier, transaction structure, and result mapping must be implemented behind `DriveProofClient`.
+The browser requests the simulator with the minimum product input:
 
-## Required capabilities from Ashiha’s workstream
+    POST /attest
+    { "tripId": "<fixture>", "driverBinding": "<client-derived binding>" }
 
-Please confirm the generated contract/client supports or exposes an equivalent for:
+The browser does not choose speed, braking, coordinates, time buckets, salt,
+attestation ID, or signature. The simulator owns those values and returns the
+signed private trip payload required by the generated client.
 
-1. a registered trusted attestor;
-2. a private signed speed/telemetry witness;
-3. policy evaluation;
-4. subject binding;
-5. a deterministic replay nullifier;
-6. a genuine rejected result for policy failure, invalid witness/signature, and replay where the contract can distinguish them.
+The final response contains the private witness material needed for proving:
+ordered samples, salt, attestation ID, trip commitment, signature, and the
+attestor identifier. It is never sent to the Insurer as a receipt.
 
-The frontend should not infer a specific rejection diagnosis. If the real result does not distinguish integrity from a generic prover rejection, the Insurer UI will remain generic.
+## Public receipt boundary
 
-## Required acceptance cases
+A successful product result maps to PublicProofReceipt:
 
-These should be demonstrated by contract/client tests and then exposed to the frontend integration adapter:
+    type PublicProofReceipt = {
+      status: "verified";
+      network?: string;
+      transactionId: string;
+      blockHeight?: number;
+      contractAddress?: string;
+      complianceStatus?: "satisfied";
+      policyId?: string;
+      attestorId?: string;
+      nullifier?: string;
+    };
 
-| Scenario | Expected contract outcome |
+Only values actually supplied by the real public result are included. The
+receipt never includes samples, route, coordinates, speed, braking, time
+buckets, salt, signature, driver binding, driver secret, or private state.
+
+The Insurer consumes only ProofResult/PublicProofReceipt. It does not receive a
+TripAttestation and does not independently re-prove the witness unless a future
+product change explicitly adds that capability.
+
+## Expected result mapping
+
+The current real client classifies only these known assertions:
+
+- Speed exceeds policy limit -> rejected, reason policy.
+- Harsh braking exceeds policy limit -> rejected, reason policy.
+- Sample outside policy geofence -> rejected, reason policy.
+- Invalid attestation signature -> rejected, reason integrity.
+- Attestation already used -> rejected, reason replay.
+
+Unknown runtime/prover/wallet failures remain genuine errors. The product never
+turns an unknown failure into a verified result or silently falls back to the
+mock client.
+
+## Deployment boundary
+
+Hosted production:
+
+    Driver PWA -> Vercel
+      -> Vehicle Attestor Simulator -> Vercel
+      -> Midnight proof server 8.1.0 -> Azure Container Apps
+      -> Lace browser extension
+      -> Midnight Preprod
+      -> public receipt -> Insurer Vercel app
+
+Privacy-maximal local proving uses the same contract and policy with the local
+8.1.0 proof server. Current Preprod wallet authorization uses Lace in a desktop
+browser; Lace Mobile is not assumed to sign Midnight transactions.
+
+## Acceptance matrix
+
+| Scenario | Expected result |
 | --- | --- |
-| Registered attestor signs a safe trip with max speed 67 | Valid compliance proof for `AUTO-SAFE-01` |
-| Registered attestor signs a trip containing 112 km/h | Cannot produce a valid compliance proof for `AUTO-SAFE-01` |
-| Attestor signs 112; user substitutes 71 but retains original attestation/signature | Cannot produce a valid proof |
-| Same valid attestation + same policy submitted twice | First succeeds; second is rejected by deterministic replay protection |
+| Fresh safe 16-sample trip | Proof succeeds; complianceCount increments |
+| Same attestation again | Replay rejection: Attestation already used |
+| Unsafe speed 112 | Policy rejection: Speed exceeds policy limit |
+| Three braking events | Policy rejection: Harsh braking exceeds policy limit |
+| Sample outside allowed rectangle | Policy rejection: Sample outside policy geofence |
+| Speed or coordinate changed after signing | Integrity rejection: Invalid attestation signature |
+| Failed policy/integrity attempts | Nullifier remains unused |
+| New valid attestation after failures | Proof can succeed |
 
-The verifier must not receive raw route, origin, destination, GPS history, or exact speed history in any of these flows.
-
-## Artifact handoff checklist
-
-Please provide the following exact information. Do not fill these with guesses in the frontend:
-
-- [ ] Generated Midnight contract API/client package and version/commit.
-- [ ] Deployed Midnight Preprod contract address, network identifier, or equivalent deployment metadata.
-- [ ] Exact policy ID representation for `AUTO-SAFE-01` (string, enum, field encoding, or generated type).
-- [ ] Exact attestor ID representation.
-- [ ] Registered attestor public key representation and serialization.
-- [ ] Attestation serialization and signature encoding.
-- [ ] Subject-binding input and the frontend-visible subject identifier requirements.
-- [ ] Witness/private input shape required by the generated client.
-- [ ] Wallet/client functions required to connect Lace and sign on Preprod.
-- [ ] Exact invocation needed to prove and submit compliance.
-- [ ] Returned transaction/result structure, including how transaction ID, nullifier, and rejection are represented.
-- [ ] Contract/client test command and expected output for the four acceptance cases above.
-
-## Integration adapter TODOs
-
-The following must remain TODO until the handoff is complete:
-
-```ts
-// TODO(ashiha): import the generated Midnight contract/client package.
-// TODO(ashiha): replace TripAttestation serialization with the generated type.
-// TODO(ashiha): map AUTO-SAFE-01 to the exact generated policy representation.
-// TODO(ashiha): pass the registered attestor ID/public key in the exact required form.
-// TODO(ashiha): bind the proof to the exact subject identifier required by contract.
-// TODO(ashiha): invoke the genuine private witness/proof submission flow.
-// TODO(ashiha): map the real transaction/result structure to ProofResult.
-// TODO(ashiha): use the contract’s nullifier/replay result as the source of truth.
-```
-
-No substitute cryptography belongs in the product app. `MockDriveProofClient` is permitted only for local UX development and is labeled throughout the Driver and Insurer surfaces as mock-only.
+Exact Preprod transaction identifiers are maintained in docs/PREPROD_EVIDENCE.md
+only when they have been recorded from a confirmed run.

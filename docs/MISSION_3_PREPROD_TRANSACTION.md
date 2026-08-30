@@ -1,6 +1,13 @@
 # Mission 3 · Real Preprod transaction harness
 
-Status: the Phase 1 path was confirmed against Midnight Preprod at the `preprod-e2e-success` checkpoint documented in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md). This page remains an isolated DEV-only engineering surface. The normal Driver flow still uses its explicit mock client, and no `MidnightDriveProofClient` or fake transaction path has been added.
+> Historical implementation record. This document describes the earlier
+> single-speed harness and is superseded by the final-stack evidence,
+> deployment, and judge documents. It is retained for engineering history.
+
+Status at the time: the earlier path was confirmed against Midnight Preprod at
+the `preprod-e2e-success` checkpoint. The current product and final-stack
+status are documented in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md) and
+[`DEPLOYMENT.md`](DEPLOYMENT.md).
 
 ## What is wired
 

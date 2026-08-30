@@ -80,7 +80,7 @@ idle -> preparing -> proving -> submitting -> verified
                                       \-> error
 ```
 
-Expected policy, integrity, replay, and unknown prover rejections are returned as `ProofResult` with `status: "rejected"`. Unexpected client/runtime failures are thrown and rendered as an error state. The mock-only stage delay is never applied to a future `mode: "midnight"` client.
+Expected policy, integrity, replay, and unknown prover rejections are returned as `ProofResult` with `status: "rejected"`. Unexpected client/runtime failures are thrown and rendered as an error state. The mock-specific stage delay is never applied to a `mode: "midnight"` client.
 
 The polished Driver uses the optional connection hooks when `mode` is `"midnight"`: connect first, request an attested trip, then prove. The debug transaction harness remains a separate real evidence surface.
 
@@ -132,4 +132,4 @@ This handoff does not define contract addresses, policy serialization, attestor 
 
 `shared/driveproof-client/src/midnight.ts` is the current v2 adapter. It owns the Lace session, browser-generated session subject, attestor request, generated contract compilation, runtime/provider construction, deploy-on-first-proof, contract join, and public receipt mapping. Its circuit call is `proveCompliance()` with no caller-supplied policy namespace; `policyId` is retained only as product metadata.
 
-Enable the real product flow explicitly with `VITE_DRIVEPROOF_CLIENT_MODE=midnight`. It requires Lace on Midnight Preprod, the local proof server at `http://localhost:6300`, the local attestor at `http://localhost:4000`, and the generated assets served at `/contract/compiled/driveproof`. The app does not fall back to mock mode when any prerequisite fails.
+Enable the real product flow explicitly with `VITE_DRIVEPROOF_CLIENT_MODE=midnight`. It requires Lace on Midnight Preprod, the configured 8.1.0 proof server (Azure in hosted production or `http://localhost:6300` locally), the configured attestor, and generated assets served at `/contract/compiled/driveproof`. The app does not fall back to mock mode when any prerequisite fails.

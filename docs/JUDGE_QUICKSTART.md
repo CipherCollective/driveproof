@@ -1,98 +1,82 @@
-# Judge Quickstart
+# DriveProof Judge Quickstart
 
-DriveProof has two deliberately separate surfaces:
+DriveProof has a real hosted Preprod product path and an isolated engineering
+harness. The reliable public URLs are:
 
-1. the polished Driver/Insurer product shell, which is mock-mode and labeled;
-2. the real Phase 1 Midnight Preprod harness, which requires local services and manual Lace approval.
+- Driver: https://driveproof-driver-atharv.vercel.app/driver
+- Insurer: https://driveproof-insurer-atharv.vercel.app
+- Attestor health: https://driveproof-attestor-atharv.vercel.app/health
 
-The recorded real results are in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md). A judge does not need to reproduce a transaction to inspect that evidence.
+Optional custom aliases are documented in README.md, but the *.vercel.app URLs
+are the recommended judge entry points.
 
-## A. Hosted product surfaces
+## Fastest product walkthrough
 
-- Landing / Driver: <https://driveproof-driver-atharv.vercel.app/> / <https://driveproof-driver-atharv.vercel.app/driver>
-- Insurer: <https://driveproof-insurer-atharv.vercel.app>
+1. Open the Driver URL.
+2. Confirm the page shows REAL · MIDNIGHT PREPROD.
+3. Connect Lace in a desktop Chrome or Brave browser and authorize the Driver
+   origin when Lace prompts.
+4. Confirm Lace is on Midnight Preprod.
+5. Prepare the signed 16-sample trip.
+6. Review the private policy summary:
+   - maximum speed 80 km/h;
+   - at most 2 harsh braking events; and
+   - every private sample inside the inclusive allowed grid rectangle.
+7. Select Create Private Proof.
+8. Approve the real Midnight Preprod request in Lace.
+9. Confirm the real receipt: compliance result, transaction, block, contract, and
+   network.
+10. Open the Insurer link and observe that it receives the public receipt
+    fields only.
 
-The Driver demo controls switch between `safe`, `unsafe`, and `tampered`. The Insurer can also be opened directly with `?fixture=unsafe` or `?fixture=tampered`.
+The proof server is hosted at the Azure endpoint documented in
+docs/DEPLOYMENT.md and reports version 8.1.0. The hosted Driver does not claim
+that private witness bytes never leave the browser; the safe claim is that raw
+telemetry is not written to public ledger state and is not included in the
+Insurer receipt.
 
-These hosted product surfaces use `MockDriveProofClient` and visibly disclose that mode. They do not claim to submit a DriveProof contract transaction.
+## What the judge should notice
 
-The hosted engineering wallet page, if enabled for the deployment, is:
+- The Driver is designed mobile-first even though final Lace authorization uses
+  the desktop/browser extension.
+- The Vehicle Attestor Simulator is the prototype trust root.
+- The authorized issuer signs a committed trip; the browser cannot replace its
+  speed, coordinates, braking flags, salt, or attestation ID.
+- Compact checks the private witness against the signed commitment and policy.
+- A repeated attestation is rejected by the contract-local replay check.
+- The Insurer sees a compliance result and safe public metadata, not route,
+  location, speed history, braking history, or raw telemetry.
 
-<https://driveproof-driver-atharv.vercel.app/wallet-debug>
+## Expected negative cases
 
-It can test browser-origin Lace diagnostics, but the local proof server is not a hosted service. HTTPS-to-`http://localhost:6300` access is blocked by browser security in the recorded hosted test. See [`DEPLOYMENT.md`](DEPLOYMENT.md).
+The engineering harness can show the real boundaries:
 
-## B. Real local Preprod harness
+- unsafe speed 112 -> Speed exceeds policy limit;
+- out-of-geofence sample -> Sample outside policy geofence;
+- telemetry changed after signing -> Invalid attestation signature;
+- same attestation submitted again -> Attestation already used.
 
-### Requirements
+These are expected proof rejections, not successful transactions.
 
-- Chrome or Brave with the Lace browser extension installed and unlocked.
-- Lace configured for Midnight **Preprod** and funded for the intended manual transaction.
-- Docker Desktop.
-- Node.js 22+ and npm.
-- The existing attestor service `.env` at `attestation/attestor-simulator/.env`, containing its persistent service configuration. Do not print, copy, commit, or replace its provider secret.
-
-### Start services
-
-From the repository root:
-
-```powershell
-docker run --rm -p 6300:6300 midnightntwrk/proof-server:8.1.0 midnight-proof-server -v
-```
-
-Check the proof server in another terminal:
-
-```powershell
-curl.exe http://localhost:6300/version
-```
-
-It should report version `8.1.0`.
-
-Start the attestor in a second terminal:
-
-```powershell
-Set-Location attestation/attestor-simulator
-npm run dev
-```
-
-The service should listen on `http://localhost:4000`. Its `/attest` endpoint owns the safe/unsafe speed selection; the browser supplies only the trip ID.
-
-Start the Driver in a third terminal from the repository root:
-
-```powershell
-npm run dev:driver
-```
-
-### Run the real harness
+## Engineering evidence page
 
 Open:
 
-<http://localhost:5173/wallet-debug/transaction>
+    https://driveproof-driver-atharv.vercel.app/wallet-debug/transaction?recording=1
 
-Use this order:
+This page is DEV-only instrumentation. It exposes readiness, real provider
+stages, transaction metadata, and exact expected assertions without replacing
+the product flow or adding mock success.
 
-1. `CONNECT LACE` and authorize the exact localhost origin.
-2. `REQUEST SAFE · EXPECT 67`.
-3. `BUILD PROVIDERS` and confirm the Preprod/proof-server gates.
-4. `DEPLOY TO PREPROD`, then review and manually approve the Lace transaction. The page displays the expected constructor values: speed limit `80`, attestor ID `1`, and the registered handoff public key.
-5. After deployment confirmation, select `PROVE SAFE 67` and manually approve the proof transaction if Lace asks.
-6. Confirm the returned transaction status and indexed `complianceCount = 1`.
-7. Only after safe success, run the unsafe and tamper failure boundaries.
+## Local reproduction
 
-The page never falls back to the product mock client, never auto-submits, and never displays private signatures, seeds, mnemonics, or provider secrets. Lace approval is always a human action.
+For a local run, use Node.js 22+, the pinned proof server 8.1.0, the attestor
+simulator with its existing persistent private provider secret, Driver/Insurer
+dev servers, and Lace on Preprod. Follow docs/DEMO_RUNBOOK.md. Do not copy
+or disclose the attestor secret, wallet seed, mnemonic, or private witness.
 
-## What to expect
+## Technical context
 
-- Safe: signed speed `67` under the `80 km/h` limit; real Preprod success.
-- Unsafe: signed speed `112`; proof rejects with `Speed exceeds policy limit`.
-- Tamper: signed `112` changed privately to `71`; proof rejects with `Invalid attestation signature`.
-- Rejected attempts do not become fabricated successful transactions.
-
-## Reproduction versus evidence
-
-The known-good deployment and safe proof are already recorded with their exact contract address, transaction IDs, statuses, blocks, and observed ledger result in [`PREPROD_EVIDENCE.md`](PREPROD_EVIDENCE.md). Reproducing the flow locally creates a new real transaction and requires Lace approval, wallet funds, a running proof server, and the persistent local attestor. Do not treat a screenshot of the mock product shell as proof of a chain transaction.
-
-## Stop services
-
-- Proof server: press `Ctrl+C` in its terminal; `--rm` removes the stopped container.
-- Attestor and Driver: press `Ctrl+C` in their terminals.
+DriveProof does not claim physical sensor provenance. Production could replace
+the simulator with an OEM telematics control unit, secure vehicle computer,
+trusted OBD device, or hardware-backed telemetry issuer.
