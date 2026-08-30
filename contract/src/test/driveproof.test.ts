@@ -167,6 +167,38 @@ describe('DriveProof acceptance — 16-sample trip commitment', () => {
     expect(simulator.nullifierUsed(attestationId)).toBe(false);
   });
 
+  it('rejects coordinate tampering after signing as an integrity failure', () => {
+    const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT, DEFAULT_BRAKING_LIMIT);
+    const attestationId = 88888889n;
+    const signedSafe = createSignedTripState(
+      getFixtureSamples('safe'),
+      simulator.attestorSk,
+      simulator.driverSecretKey,
+      simulator.attestorId,
+      attestationId,
+    );
+    const tamperedSamples = signedSafe.samples.map((sample, index) =>
+      index === 6 ? { ...sample, gridX: sample.gridX + 1n } : sample,
+    );
+    simulator.setPrivateState({
+      ...signedSafe,
+      samples: tamperedSamples,
+    });
+
+    let thrown: Error | undefined;
+    try {
+      simulator.proveCompliance();
+    } catch (err) {
+      thrown = err as Error;
+    }
+
+    expect(thrown).toBeDefined();
+    expect(thrown!.message).toContain('Invalid attestation signature');
+    expect(thrown!.message).not.toContain('Sample outside policy geofence');
+    expect(simulator.getLedger().complianceCount).toEqual(0n);
+    expect(simulator.nullifierUsed(attestationId)).toBe(false);
+  });
+
   it('allows a fresh safe proof after failed unsafe and tampered attempts', () => {
     const simulator = new DriveProofSimulator(DEFAULT_SPEED_LIMIT, DEFAULT_BRAKING_LIMIT);
     const attestationId = 99999999n;
