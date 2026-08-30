@@ -10,6 +10,7 @@
 import 'dotenv/config';
 import { createAttestorRuntimeFromEnv } from './runtime.js';
 import { createServer } from './server.js';
+import { resolveDemoTripSamples } from './trips.js';
 
 const PORT = parseInt(process.env.PORT || '4000', 10);
 let runtime;
@@ -27,7 +28,7 @@ console.log(`  x: ${runtime.providerPk.x}`);
 console.log(`  y: ${runtime.providerPk.y}`);
 console.log(`Register this attestor on-chain with: registerAttestor(${runtime.providerId}, {x: ${runtime.providerPk.x}n, y: ${runtime.providerPk.y}n})`);
 
-const server = createServer(runtime.providerSk, runtime.providerId, runtime.providerPk);
+const server = createServer(runtime.providerSk, runtime.providerId, runtime.providerPk, resolveDemoTripSamples);
 server.listen(PORT, () => {
   console.log(`Attestor simulator listening on port ${PORT}`);
 });

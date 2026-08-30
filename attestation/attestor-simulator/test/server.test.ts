@@ -4,6 +4,7 @@ import { computeDriverBinding, generateDriverSecret } from 'driveproof-contract'
 import type { Server } from 'node:http';
 import { createServer } from '../src/server.js';
 import { generateKeyPair } from '../src/signing.js';
+import { resolveDemoTripSamples } from '../src/trips.js';
 
 setNetworkId('undeployed');
 
@@ -20,7 +21,7 @@ describe('Attestor simulator server', () => {
   }
 
   beforeAll(async () => {
-    server = createServer(sk, providerId, pk);
+    server = createServer(sk, providerId, pk, resolveDemoTripSamples);
     await new Promise<void>((resolve) => {
       server.listen(0, () => {
         const addr = server.address();

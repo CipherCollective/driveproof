@@ -1,7 +1,6 @@
 import { createServer as createHttpServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { JubjubPoint } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
 import { signTripSamples, generateAttestationId } from './signing.js';
-import { resolveDemoTripSamples } from './trips.js';
 
 export interface AttestationRequest {
   tripId: string;
@@ -108,7 +107,9 @@ async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   return JSON.parse(Buffer.concat(chunks).toString('utf8'));
 }
 
-function serializeSamples(samples: ReturnType<typeof resolveDemoTripSamples>): AttestationSample[] {
+export type DemoTripResolver = (tripId: string) => Parameters<typeof signTripSamples>[1] | undefined;
+
+function serializeSamples(samples: ReturnType<DemoTripResolver>): AttestationSample[] {
   return (samples ?? []).map((sample) => ({
     gridX: sample.gridX.toString(),
     gridY: sample.gridY.toString(),
@@ -118,7 +119,12 @@ function serializeSamples(samples: ReturnType<typeof resolveDemoTripSamples>): A
   }));
 }
 
-export function createRequestHandler(providerSk: bigint, providerId: number, providerPk: JubjubPoint) {
+export function createRequestHandler(
+  providerSk: bigint,
+  providerId: number,
+  providerPk: JubjubPoint,
+  resolveDemoTripSamples: DemoTripResolver,
+) {
   const allowedOrigin = resolveAllowedOrigin();
 
   return async (req: IncomingMessage, res: ServerResponse) => {
@@ -212,8 +218,13 @@ export function createRequestHandler(providerSk: bigint, providerId: number, pro
   };
 }
 
-export function createServer(providerSk: bigint, providerId: number, providerPk: JubjubPoint) {
-  return createHttpServer(createRequestHandler(providerSk, providerId, providerPk));
+export function createServer(
+  providerSk: bigint,
+  providerId: number,
+  providerPk: JubjubPoint,
+  resolveDemoTripSamples: DemoTripResolver,
+) {
+  return createHttpServer(createRequestHandler(providerSk, providerId, providerPk, resolveDemoTripSamples));
 }
 
 export { readJsonBody, sendJson };
