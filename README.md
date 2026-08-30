@@ -22,10 +22,10 @@ Attestation protects integrity.
 3. The Driver holds the measurement and signature in private state.
 4. The Compact contract verifies the configured attestor's Schnorr-on-Jubjub signature.
 5. Compact privately checks the Phase 1 policy predicate: signed speed is at or below the public limit.
-6. A successful proof increments the public compliance result on Midnight Preprod.
+6. A successful proof increments the public compliance result on Midnight Preprod and consumes the contract-local attestation nullifier.
 7. An insurer can verify the result without receiving the raw measurement or route.
 
-The current Phase 1 contract proves one signed speed value. Subject binding, deterministic nullifiers, replay protection in contract state, and expanded telemetry are separate pending work.
+The current v2 contract proves one signed speed value bound to a browser-session subject and derives a contract-local replay nullifier from the attestation ID. Expanded telemetry remains separate pending work.
 
 ### Trust root
 
@@ -39,11 +39,11 @@ The simulator is an explicit trust boundary. DriveProof does not claim that it i
 
 An ordinary hash can commit to a route or telemetry file, but it cannot let an insurer verify a policy predicate over hidden values. The driver would still need to reveal the preimage, or a traditional backend would need to receive and retain the raw telemetry. Hashing also does not, by itself, prove that an authorized issuer signed the measurement or prevent reuse.
 
-Midnight supplies the intended combination of private witnesses, zero-knowledge policy predicates, registered-attestor verification, and minimal public disclosure. Deterministic nullifier/replay protection is pending the next contract phase and is not claimed as part of the Phase 1 evidence.
+Midnight supplies the intended combination of private witnesses, zero-knowledge policy predicates, registered-attestor verification, minimal public disclosure, and contract-local replay protection. The current v2 evidence covers the subject-bound single-speed path; expanded telemetry remains pending.
 
 ## Privacy boundary
 
-Raw driving telemetry is not revealed to the insurer or public ledger. The real Phase 1 proof uses a private speed/signature witness; the polished Driver UI also contains a deterministic 16-sample product fixture for visual demonstration, which is not the Phase 1 contract input.
+Raw driving telemetry is not revealed to the insurer or public ledger. The real v2 proof uses a private speed/signature/subject witness; the polished Driver UI's deterministic 16-sample fixture remains a mock-only visual surface and is not the v2 contract input.
 
 For the verified Preprod proof call, the observed public application result was `complianceCount = 1`. Transaction metadata and deployed contract state are public chain data. The insurer-facing product surface is still an explicitly labeled mock verifier until the product `MidnightDriveProofClient` is wired to the generated contract API.
 
@@ -51,8 +51,9 @@ For the verified Preprod proof call, the observed public application result was 
 
 ### What DriveProof proves
 
-- The private Phase 1 measurement was signed by the configured attestor.
+- The private v2 measurement was signed by the configured attestor and bound to the driver's private session subject.
 - The signed measurement satisfies the Compact policy predicate.
+- A contract-local attestation nullifier prevents the same attestation from being accepted again.
 - The private measurement itself is not published on-chain.
 
 ### What DriveProof does not prove in the prototype
@@ -68,10 +69,10 @@ The attestor is therefore an explicit trust assumption, not a claim of independe
 | Data | Driver | Attestor | Insurer | Public ledger |
 | --- | --- | --- | --- | --- |
 | Raw telemetry / speed | Private witness; Phase 1 uses one speed value. The 16-sample view is a product fixture only. | Simulator owns the demo measurement and signs it. | Not received by the current verifier surface. | Raw value is not published. |
-| Driver binding / subject secret | Not implemented in Phase 1. | Not used in Phase 1. | Not received. | Not stored by Phase 1. |
+| Driver binding / subject secret | Secret stays client-side; a derived binding is sent for issuer signing. | Signs the binding into the attestation; never receives the secret. | Not received. | The secret is not stored; the contract derives its replay nullifier from the attestation ID. |
 | Attestation signature | Held in private state for proving. | Created by the simulator service; its secret stays service-side. | Not exposed. | Not published as raw signature material. |
 | Policy | Sees the product policy label and Phase 1 limit `80`. | No policy input is required to issue the fixture. | Product displays `AUTO-SAFE-01`; real public-state wiring is pending. | Phase 1 `speedLimit = 80` is public contract state. |
-| Compliance result | Real harness observes the indexed result; product result remains mock. | Not received. | Real connected verifier is pending; current surface is mock. | `complianceCount` was observed moving from `0` to `1`. |
+| Compliance result | Real harness and opt-in real product client observe the indexed result; default product mode remains mock. | Not received. | Receives only the public receipt/result when the Driver shares it. | `complianceCount` was observed moving from `0` to `1`. |
 | Transaction metadata | Real harness displays the returned address, transaction, status, and block. | Not received. | Not wired to the real result yet. | Address, transaction metadata, status, and block are public. |
 
 ## Architecture
@@ -93,7 +94,7 @@ flowchart LR
     class P,I public;
 ```
 
-The browser wallet and local proof server are real infrastructure in the confirmed harness. The primary Driver/Insurer product surfaces remain mock-mode because the final `MidnightDriveProofClient` facade is not yet present.
+The browser wallet, local proof server, attestor, and generated contract path are real infrastructure in the confirmed harness. The polished Driver can opt into the real `MidnightDriveProofClient`; the default remains the explicitly labeled `MockDriveProofClient` for safe local UI development.
 
 ## Real Preprod checkpoint
 
@@ -113,8 +114,7 @@ The confirmed Phase 1 evidence is recorded in [`docs/PREPROD_EVIDENCE.md`](docs/
 
 ### Pending
 
-- Product-facing `MidnightDriveProofClient` integration and connected Insurer public-state flow.
-- Subject binding and deterministic contract nullifiers/replay protection.
+- Further contract phases beyond the current v2 client adapter.
 - Expanded 16-sample/braking/geofence contract witness, if accepted in the next crypto phase.
 - Production physical telemetry trust root.
 
@@ -130,6 +130,8 @@ npm run dev:insurer
 ```
 
 Open `http://localhost:5173/` for the product landing page, `http://localhost:5173/driver` for the Driver, and `http://localhost:5174/` for the Insurer. The product surfaces use `MockDriveProofClient` by default and label that mode clearly; mock transaction IDs are not blockchain transactions.
+
+To manually exercise the real product adapter, set `VITE_DRIVEPROOF_CLIENT_MODE=midnight` in the Driver and Insurer app environments. It requires the same human-approved Lace/Preprod, local proof-server, attestor, and generated-asset prerequisites documented in [`docs/CLIENT_INTEGRATION_HANDOFF.md`](docs/CLIENT_INTEGRATION_HANDOFF.md); it never silently falls back to mock mode.
 
 For the real harness, use [`docs/JUDGE_QUICKSTART.md`](docs/JUDGE_QUICKSTART.md). It requires Lace on Preprod, the local proof server on port `6300`, and the attestor simulator on port `4000`. Lace approval is always manual.
 

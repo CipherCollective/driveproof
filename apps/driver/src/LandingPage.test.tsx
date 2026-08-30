@@ -23,4 +23,11 @@ describe("LandingPage", () => {
     expect(screen.getByText(/Physical sensor provenance is outside the current claim/i)).toBeInTheDocument();
     expect(screen.getByText("MIDNIGHT · PREPROD TARGET")).toBeInTheDocument();
   });
+
+  it("labels the landing surface honestly when the real client is selected", () => {
+    render(<LandingPage mode="midnight" />);
+
+    expect(screen.getAllByText("REAL · MIDNIGHT PREPROD")).toHaveLength(2);
+    expect(screen.queryByText("PRODUCT PREVIEW · MOCK MODE")).not.toBeInTheDocument();
+  });
 });

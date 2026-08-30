@@ -6,6 +6,10 @@ import type {
   ProofResult,
   TripAttestation
 } from "@driveproof/types";
+import { MidnightDriveProofClient } from "./midnight";
+
+export { MidnightDriveProofClient, classifyMidnightProofRejection } from "./midnight";
+export type { MidnightDriveProofClientAdapters, MidnightDriveProofClientOptions } from "./midnight";
 
 /**
  * Product-development adapter. This intentionally performs no cryptography,
@@ -63,16 +67,9 @@ export class MockDriveProofClient implements DriveProofClient {
   }
 }
 
-/**
- * Stable provider boundary for the eventual generated Midnight client.
- * `midnight` is intentionally unavailable until the teammate supplies the
- * generated API and Preprod deployment metadata.
- */
 export function createDriveProofClient(mode: DriveProofClientMode = "mock"): DriveProofClient {
   if (mode === "midnight") {
-    throw new Error(
-      "MidnightDriveProofClient is not wired yet. Add the generated contract client and Preprod metadata first."
-    );
+    return new MidnightDriveProofClient();
   }
   return new MockDriveProofClient();
 }

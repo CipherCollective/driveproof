@@ -12,12 +12,15 @@
     "@driveproof/driveproof-client": "1.0.0",
     "@driveproof/fixtures": "1.0.0",
     "@driveproof/types": "1.0.0",
+    "buffer": "^6.0.3",
+    "events": "^3.3.0",
     "lucide-react": "^0.468.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vite-plugin-wasm": "^3.4.1"
   }
 }

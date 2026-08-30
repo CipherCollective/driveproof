@@ -223,15 +223,30 @@ export function InsurerExperience({
       setIsLoading(false);
       return () => { cancelled = true; };
     }
+    if (client.mode === "midnight") {
+      // The insurer is a public receipt surface. It must never initiate a
+      // private attestation or proof operation; the Driver hands it a receipt.
+      setAttestation(undefined);
+      setResult(undefined);
+      setIsLoading(false);
+      return () => { cancelled = true; };
+    }
     setResult(undefined);
-    void client.issueDemoTrip(fixture).then(async (nextAttestation) => {
-      const nextResult = await client.proveCompliance(nextAttestation, POLICY_ID);
-      if (!cancelled) {
-        setAttestation(nextAttestation);
-        setResult(nextResult);
-        setIsLoading(false);
-      }
-    });
+    void client.issueDemoTrip(fixture)
+      .then((nextAttestation) => client.proveCompliance(nextAttestation, POLICY_ID).then((nextResult) => {
+        if (!cancelled) {
+          setAttestation(nextAttestation);
+          setResult(nextResult);
+          setIsLoading(false);
+        }
+      }))
+      .catch(() => {
+        if (!cancelled) {
+          setAttestation(undefined);
+          setResult(undefined);
+          setIsLoading(false);
+        }
+      });
     return () => { cancelled = true; };
   }, [client, fixture, publicResult]);
 
@@ -253,8 +268,12 @@ export function InsurerExperience({
   const verified = result?.status === "verified";
   const replay = result?.status === "rejected" && result.reason === "replay";
 
-  if (isLoading || !result) {
+  if (isLoading) {
     return <div className="app-shell"><a className="skip-link" href="#main-content">Skip to main content</a><main className="shell-content" id="main-content"><div className="empty-state"><div><div className="eyebrow">DRIVEPROOF · INSURER</div><h1>Waiting for proof</h1><p>Loading the verifier boundary.</p></div></div></main></div>;
+  }
+
+  if (!result) {
+    return <div className="app-shell"><a className="skip-link" href="#main-content">Skip to main content</a><main className="shell-content" id="main-content"><div className="empty-state"><div><div className="eyebrow">DRIVEPROOF · INSURER</div><h1>NO PROOF LOADED</h1><p>Open a public receipt from the Driver or load one through the configured verifier integration.</p></div></div></main></div>;
   }
 
   return (

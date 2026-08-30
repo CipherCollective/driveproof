@@ -95,13 +95,15 @@ describe("DriverExperience", () => {
     expect(await screen.findByText("INJECTED TEST CLIENT")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "CREATE PRIVATE PROOF" }));
     expect(await screen.findByText("DRIVEPROOF VERIFIED IN MOCK MODE")).toBeInTheDocument();
-    expect(screen.getByText("injected_tx_001")).toBeInTheDocument();
+    expect(screen.getAllByText("injected_tx_001")).toHaveLength(2);
   });
 
   it("maps an unexpected client failure to an error state", async () => {
     const failingClient: DriveProofClient = {
       mode: "midnight",
       displayName: "TEST FAILURE CLIENT",
+      getConnectionState: () => ({ status: "disconnected" }),
+      connect: async () => ({ status: "connected", network: "preprod" }),
       issueDemoTrip: async () => createDemoAttestation("safe"),
       proveCompliance: async () => { throw new Error("proof runtime unavailable"); }
     };
@@ -109,10 +111,48 @@ describe("DriverExperience", () => {
     render(<DriverExperience client={failingClient} stageDelayMs={0} />);
 
     await screen.findByText("Private Trip");
+    fireEvent.click(screen.getByRole("button", { name: "CONNECT LACE" }));
+    fireEvent.click((await screen.findAllByRole("button", { name: "PREPARE ATTESTED DRIVE" }))[1]);
+    fireEvent.click(await screen.findByRole("button", { name: "CREATE PRIVATE PROOF" }));
     expect(screen.getByText("REAL CLIENT · PRODUCT SURFACE")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "CREATE PRIVATE PROOF" }));
     expect(await screen.findByText("DRIVEPROOF CLIENT ERROR")).toBeInTheDocument();
     expect(screen.getByText("proof runtime unavailable")).toBeInTheDocument();
     expect(screen.queryByText("Verification confirmed")).not.toBeInTheDocument();
+  });
+
+  it("runs the real product flow through an injected client without UI-specific Midnight code", async () => {
+    const connect = vi.fn(async () => ({ status: "connected" as const, network: "preprod" }));
+    const issueDemoTrip = vi.fn(async () => createDemoAttestation("safe"));
+    const proveCompliance = vi.fn(async () => ({
+      status: "verified" as const,
+      receipt: {
+        status: "verified" as const,
+        network: "preprod",
+        transactionId: "real_injected_tx",
+        blockHeight: 2318673,
+        contractAddress: "real_contract",
+        complianceStatus: "satisfied" as const
+      }
+    }));
+    const realClient: DriveProofClient = {
+      mode: "midnight",
+      displayName: "REAL · MIDNIGHT PREPROD",
+      getConnectionState: () => ({ status: "disconnected" }),
+      connect,
+      issueDemoTrip,
+      proveCompliance
+    };
+
+    render(<DriverExperience client={realClient} stageDelayMs={0} />);
+
+    expect(await screen.findByText("REAL · MIDNIGHT PREPROD")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "CONNECT LACE" }));
+    fireEvent.click((await screen.findAllByRole("button", { name: "PREPARE ATTESTED DRIVE" }))[1]);
+    fireEvent.click(await screen.findByRole("button", { name: "CREATE PRIVATE PROOF" }));
+
+    expect(await screen.findByText("DRIVEPROOF VERIFIED ON MIDNIGHT PREPROD")).toBeInTheDocument();
+    expect(connect).toHaveBeenCalledTimes(1);
+    expect(issueDemoTrip).toHaveBeenCalledWith("safe");
+    expect(proveCompliance).toHaveBeenCalledTimes(1);
   });
 });

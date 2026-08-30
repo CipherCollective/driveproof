@@ -7,6 +7,7 @@ import {
   LockKeyhole,
   ShieldCheck
 } from "lucide-react";
+import type { DriveProofClientMode } from "@driveproof/types";
 
 function Brand({ href = "/" }: { href?: string }) {
   return (
@@ -48,7 +49,8 @@ function FlowArrow() {
   return <ArrowRight className="landing-flow-arrow" size={17} aria-hidden="true" />;
 }
 
-export function LandingPage() {
+export function LandingPage({ mode = "mock" }: { mode?: DriveProofClientMode }) {
+  const isMock = mode === "mock";
   const insurerUrl = `${import.meta.env.VITE_INSURER_URL ?? "http://localhost:5174"}/`;
 
   return (
@@ -64,7 +66,7 @@ export function LandingPage() {
           <a href="#technical-proof">Technical proof</a>
         </nav>
         <div className="landing-nav-actions">
-          <span className="landing-network-chip"><span /> MIDNIGHT · PREPROD TARGET</span>
+          <span className="landing-network-chip"><span /> {isMock ? "MIDNIGHT · PREPROD TARGET" : "REAL · MIDNIGHT PREPROD"}</span>
           <a className="landing-nav-cta" href="/driver">Launch DriveProof <ArrowUpRight size={14} /></a>
         </div>
       </header>
@@ -174,7 +176,9 @@ export function LandingPage() {
             <div><span>Unsafe policy</span><strong><Check size={13} /> Rejected</strong></div>
             <div><span>Tampered witness</span><strong><Check size={13} /> Rejected</strong></div>
           </div>
-          <p className="landing-evidence-note">The main product surface remains clearly labeled mock until the production client is injected. Technical evidence is available in the engineering harness.</p>
+          <p className="landing-evidence-note">{isMock
+            ? "The product surface is clearly labeled mock until real mode is selected. Technical evidence is available in the engineering harness."
+            : "Real mode uses the injected Midnight client; the engineering harness remains available for detailed transaction evidence."}</p>
         </section>
 
         <section className="landing-final-cta landing-section-width" aria-labelledby="final-title">
@@ -183,7 +187,7 @@ export function LandingPage() {
         </section>
       </main>
 
-      <footer className="landing-footer landing-section-width"><Brand /><span>PRODUCT PREVIEW · MOCK MODE</span><small>Zero knowledge protects privacy · attestation protects integrity.</small></footer>
+      <footer className="landing-footer landing-section-width"><Brand /><span>{isMock ? "PRODUCT PREVIEW · MOCK MODE" : "REAL · MIDNIGHT PREPROD"}</span><small>Zero knowledge protects privacy · attestation protects integrity.</small></footer>
     </div>
   );
 }

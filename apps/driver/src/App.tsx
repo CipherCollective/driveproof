@@ -23,7 +23,15 @@ import {
   POLICY_ID,
   VEHICLE_ID
 } from "@driveproof/fixtures";
-import type { DemoFixture, DriverFlowState, DriveProofClient, ProofResult, TripAttestation } from "@driveproof/types";
+import type {
+  DemoFixture,
+  DriveProofClient,
+  DriveProofConnectionState,
+  DriverFlowState,
+  ProofResult,
+  PublicProofReceipt,
+  TripAttestation
+} from "@driveproof/types";
 import { WalletDebugPage } from "./WalletDebugPage";
 import { PreprodTransactionDebugPage } from "./PreprodTransactionDebugPage";
 import {
@@ -55,13 +63,22 @@ function normalizeClientError(error: unknown): string {
   return "The DriveProof client returned an unexpected error.";
 }
 
+function insurerUrlForResult(fixture: DemoFixture, result?: ProofResult): string {
+  const baseUrl = `${import.meta.env.VITE_INSURER_URL ?? "http://localhost:5174"}/?fixture=${fixture}`;
+  if (!result || result.status !== "verified") return baseUrl;
+
+  // Only the public receipt crosses the app boundary. TripAttestation and
+  // generated private state are deliberately absent from this handoff.
+  return `${baseUrl}&receipt=${encodeURIComponent(JSON.stringify(result.receipt))}`;
+}
+
 function RouteVisualization({ attestation }: { attestation: TripAttestation }) {
   const points = attestation.samples.map((sample) => `${sample.gridX},${sample.gridY}`).join(" ");
   const start = attestation.samples[0];
   const end = attestation.samples[attestation.samples.length - 1];
   return (
     <div className="route-stage" aria-label="Stylized private journey visualization">
-      <span className="route-tag route-tag--top">PRIVATE GRID · 16 SAMPLES</span>
+      <span className="route-tag route-tag--top">PRIVATE GRID · {attestation.samples.length} SAMPLES</span>
       <span className="route-tag route-tag--bottom">NO GPS COORDINATES</span>
       <svg className="route-svg" viewBox="0 0 360 120" role="img" aria-label="Deterministic private journey grid with start and end nodes">
         <g className="route-roads" aria-hidden="true">
@@ -120,13 +137,19 @@ const pendingPublicProofMetadata: PublicProofMetadataField[] = [
   { label: "Transaction / proof reference", value: "—", note: "awaiting Midnight field" }
 ];
 
-export function PublicProofMetadata({ fields = pendingPublicProofMetadata }: { fields?: PublicProofMetadataField[] }) {
+export function PublicProofMetadata({
+  fields = pendingPublicProofMetadata,
+  connected = false
+}: {
+  fields?: PublicProofMetadataField[];
+  connected?: boolean;
+}) {
   return (
     <section className="panel public-metadata-panel" aria-labelledby="public-metadata-title">
       <div className="panel-padding">
         <div className="public-metadata-heading">
-          <div><h2 className="eyebrow" id="public-metadata-title">PUBLIC PROOF METADATA</h2><p>Reserved for the exact public fields returned by Midnight.</p></div>
-          <span className="metadata-pending">NOT WIRED</span>
+          <div><h2 className="eyebrow" id="public-metadata-title">PUBLIC PROOF METADATA</h2><p>{connected ? "Public-safe fields returned by the injected proof client." : "Reserved for the exact public fields returned by Midnight."}</p></div>
+          <span className="metadata-pending">{connected ? "PUBLIC RESULT" : "NOT WIRED"}</span>
         </div>
         <div className="public-metadata-grid">
           {fields.map((field) => (
@@ -142,7 +165,20 @@ export function PublicProofMetadata({ fields = pendingPublicProofMetadata }: { f
   );
 }
 
-function PrivacyPanel({ attestation }: { attestation: TripAttestation }) {
+function PrivacyPanel({ attestation, receipt }: { attestation?: TripAttestation; receipt?: PublicProofReceipt }) {
+  const privateTelemetryLabel = !attestation
+    ? "not loaded"
+    : attestation.samples.length > 0
+      ? `${attestation.samples.length} samples`
+      : "v2 measurement";
+  const publicFields: PublicProofMetadataField[] | undefined = receipt
+    ? [
+        { label: "Policy identifier", value: receipt.policyId ?? "NOT RETURNED", note: receipt.policyId ? "product metadata" : "not returned by client" },
+        { label: "Attestor identifier", value: receipt.attestorId ?? "NOT RETURNED", note: receipt.attestorId ? "public metadata" : "not returned by client" },
+        { label: "Nullifier", value: receipt.nullifier ?? "NOT RETURNED", note: receipt.nullifier ? "public protocol metadata" : "not returned by client" },
+        { label: "Transaction / proof reference", value: receipt.transactionId, note: "public receipt" }
+      ]
+    : undefined;
   return (
     <div className="privacy-grid" id="privacy">
       <section className="panel privacy-panel">
@@ -152,11 +188,11 @@ function PrivacyPanel({ attestation }: { attestation: TripAttestation }) {
             <h2 className="privacy-heading">LOCAL PRIVATE STATE</h2>
           </div>
           <div className="privacy-items">
-            <div className="privacy-item"><span>Telemetry samples</span><span>{attestation.samples.length} samples</span></div>
+            <div className="privacy-item"><span>Private telemetry</span><span>{privateTelemetryLabel}</span></div>
             <div className="privacy-item"><span>Route / grid positions</span><span>private</span></div>
             <div className="privacy-item"><span>Speed history</span><span>private</span></div>
             <div className="privacy-item"><span>Braking history</span><span>private</span></div>
-            <div className="privacy-item"><span>Attestation</span><span>issuer-signed</span></div>
+            <div className="privacy-item"><span>Attestation</span><span>{attestation ? "issuer-signed" : "not loaded"}</span></div>
           </div>
           <div className="lock-line"><Fingerprint size={12} /> the authorized attestor signs the private measurement</div>
         </div>
@@ -175,7 +211,7 @@ function PrivacyPanel({ attestation }: { attestation: TripAttestation }) {
           <div className="lock-line"><ShieldCheck size={12} /> raw driving telemetry is not revealed to the insurer or public ledger</div>
         </div>
       </section>
-      <PublicProofMetadata />
+      <PublicProofMetadata fields={publicFields} connected={Boolean(receipt)} />
     </div>
   );
 }
@@ -243,8 +279,24 @@ function ResultBanner({ result, mode }: { result: ProofResult; mode: DriveProofC
             ? `This attestation has already been used against ${POLICY_ID}.`
             : `This private witness cannot produce a valid proof for policy ${POLICY_ID}. Underlying telemetry remains private.`}</p>
         {verified && <div className="state-mono">{result.receipt.transactionId}</div>}
+        {verified && !isMock && <PublicReceiptSummary receipt={result.receipt} />}
       </div>
     </section>
+  );
+}
+
+function PublicReceiptSummary({ receipt }: { receipt: PublicProofReceipt }) {
+  const fields = [
+    ["Network", receipt.network],
+    ["Block", receipt.blockHeight === undefined ? undefined : String(receipt.blockHeight)],
+    ["Contract", receipt.contractAddress],
+    ["Compliance", receipt.complianceStatus]
+  ].filter((field): field is [string, string] => field[1] !== undefined);
+
+  return (
+    <div className="state-receipt" aria-label="Public proof receipt">
+      {fields.map(([label, value]) => <span key={label}><small>{label}</small><strong>{value}</strong></span>)}
+    </div>
   );
 }
 
@@ -332,8 +384,28 @@ function ProductSidebar({
   );
 }
 
-function ProductStatusStrip({ client, hasAttestation }: { client: DriveProofClient; hasAttestation: boolean }) {
+function ProductStatusStrip({
+  client,
+  hasAttestation,
+  connection
+}: {
+  client: DriveProofClient;
+  hasAttestation: boolean;
+  connection: DriveProofConnectionState;
+}) {
   const isMock = client.mode === "mock";
+  const walletLabel = isMock
+    ? "MOCK MODE"
+    : connection.status === "connected"
+      ? "CONNECTED"
+      : connection.status === "connecting"
+        ? "CONNECTING"
+        : "ACTION NEEDED";
+  const networkLabel = isMock
+    ? "MOCK MODE"
+    : connection.status === "connected"
+      ? connection.network.toUpperCase()
+      : "PREPROD TARGET";
   return (
     <section className="product-status-strip" aria-label="Driver readiness">
       <div className="product-status-intro">
@@ -344,13 +416,13 @@ function ProductStatusStrip({ client, hasAttestation }: { client: DriveProofClie
       <div className="product-status-items">
         <div className="product-status-item">
           <span>Wallet</span>
-          <strong>{isMock ? "MOCK MODE" : "CLIENT MANAGED"}</strong>
-          <small>{isMock ? "Lace lives in Technical evidence." : "Connection supplied by the client."}</small>
+          <strong>{walletLabel}</strong>
+          <small>{isMock ? "Lace lives in Technical evidence." : connection.status === "connected" ? "Lace session authorized." : "Connect Lace to continue."}</small>
         </div>
         <div className="product-status-item">
           <span>Network</span>
-          <strong>MIDNIGHT PREPROD</strong>
-          <small>{isMock ? "target environment" : "provided by client"}</small>
+          <strong>{networkLabel}</strong>
+          <small>{isMock ? "target environment" : connection.status === "connected" ? "validated by client" : "validated after connection"}</small>
         </div>
         <div className="product-status-item">
           <span>Proof readiness</span>
@@ -365,15 +437,17 @@ function ProductStatusStrip({ client, hasAttestation }: { client: DriveProofClie
 function ProductProofStepper({
   client,
   hasAttestation,
+  walletConnected,
   flowState,
   result
 }: {
   client: DriveProofClient;
   hasAttestation: boolean;
+  walletConnected: boolean;
   flowState: DriverFlowState;
   result?: ProofResult;
 }) {
-  const steps = getDriverProofSteps({ mode: client.mode, hasAttestation, flowState, result });
+  const steps = getDriverProofSteps({ mode: client.mode, hasAttestation, walletConnected, flowState, result });
   const stateLabel: Record<ReturnType<typeof getDriverProofSteps>[number]["state"], string> = {
     complete: "complete",
     current: "next",
@@ -460,18 +534,85 @@ function browserStorage(): Storage | undefined {
   }
 }
 
+function initialConnectionState(client: DriveProofClient): DriveProofConnectionState {
+  return client.getConnectionState?.() ?? (client.mode === "mock"
+    ? { status: "connected", network: "mock" }
+    : { status: "disconnected" });
+}
+
+function connectionErrorMessage(connection: DriveProofConnectionState): string | undefined {
+  if (connection.status === "error") return connection.message;
+  if (connection.status === "unavailable") return connection.reason;
+  if (connection.status === "wrong-network") {
+    return `Lace reported ${connection.network}; expected ${connection.expectedNetwork}.`;
+  }
+  return undefined;
+}
+
+function PrivateTripPlaceholder({
+  client,
+  walletConnected,
+  onPrepare
+}: {
+  client: DriveProofClient;
+  walletConnected: boolean;
+  onPrepare: () => void;
+}) {
+  return (
+    <section className="panel route-card private-trip-placeholder">
+      <div className="panel-heading">
+        <div><h2 className="panel-title">Private Trip</h2><p className="panel-subtitle">An attested measurement appears here after the session is ready.</p></div>
+        <div className="status-label">Awaiting trip</div>
+      </div>
+      <div className="private-trip-placeholder-body">
+        <LockKeyhole size={22} strokeWidth={1.5} />
+        <div>
+          <h3>{walletConnected ? "Prepare an attested drive" : "Connect Lace to begin"}</h3>
+          <p>{walletConnected
+            ? "The Vehicle Attestor Simulator will issue the signed private measurement used by the current proof."
+            : "DriveProof uses Lace only to authorize Midnight Preprod transactions. Raw trip data is not sent to the wallet."}</p>
+          {walletConnected && <button className="secondary-button" onClick={onPrepare} type="button">PREPARE ATTESTED DRIVE <ChevronRight size={14} /></button>}
+        </div>
+      </div>
+      <div className="lock-line"><ShieldCheck size={12} /> no private measurement has been loaded yet</div>
+      {client.mode === "midnight" && !walletConnected && <div className="private-trip-placeholder-note">Use the primary action in the proof panel to connect Lace.</div>}
+    </section>
+  );
+}
+
+function PrivateMeasurementCard() {
+  return (
+    <section className="panel route-card private-trip-placeholder">
+      <div className="panel-heading">
+        <div><h2 className="panel-title">Private Trip</h2><p className="panel-subtitle">The current v2 contract proves one issuer-signed speed measurement.</p></div>
+        <div className="status-label">Local only</div>
+      </div>
+      <div className="private-trip-placeholder-body">
+        <LockKeyhole size={22} strokeWidth={1.5} />
+        <div>
+          <h3>Attested measurement ready</h3>
+          <p>The signed measurement is held in the private witness. Route and expanded telemetry are not part of this contract version.</p>
+        </div>
+      </div>
+      <div className="lock-line"><ShieldCheck size={12} /> the authorized attestor signs the private measurement</div>
+    </section>
+  );
+}
+
 function OnboardingChecklist({
   insurerUrl,
   state,
   onStateChange,
   clientMode,
-  proofVerified
+  proofVerified,
+  onConnect
 }: {
   insurerUrl: string;
   state: OnboardingState;
   onStateChange: (nextState: OnboardingState) => void;
   clientMode: DriveProofClient["mode"];
   proofVerified: boolean;
+  onConnect?: () => void;
 }) {
   const progress = onboardingProgress(state);
 
@@ -512,7 +653,9 @@ function OnboardingChecklist({
                 <p>{task.description}</p>
                 <small><strong>Why it matters</strong> {task.why}</small>
                 <div className="onboarding-task-actions">
-                  <a className="secondary-button" href={href} onClick={() => task.id !== "connect-wallet" && completeFromGuide()}>{task.action} <ArrowUpRight size={13} /></a>
+                  {task.id === "connect-wallet" && clientMode === "midnight" && onConnect
+                    ? <button className="secondary-button" onClick={onConnect} type="button">Connect Lace <ArrowUpRight size={13} /></button>
+                    : <a className="secondary-button" href={href} onClick={() => task.id !== "connect-wallet" && completeFromGuide()}>{task.action} <ArrowUpRight size={13} /></a>}
                   {canComplete
                     ? <button className="onboarding-complete-button" onClick={completeFromGuide} type="button">{completed ? "Completed locally" : "Mark complete"}</button>
                     : <span className="onboarding-complete-note">Completes after a verified result</span>}
@@ -542,9 +685,14 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
   const [flowState, setFlowState] = useState<DriverFlowState>("idle");
   const [errorMessage, setErrorMessage] = useState<string>();
   const [isLoading, setIsLoading] = useState(true);
+  const [connection, setConnection] = useState<DriveProofConnectionState>(() => initialConnectionState(client));
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isPreparingTrip, setIsPreparingTrip] = useState(false);
   const [isNavOpen, setIsNavOpen] = useState(false);
   const [onboardingState, setOnboardingState] = useState<OnboardingState>(() => loadOnboardingState(storage));
   const isVerifying = flowState === "preparing" || flowState === "proving" || flowState === "submitting";
+  const walletConnected = isMock || connection.status === "connected";
+  const isBusy = isConnecting || isPreparingTrip || isVerifying;
 
   function updateOnboardingState(nextState: OnboardingState) {
     setOnboardingState(nextState);
@@ -554,10 +702,18 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
+    setAttestation(undefined);
     setResult(undefined);
     setStage(0);
     setErrorMessage(undefined);
     setFlowState("idle");
+
+    if (!isMock) {
+      setConnection(initialConnectionState(client));
+      setIsLoading(false);
+      return () => { cancelled = true; };
+    }
+
     void client.issueDemoTrip(fixture)
       .then((nextAttestation) => {
         if (!cancelled) {
@@ -573,7 +729,18 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
         }
       });
     return () => { cancelled = true; };
-  }, [client, fixture]);
+  }, [client, fixture, isMock]);
+
+  useEffect(() => {
+    if (client.mode !== "midnight" || connection.status !== "connected") return;
+
+    setOnboardingState((current) => {
+      if (current.completed["connect-wallet"]) return current;
+      const next = completeOnboardingTask(current, "connect-wallet");
+      saveOnboardingState(storage, next);
+      return next;
+    });
+  }, [client.mode, connection.status, storage]);
 
   useEffect(() => {
     if (client.mode !== "midnight" || result?.status !== "verified") return;
@@ -586,18 +753,69 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
     });
   }, [client.mode, result, storage]);
 
-  async function generateProof() {
-    if (!attestation || isVerifying) return;
-    setResult(undefined);
+  async function connectWallet() {
+    if (isMock || isConnecting || isVerifying) return;
+    if (!client.connect) {
+      setErrorMessage("This real client does not expose a wallet connection method.");
+      setFlowState("error");
+      return;
+    }
+
     setErrorMessage(undefined);
+    setIsConnecting(true);
+    try {
+      const nextConnection = await client.connect();
+      setConnection(nextConnection);
+      if (nextConnection.status === "error" || nextConnection.status === "unavailable") {
+        setErrorMessage(connectionErrorMessage(nextConnection));
+        setFlowState("error");
+      } else {
+        setFlowState("idle");
+      }
+    } catch (error: unknown) {
+      setErrorMessage(normalizeClientError(error));
+      setFlowState("error");
+    } finally {
+      setIsConnecting(false);
+    }
+  }
+
+  async function prepareAttestedTrip() {
+    if (isMock || !walletConnected || isBusy) return;
+
+    setErrorMessage(undefined);
+    setResult(undefined);
+    setIsPreparingTrip(true);
     setFlowState("preparing");
     try {
-      for (let index = 0; index < pendingStages.length; index += 1) {
-        setStage(index);
-        setFlowState(index >= 4 ? "submitting" : index >= 3 ? "proving" : "preparing");
-        // Staging is a product-shell aid only. A future real client owns its
-        // actual proving/submission timing and is never artificially delayed.
-        if (client.mode === "mock" && stageDelayMs > 0) await wait(stageDelayMs);
+      const nextAttestation = await client.issueDemoTrip(fixture);
+      setAttestation(nextAttestation);
+      setFlowState("idle");
+    } catch (error: unknown) {
+      setErrorMessage(normalizeClientError(error));
+      setFlowState("error");
+    } finally {
+      setIsPreparingTrip(false);
+    }
+  }
+
+  async function generateProof() {
+    if (!attestation || isBusy) return;
+    setResult(undefined);
+    setErrorMessage(undefined);
+    try {
+      if (client.mode === "mock") {
+        setFlowState("preparing");
+        for (let index = 0; index < pendingStages.length; index += 1) {
+          setStage(index);
+          setFlowState(index >= 4 ? "submitting" : index >= 3 ? "proving" : "preparing");
+          if (stageDelayMs > 0) await wait(stageDelayMs);
+        }
+      } else {
+        // The real client owns deploy, proving, wallet approval, and submit.
+        // Keep one honest coarse stage until that product operation resolves.
+        setStage(3);
+        setFlowState("proving");
       }
       const nextResult = await client.proveCompliance(attestation, POLICY_ID);
       setResult(nextResult);
@@ -609,9 +827,24 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
     }
   }
 
-  const insurerUrl = `${import.meta.env.VITE_INSURER_URL ?? "http://localhost:5174"}/?fixture=${fixture}`;
+  const primaryAction = !walletConnected ? connectWallet : !attestation ? prepareAttestedTrip : generateProof;
+  const primaryLabel = isConnecting
+    ? "CONNECTING TO LACE"
+    : isPreparingTrip
+      ? "REQUESTING ATTESTATION"
+      : isVerifying
+        ? "GENERATING PROOF"
+        : !walletConnected
+          ? "CONNECT LACE"
+          : !attestation
+            ? "PREPARE ATTESTED DRIVE"
+            : result?.status === "verified"
+              ? "RESUBMIT SAME ATTESTATION"
+              : "CREATE PRIVATE PROOF";
+  const insurerUrl = insurerUrlForResult(fixture, result);
+  const connectionError = connectionErrorMessage(connection);
 
-  if (isLoading || !attestation) {
+  if (isLoading) {
     return <div className="app-shell"><a className="skip-link" href="#main-content">Skip to main content</a><main className="shell-content" id="main-content"><div className="empty-state"><div><div className="eyebrow">DRIVEPROOF · DRIVER</div><h1>Preparing private trip</h1><p>Loading the deterministic demo fixture.</p></div></div></main></div>;
   }
 
@@ -641,41 +874,45 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
             <div className="vehicle-card"><div className="eyebrow">VEHICLE</div><div className="vehicle-name">{VEHICLE_ID}</div><div className="vehicle-detail">Personal trip · Today, 09:42</div></div>
           </section>
 
-          <ProductStatusStrip client={client} hasAttestation={Boolean(attestation)} />
+          <ProductStatusStrip client={client} hasAttestation={Boolean(attestation)} connection={connection} />
 
           <section className="dashboard-grid">
             <div>
-              <section className="panel route-card">
-                <div className="panel-heading">
-                  <div><h2 className="panel-title">Private Trip</h2><p className="panel-subtitle">A local view of the telemetry your proof uses.</p></div>
-                  <div className="status-label">Local only</div>
-                </div>
-                <RouteVisualization attestation={attestation} />
-                <dl className="route-metric-grid">
-                  <Metric label="Distance" value="18.7" unit="km" />
-                  <Metric label="Samples" value={attestation.samples.length} />
-                  <Metric label="Max speed" value={maxSpeed(attestation.samples)} unit="km/h" />
-                  <Metric label="Harsh braking" value={harshBrakingCount(attestation.samples)} />
-                </dl>
-              </section>
-              <PrivacyPanel attestation={attestation} />
+              {attestation && attestation.samples.length > 0
+                ? <section className="panel route-card">
+                    <div className="panel-heading">
+                      <div><h2 className="panel-title">Private Trip</h2><p className="panel-subtitle">A local view of the telemetry your proof uses.</p></div>
+                      <div className="status-label">Local only</div>
+                    </div>
+                    <RouteVisualization attestation={attestation} />
+                    <dl className="route-metric-grid">
+                      <Metric label="Distance" value="18.7" unit="km" />
+                      <Metric label="Samples" value={attestation.samples.length} />
+                      <Metric label="Max speed" value={maxSpeed(attestation.samples)} unit="km/h" />
+                      <Metric label="Harsh braking" value={harshBrakingCount(attestation.samples)} />
+                    </dl>
+                  </section>
+                : attestation
+                  ? <PrivateMeasurementCard />
+                  : <PrivateTripPlaceholder client={client} walletConnected={walletConnected} onPrepare={() => void prepareAttestedTrip()} />}
+              <PrivacyPanel attestation={attestation} receipt={result?.status === "verified" ? result.receipt : undefined} />
             </div>
 
             <section className="panel proof-panel" id="create-proof">
               <div className="panel-padding">
                 <div className="panel-heading"><div><div className="eyebrow">PRIVATE PROOF</div><h2 className="panel-title">Create a private proof</h2><p className="panel-subtitle">The insurer receives only whether your signed trip satisfies the policy.</p></div><div className="status-label">{POLICY_ID}</div></div>
-                <ProductProofStepper client={client} hasAttestation={Boolean(attestation)} flowState={flowState} result={result} />
+                <ProductProofStepper client={client} hasAttestation={Boolean(attestation)} walletConnected={walletConnected} flowState={flowState} result={result} />
                 <div className="proof-orbit"><ShieldCheck className="proof-orbit-icon" size={32} strokeWidth={1.3} /><span className="proof-orbit-label">PRIVATE WITNESS</span></div>
                 <ProofPipeline />
                 <div className="proof-list">
-                  <div className="proof-row"><span className="proof-row-label" title="A cryptographic signature from an authorized telemetry source.">Authorized attestation</span><span className="proof-row-value">ready</span></div>
+                  <div className="proof-row"><span className="proof-row-label" title="A cryptographic signature from an authorized telemetry source.">Authorized attestation</span><span className="proof-row-value">{attestation ? "ready" : "waiting"}</span></div>
                   <div className="proof-row"><span className="proof-row-label" title="The conditions the insurer requires the trip to satisfy.">Safety policy</span><span className="proof-row-value">{POLICY_ID}</span></div>
                   <div className="proof-row"><span className="proof-row-label">Replay protection</span><span className="proof-row-value">active</span></div>
                 </div>
                 <div style={{ marginTop: "auto", paddingTop: 23 }}>
-                  <button className="primary-button" disabled={isVerifying} onClick={() => void generateProof()} type="button">
-                    {isVerifying ? "GENERATING PROOF" : result?.status === "verified" ? "RESUBMIT SAME ATTESTATION" : "CREATE PRIVATE PROOF"}
-                    {isVerifying ? <Zap size={14} /> : <ChevronRight size={15} />}
+                  <button className="primary-button" disabled={isBusy} onClick={() => void primaryAction()} type="button">
+                    {primaryLabel}
+                    {isBusy ? <Zap size={14} /> : <ChevronRight size={15} />}
                   </button>
                   <p className="proof-footnote"><Code2 size={11} style={{ verticalAlign: "-2px", marginRight: 4 }} /> {client.displayName} {isMock ? "· no chain transaction" : "· Lace approval required"}</p>
                 </div>
@@ -683,16 +920,17 @@ export function DriverExperience({ client, stageDelayMs = 650 }: DriverExperienc
             </section>
           </section>
 
-          <OnboardingChecklist insurerUrl={insurerUrl} state={onboardingState} onStateChange={updateOnboardingState} clientMode={client.mode} proofVerified={result?.status === "verified"} />
+          <OnboardingChecklist insurerUrl={insurerUrl} state={onboardingState} onStateChange={updateOnboardingState} clientMode={client.mode} proofVerified={result?.status === "verified"} onConnect={() => void connectWallet()} />
 
           {fixture === "tampered" && <TamperedNotice />}
           {flowState === "error" && errorMessage && <ClientErrorBanner message={errorMessage} />}
+          {flowState !== "error" && connectionError && <ClientErrorBanner message={connectionError} />}
           {isVerifying && <VerificationFlow mode={client.mode} stage={stage} />}
           {result && !isVerifying && <><ResultBanner mode={client.mode} result={result} /><VerificationFlow mode={client.mode} stage={pendingStages.length - 1} result={result} /></>}
         </main>
         </div>
       </div>
-      <DemoControls fixture={fixture} onFixtureChange={setFixture} />
+      {isMock && <DemoControls fixture={fixture} onFixtureChange={setFixture} />}
     </div>
   );
 }
@@ -710,7 +948,7 @@ export default function App({ client }: DriverAppProps) {
     return <PreprodTransactionDebugPage />;
   }
   if (window.location.pathname === "/" || window.location.pathname === "") {
-    return <LandingPage />;
+    return <LandingPage mode={client.mode} />;
   }
   return <DriverExperience client={client} />;
 }

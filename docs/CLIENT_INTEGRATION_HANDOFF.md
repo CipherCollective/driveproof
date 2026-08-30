@@ -1,6 +1,6 @@
 # DriveProof Client Integration Handoff
 
-Status: the product seam is ready. `MidnightDriveProofClient` is not implemented in this commit and the current product default remains `MockDriveProofClient`.
+Status: `MidnightDriveProofClient` now implements the product seam for the current v2 contract. The product default remains `MockDriveProofClient`; real mode is explicit and opt-in.
 
 ## Stable client contract
 
@@ -19,6 +19,11 @@ export interface DriveProofClient {
   ): Promise<ProofResult>;
 
   getProofStatus?(transactionId: string): Promise<ProofResult>;
+
+  getConnectionState?(): DriveProofConnectionState;
+  connect?(): Promise<DriveProofConnectionState>;
+  detect?(): Promise<boolean>;
+  getLatestReceipt?(): PublicProofReceipt | undefined;
 }
 ```
 
@@ -63,7 +68,7 @@ Implementation selection happens at the application entrypoint:
 - `apps/driver/src/App.tsx` passes that client to `DriverExperience`.
 - `DriverExperience` consumes only `DriveProofClient`; it does not construct a client or call wallet/attestor APIs directly.
 
-Wire the supplied implementation through the existing `createDriveProofClient("midnight")` branch in `shared/driveproof-client/src/index.ts` (or an equivalent adapter there). Do not change Driver components to call Midnight APIs.
+`shared/driveproof-client/src/index.ts` now selects `MidnightDriveProofClient` for `createDriveProofClient("midnight")`. The two app entrypoints select that explicit mode from `VITE_DRIVEPROOF_CLIENT_MODE`; no Driver component imports Midnight APIs.
 
 ## Driver state transitions
 
@@ -77,11 +82,11 @@ idle -> preparing -> proving -> submitting -> verified
 
 Expected policy, integrity, replay, and unknown prover rejections are returned as `ProofResult` with `status: "rejected"`. Unexpected client/runtime failures are thrown and rendered as an error state. The mock-only stage delay is never applied to a future `mode: "midnight"` client.
 
-The current UI does not require a separate `connect()` method. Wallet discovery, authorization, and runtime setup belong inside the real client or its existing integration boundary until a product-level connection surface is explicitly requested.
+The polished Driver uses the optional connection hooks when `mode` is `"midnight"`: connect first, request an attested trip, then prove. The debug transaction harness remains a separate real evidence surface.
 
 ## Insurer injection point
 
-`apps/insurer/src/main.tsx` is the implementation-selection point and renders `<App client={driveProofClient} />`.
+`apps/insurer/src/main.tsx` is the implementation-selection point and renders `<App client={driveProofClient} publicResult={publicResult} />`. It accepts only a URL-encoded public receipt produced by the Driver link; it never requests an attestation or proof in real mode.
 
 `InsurerExperience` accepts a public result directly:
 
@@ -94,7 +99,7 @@ The current UI does not require a separate `connect()` method. Wallet discovery,
 />
 ```
 
-When `publicResult` is supplied, the verifier view renders only `ProofResult`/`PublicProofReceipt` data. It does not need a `TripAttestation`. The current default mock path remains available for the existing fixture demo; replace that adapter at the application boundary when the real public contract/indexer result is ready. Do not make the Insurer fetch raw telemetry from Driver.
+When `publicResult` is supplied, the verifier view renders only `ProofResult`/`PublicProofReceipt` data. It does not need a `TripAttestation`. In real mode with no receipt it shows `NO PROOF LOADED`; the mock path remains available for the fixture demo. Do not make the Insurer fetch raw telemetry from Driver.
 
 ## Expected rejection shape
 
@@ -113,7 +118,7 @@ Keep telemetry samples, route/grid positions, speed and braking history, attesta
 
 ## Frontend files Ashiha should not need to modify
 
-Once the implementation satisfies the interface and is selected by the existing factory, no Driver/Insurer component changes should be required. The expected integration touch points are the client adapter/factory and, if needed, the application-boundary code that loads a public receipt for the Insurer. Leave these unchanged:
+The current implementation satisfies the interface and is selected by the existing factory. Future contract phases should stay inside the client adapter and generated-artifact mapping; no Driver/Insurer component changes should be required for private-state or circuit changes. Leave these unchanged:
 
 - `apps/driver/src/PreprodTransactionDebugPage.tsx`
 - `shared/midnight-runtime/**`
@@ -122,3 +127,9 @@ Once the implementation satisfies the interface and is selected by the existing 
 - `apps/insurer/src/App.tsx` public-result presentation
 
 This handoff does not define contract addresses, policy serialization, attestor serialization, witness fields, generated APIs, or transaction mechanics. Those remain supplied by the real generated client and contract handoff.
+
+## Current real adapter
+
+`shared/driveproof-client/src/midnight.ts` is the current v2 adapter. It owns the Lace session, browser-generated session subject, attestor request, generated contract compilation, runtime/provider construction, deploy-on-first-proof, contract join, and public receipt mapping. Its circuit call is `proveCompliance()` with no caller-supplied policy namespace; `policyId` is retained only as product metadata.
+
+Enable the real product flow explicitly with `VITE_DRIVEPROOF_CLIENT_MODE=midnight`. It requires Lace on Midnight Preprod, the local proof server at `http://localhost:6300`, the local attestor at `http://localhost:4000`, and the generated assets served at `/contract/compiled/driveproof`. The app does not fall back to mock mode when any prerequisite fails.

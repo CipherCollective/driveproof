@@ -7,7 +7,14 @@
     ".": "./src/index.ts"
   },
   "dependencies": {
+    "@driveproof/attestor-client": "1.0.0",
     "@driveproof/fixtures": "1.0.0",
-    "@driveproof/types": "1.0.0"
+    "@driveproof/midnight-runtime": "1.0.0",
+    "@driveproof/midnight-wallet": "1.0.0",
+    "@driveproof/types": "1.0.0",
+    "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
+    "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
+    "@midnight-ntwrk/midnight-js-types": "4.1.1",
+    "driveproof-contract": "0.1.0"
   }
 }

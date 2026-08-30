@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { MockDriveProofClient } from "@driveproof/driveproof-client";
-import type { ProofResult } from "@driveproof/types";
+import type { DriveProofClient, ProofResult } from "@driveproof/types";
 import { InsurerExperience } from "./App";
 
 describe("InsurerExperience", () => {
@@ -59,5 +59,22 @@ describe("InsurerExperience", () => {
     expect(screen.getAllByText("real_public_tx_001")).toHaveLength(2);
     expect(screen.queryByText("67")).not.toBeInTheDocument();
     expect(screen.queryByText("112")).not.toBeInTheDocument();
+  });
+
+  it("does not initiate a real proof when no public receipt is supplied", async () => {
+    const issueDemoTrip = vi.fn();
+    const proveCompliance = vi.fn();
+    const realClient: DriveProofClient = {
+      mode: "midnight",
+      displayName: "REAL · MIDNIGHT PREPROD",
+      issueDemoTrip,
+      proveCompliance
+    };
+
+    render(<InsurerExperience client={realClient} />);
+
+    expect(await screen.findByText("NO PROOF LOADED")).toBeInTheDocument();
+    expect(issueDemoTrip).not.toHaveBeenCalled();
+    expect(proveCompliance).not.toHaveBeenCalled();
   });
 });

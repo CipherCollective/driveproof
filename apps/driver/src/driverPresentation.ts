@@ -22,12 +22,14 @@ export function getDriverProofSteps({
   mode,
   hasAttestation,
   flowState,
-  result
+  result,
+  walletConnected = true
 }: {
   mode: DriveProofClient["mode"];
   hasAttestation: boolean;
   flowState: DriverFlowState;
   result?: ProofResult;
+  walletConnected?: boolean;
 }): DriverProofStep[] {
   const verified = result?.status === "verified";
 
@@ -36,14 +38,14 @@ export function getDriverProofSteps({
       id: "connect-wallet",
       label: "Connect wallet",
       description: "Authorize Midnight transactions through the wallet layer.",
-      state: mode === "mock" ? "unavailable" : verified ? "complete" : "current",
+      state: mode === "mock" ? "unavailable" : walletConnected ? "complete" : "current",
       note: mode === "mock" ? "Lace is exercised in Technical evidence." : "Connection is managed by the injected client."
     },
     {
       id: "prepare-trip",
       label: "Prepare attested trip",
       description: "Load a measurement signed by the authorized telemetry source.",
-      state: hasAttestation ? "complete" : "current"
+      state: hasAttestation ? "complete" : walletConnected ? "current" : "upcoming"
     },
     {
       id: "review-policy",

@@ -62,6 +62,18 @@ export type DriverFlowState =
 
 export type DriveProofClientMode = "mock" | "midnight";
 
+/**
+ * Product-safe wallet state. The underlying Lace session and ConnectedAPI
+ * remain private to the real client implementation.
+ */
+export type DriveProofConnectionState =
+  | { status: "disconnected" }
+  | { status: "connecting" }
+  | { status: "connected"; network: string; walletName?: string }
+  | { status: "wrong-network"; network: string; expectedNetwork: string; walletName?: string }
+  | { status: "unavailable"; reason: string }
+  | { status: "error"; message: string };
+
 export interface DriveProofClient {
   readonly mode: DriveProofClientMode;
   readonly displayName: string;
@@ -71,4 +83,12 @@ export interface DriveProofClient {
   proveCompliance(attestation: TripAttestation, policyId: string): Promise<ProofResult>;
 
   getProofStatus?(transactionId: string): Promise<ProofResult>;
+
+  /** Optional real-wallet onboarding hooks; mock clients need not implement them. */
+  getConnectionState?(): DriveProofConnectionState;
+  connect?(): Promise<DriveProofConnectionState>;
+  detect?(): Promise<boolean>;
+
+  /** Public-only receipt access for a verifier surface; never private witness data. */
+  getLatestReceipt?(): PublicProofReceipt | undefined;
 }
