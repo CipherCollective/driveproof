@@ -118,10 +118,10 @@ function serializeSamples(samples: ReturnType<typeof resolveDemoTripSamples>): A
   }));
 }
 
-export function createServer(providerSk: bigint, providerId: number, providerPk: JubjubPoint) {
+export function createRequestHandler(providerSk: bigint, providerId: number, providerPk: JubjubPoint) {
   const allowedOrigin = resolveAllowedOrigin();
 
-  return createHttpServer(async (req, res) => {
+  return async (req: IncomingMessage, res: ServerResponse) => {
     const requestOrigin = typeof req.headers.origin === 'string' ? req.headers.origin : undefined;
 
     if (!isAllowedOrigin(requestOrigin, allowedOrigin)) {
@@ -209,7 +209,11 @@ export function createServer(providerSk: bigint, providerId: number, providerPk:
     }
 
     sendJson(res, 404, { error: 'Not found' }, requestOrigin, allowedOrigin);
-  });
+  };
+}
+
+export function createServer(providerSk: bigint, providerId: number, providerPk: JubjubPoint) {
+  return createHttpServer(createRequestHandler(providerSk, providerId, providerPk));
 }
 
 export { readJsonBody, sendJson };
