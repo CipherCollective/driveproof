@@ -1,0 +1,9 @@
+# Never upload local environment files or private wallet/attestor material.
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Local dependency and generated caches are not deployment inputs.
+**/node_modules
+**/.cache

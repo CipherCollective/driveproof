@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "framework": "vite",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build --workspace @driveproof/insurer",
+  "outputDirectory": "apps/insurer/dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

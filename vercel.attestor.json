@@ -1,0 +1,25 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "version": 2,
+  "installCommand": "npm ci",
+  "builds": [
+    { "src": "api/attestor.ts", "use": "@vercel/node" }
+  ],
+  "routes": [
+    {
+      "src": "/health",
+      "dest": "/api/attestor.ts",
+      "transforms": [{ "type": "request.path", "op": "set", "args": "/health" }]
+    },
+    {
+      "src": "/provider-info",
+      "dest": "/api/attestor.ts",
+      "transforms": [{ "type": "request.path", "op": "set", "args": "/provider-info" }]
+    },
+    {
+      "src": "/attest",
+      "dest": "/api/attestor.ts",
+      "transforms": [{ "type": "request.path", "op": "set", "args": "/attest" }]
+    }
+  ]
+}
